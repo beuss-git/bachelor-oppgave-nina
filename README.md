@@ -1,2 +1,1 @@
 # bachelor-oppgave-nina
-test
