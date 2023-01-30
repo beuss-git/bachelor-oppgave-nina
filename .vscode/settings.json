@@ -2,4 +2,5 @@
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "python.formatting.provider": "black",
+    "mypy.dmypyExecutable": "${workspaceFolder}\\.venv\\Scripts\\dmypy.exe",
 }

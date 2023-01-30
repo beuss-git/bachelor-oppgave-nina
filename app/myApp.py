@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 class MainWindow(QMainWindow):
     """Main Window"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.setWindowTitle("My App")
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
         self.input = QLineEdit()
         self.input.textChanged.connect(self.label.setText)
 
-        self.browseFiles()
+        self.browse_files()
 
         layout = QVBoxLayout()
         layout.addWidget(self.input)
@@ -38,7 +38,8 @@ class MainWindow(QMainWindow):
         # Set the central widget of the Window.
         self.setCentralWidget(container)
 
-    def browseFiles(self):
+    def browse_files(self) -> tuple[str, str]:
+        """Open a dialog to select a file, and return the path to it."""
         filename = QFileDialog.getOpenFileName()
         return filename
 
