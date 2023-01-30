@@ -1,5 +1,6 @@
 # Only needed for access to command line arguments
 import sys
+import typing
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -38,7 +39,7 @@ class MainWindow(QMainWindow):
         # Set the central widget of the Window.
         self.setCentralWidget(container)
 
-    def browse_files(self) -> tuple[str, str]:
+    def browse_files(self) -> typing.Tuple[str, str]:
         """Open a dialog to select a file, and return the path to it."""
         filename = QFileDialog.getOpenFileName()
         return filename
