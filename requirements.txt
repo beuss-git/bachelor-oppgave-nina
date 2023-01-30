@@ -27,3 +27,5 @@ typing_extensions==4.4.0
 urllib3==1.26.14
 wrapt==1.14.1
 yarg==0.1.9
+pyqt5==5.15.8
+pyqt6==6.4.1
