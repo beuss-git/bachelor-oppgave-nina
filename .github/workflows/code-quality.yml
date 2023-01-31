@@ -13,5 +13,5 @@ jobs:
       - run: pip install --upgrade pip
       - run: pip install -r requirements.txt
       - run: black --diff --check $(git ls-files '*.py')
-      - run: pylint --disable=all --enable=unused-import $(git ls-files '*.py')
+      - run: pylint $(git ls-files '*.py')
       - run: mypy --strict $(git ls-files '*.py')
