@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
 )
 
+
 class MainWindow(QMainWindow):
     """Main Window"""
 
