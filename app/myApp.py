@@ -25,11 +25,13 @@ class MainWindow(QMainWindow):
     OpenDirectory = 2
     SaveFile = 3
 
-    def __init__(self, mode=OpenFile) -> None:
-        """Initializer
+    def __init__(self, mode: int = OpenFile) -> None:
+        """_summary_
 
-        Args:self
-            mode (int, optional): [description]. Defaults to OpenFile."""
+        Args:
+            mode (int, optional): _description_. Defaults to OpenFile.
+        """
+
         super().__init__()
 
         # Set default window settings
