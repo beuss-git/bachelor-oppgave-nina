@@ -1,9 +1,9 @@
-path: path_to_dataset
+path: /home/beuss/Downloads/datasets/brackish/out
 
 # These are relative to the path above
-train: images\train\
-val: images\valid\
-test: images\test\
+train: images/train/
+val: images/valid/
+test: images/test/
 
 nc: 6
 names: ["none", "fish", "small_fish", "shrimp", "crab", "jellyfish", "starfish"]
