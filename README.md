@@ -9,3 +9,5 @@ https://developer.nvidia.com/rdp/cudnn-archive
 
 Install pytorch for CUDA 11.7: `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117`
 
+
+`pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu117`
