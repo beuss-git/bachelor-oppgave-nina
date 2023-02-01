@@ -2,6 +2,9 @@
 from enum import Enum
 import customtkinter as c_tk
 
+from tkinter import RIGHT
+from tkinter import LEFT
+
 # Setup of application configuration
 c_tk.set_appearance_mode("System")
 c_tk.set_default_color_theme("green")
@@ -46,7 +49,7 @@ def set_label(
         c_tk.CTkLabel: the label
     """
     label = c_tk.CTkLabel(master=frame, text=label)
-    label.pack(pady=padding[1], padx=padding[0])
+    label.pack(pady=padding[1], padx=padding[0], side=RIGHT)
     return label
 
 
@@ -89,7 +92,7 @@ class App(c_tk.CTk):
             text="Browse Directories",
             command=browse_load,
         )
-        button_get_load_dir.pack()
+        button_get_load_dir.pack(side=LEFT)
 
         label_save = set_label("Save directory", frame_getdirs, padding=(10, 10))
 
@@ -101,7 +104,12 @@ class App(c_tk.CTk):
             text="Browse Directories",
             command=browse_save,
         )
-        button_get_save_dir.pack()
+        button_get_save_dir.pack(side=LEFT)
+
+        # subframe = c_tk.CTkFrame(master=frame_getdirs)
+        # subject = c_tk.CTkLabel(subframe, text="Subject")
+        # subject.place(relx=0.5, rely=0.5, anchor=CENTER)
+        # subframe.pack(expand=True, fill=BOTH, side=LEFT)
 
 
 if __name__ == "__main__":
