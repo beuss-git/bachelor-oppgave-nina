@@ -1,12 +1,13 @@
+"""Creates empty YOLO detection files for frames with no detections in it"""
 import argparse
 import os
 import typing
 import pathlib
 
 
-def create_image_list(args: dict[str, typing.Any]) -> None:
-    root_dir = args["inputFolder"]
-    output_dir = os.path.abspath(args["outputFolder"])
+def create_image_list(parsed_args: dict[str, typing.Any]) -> None:
+    root_dir = parsed_args["inputFolder"]
+    output_dir = os.path.abspath(parsed_args["outputFolder"])
     # Create output dir if it doesn't exist
     pathlib.Path(output_dir).mkdir(exist_ok=True, parents=True)
 
