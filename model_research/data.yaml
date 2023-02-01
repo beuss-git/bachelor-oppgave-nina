@@ -1,0 +1,15 @@
+path: path_to_dataset
+
+# These are relative to the path above
+train: images\train\
+val: images\valid\
+test: images\test\
+
+names:
+  0: none
+  1: fish
+  2: small_fish
+  3: shrimp
+  4: crab
+  5: jellyfish
+  6: starfish
