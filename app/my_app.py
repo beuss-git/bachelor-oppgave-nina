@@ -1,5 +1,7 @@
 # Only needed for access to command line arguments
 from enum import Enum
+import tkinter
+from typing import Literal
 import customtkinter as c_tk
 
 # Setup of application configuration
@@ -33,7 +35,10 @@ def set_frame(parent: c_tk.CTk, padding: tuple[int, int]) -> c_tk.CTkFrame:
 
 
 def set_label(
-    label: str, frame: c_tk.CTkFrame, padding: tuple[int, int]
+    label: str,
+    frame: c_tk.CTkFrame,
+    padding: tuple[int, int],
+    # direction: str,
 ) -> c_tk.CTkLabel:
     """Creates a label
 
@@ -87,7 +92,11 @@ class App(c_tk.CTk):
 
         # Frame for load dir
         load_dir_frame = c_tk.CTkFrame(main_frame)
-        label_load = set_label("Load directory:", load_dir_frame, padding=(10, 10))
+        label_load = set_label(
+            "Load directory:",
+            load_dir_frame,
+            padding=(10, 10),
+        )
 
         textbox_load_dir = c_tk.CTkTextbox(
             load_dir_frame, height=20, width=400, activate_scrollbars=False
@@ -132,18 +141,60 @@ class App(c_tk.CTk):
         # Frame for buffer time
         buffer_time_frame = c_tk.CTkFrame(main_frame)
         label_buffer_time = set_label(
-            "Buffer Time:", buffer_time_frame, padding=(10, 10)
+            "Buffer Time before:", buffer_time_frame, padding=(10, 10)
         )
 
         def combobox_callback(choice):
             print("combobox dropdown clicked:", choice)
 
-        combobox_buffer_time = c_tk.CTkComboBox(
+        combobox_buffer_time_bfore = c_tk.CTkComboBox(
             buffer_time_frame, values=["1", "2", "3"], command=combobox_callback
         )
-        combobox_buffer_time.pack(side=c_tk.RIGHT)
+        combobox_buffer_time_bfore.pack(side=c_tk.LEFT)
+
+        label_buffer_time = set_label(
+            "Buffer Time after:", buffer_time_frame, padding=(10, 10)
+        )
+
+        combobox_buffer_time_after = c_tk.CTkComboBox(
+            buffer_time_frame, values=["1", "2", "3"], command=combobox_callback
+        )
+        combobox_buffer_time_after.pack(side=c_tk.RIGHT)
 
         buffer_time_frame.pack()
+
+        # Frame for "Keeping original video" checkbox
+        keep_original_frame = c_tk.CTkFrame(main_frame)
+
+        check_var = tkinter.BooleanVar()
+        check_var.set(False)
+
+        def checkbox_event():
+            print("checkbox toggled, current value:", check_var.get())
+
+        keep_original_checkbox = c_tk.CTkCheckBox(
+            keep_original_frame,
+            text="Keep the original video",
+            command=checkbox_event,
+            onvalue=True,
+            offvalue=False,
+            variable=check_var,
+        )
+        keep_original_checkbox.pack()
+        keep_original_frame.pack()
+
+        # Frame for run process button
+        run_process_frame = c_tk.CTkFrame(main_frame)
+
+        def run_external_process():
+            print("Run process :)")
+
+        button_run_process = c_tk.CTkButton(
+            run_process_frame, text="Run Processing", command=run_external_process
+        )
+        button_run_process.pack(side=c_tk.BOTTOM)
+
+        run_process_frame.pack(side=c_tk.BOTTOM)
 
 
 if __name__ == "__main__":
