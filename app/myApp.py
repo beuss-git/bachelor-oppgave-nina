@@ -1,57 +1,69 @@
 # Only needed for access to command line arguments
-import sys
-import typing
+from enum import Enum
+import customtkinter as c_tk
 
-from PyQt6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QLabel,
-    QLineEdit,
-    QVBoxLayout,
-    QWidget,
-    QFileDialog,
-)
+c_tk.set_appearance_mode("System")
+c_tk.set_default_color_theme("green")
 
 
-class MainWindow(QMainWindow):
-    """Main Window"""
+class fileHandle(Enum):
+    SAVE = "Save"
+    LOAD = "Load"
 
+
+def setFrame(parent: c_tk.CTk, padding: tuple[int, int]) -> c_tk.CTkFrame:
+    frame = c_tk.CTkFrame(master=parent)
+    frame.pack(pady=padding[1], padx=padding[0], fill="both")
+    return frame
+
+
+def setLabel(
+    label: str, frame: c_tk.CTkFrame, padding: tuple[int, int]
+) -> c_tk.CTkLabel:
+    label = c_tk.CTkLabel(master=frame, text=label)
+    label.pack(pady=padding[1], padx=padding[0])
+    return label
+
+
+def browseDir(label: c_tk.CTkLabel, type: fileHandle) -> str:
+    dir = c_tk.filedialog.askdirectory()
+    if len(dir) > 0:
+        label.configure(text=f"{type} directory: {dir}")
+    return dir
+
+
+class App(c_tk.CTk):
     def __init__(self) -> None:
         super().__init__()
+        self.geometry(f"{1100}x{580}")
+        self.title("Dead time cleaner")
 
-        self.setWindowTitle("My App")
-        self.resize(700, 400)
+        frame_getdirs = setFrame(self, padding=(60, 20))
+        label_load = setLabel("Load directory", frame_getdirs, padding=(10, 10))
 
-        self.label = QLabel()
+        def browseLoad():
+            browseDir(label_load, fileHandle.LOAD.value)
 
-        self.input = QLineEdit()
-        self.input.textChanged.connect(self.label.setText)
+        button_get_load_dir = c_tk.CTkButton(
+            master=frame_getdirs,
+            text="Browse Directories",
+            command=browseLoad,
+        )
+        button_get_load_dir.pack()
 
-        self.browse_files()
+        label_save = setLabel("Save directory", frame_getdirs, padding=(10, 10))
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.input)
-        layout.addWidget(self.label)
+        def browseSave():
+            browseDir(label_save, fileHandle.SAVE.value)
 
-        container = QWidget()
-        container.setLayout(layout)
-
-        # Set the central widget of the Window.
-        self.setCentralWidget(container)
-
-    def browse_files(self) -> typing.Tuple[str, str]:
-        """Open a dialog to select a file, and return the path to it."""
-        filename = QFileDialog.getOpenFileName()
-        return filename
+        button_get_save_dir = c_tk.CTkButton(
+            master=frame_getdirs,
+            text="Browse Directories",
+            command=browseSave,
+        )
+        button_get_save_dir.pack()
 
 
-# You need one (and only one) QApplication instance per application.
-# Pass in sys.argv to allow command line arguments for your app.
-# If you know you won't use command line arguments QApplication([]) works too.
-app = QApplication(sys.argv)
-
-window = MainWindow()
-window.show()  # IMPORTANT!!!!! Windows are hidden by default.
-
-# Start the event loop.
-app.exec()
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
