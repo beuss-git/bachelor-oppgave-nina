@@ -2,12 +2,17 @@
 import argparse
 import os
 import typing
+import pathlib
 import cv2
 import pandas as pd
-import pathlib
 
 
 def aaut_to_yolo(parsed_args: dict[str, typing.Any]) -> None:
+    """
+    Converts the ground truth annotations from AAU Bounding Box annotation format to YOLO format
+    Args:
+        parsed_args (dict[str, typing.Any]): The parsed arguments from the command line
+    """
     # yolo_txt_files_path = parsed_args["yoloTxtFiles"]
     annotation_path = parsed_args["annotationCSV"]
     category_file_path = parsed_args["categories"]
@@ -38,8 +43,15 @@ def aaut_to_yolo(parsed_args: dict[str, typing.Any]) -> None:
 def write_to_yolo_file(
     filename: str, yolo_path: str, ann_list: list[tuple[int, int, int, int, int]]
 ) -> None:
+    """Write the annotations to a YOLO .txt file
+
+    Args:
+        filename (str): the name of the file to write to
+        yolo_path (str): the path to the folder where the file should be written
+        ann_list (list[tuple[int, int, int, int, int]]): the list of annotations to write
+    """
     yolo_strings = [
-        "{} {} {} {} {}\n".format(ann[0], ann[1], ann[2], ann[3], ann[4])
+        f'{ann[0]} {ann[1]} {ann[2]} {ann[3]} {ann[4]}\n'
         for ann in ann_list
     ]
     with open(os.path.join(yolo_path, filename), "w+", encoding="UTF-8") as f:
@@ -49,15 +61,26 @@ def write_to_yolo_file(
 
 
 def get_yolo_bbs(
-    df: pd.DataFrame,
+    data_frame: pd.DataFrame,
     img_name: str,
     category_numbers: dict[str, int],
     image_folder_path: str,
 ) -> list[tuple[int, int, int, int, int]]:
+    """
+    Get the YOLO annotations for a given image
+    Args:
+        data_frame: the dataframe containing the annotations
+        img_name: the name of the image
+        category_numbers: the dictionary containing the category numbers
+        image_folder_path: the path to the folder containing the images
+
+    Returns:
+        list[tuple[int, int, int, int, int]]: the list of annotations
+    """
     ann_list = []
-    for _, annotation in df[df["Filename"] == img_name].iterrows():
-        x = int(annotation["x"])
-        y = int(annotation["y"])
+    for _, annotation in data_frame[data_frame["Filename"] == img_name].iterrows():
+        center_x = int(annotation["x"])
+        center_y = int(annotation["y"])
         height = int(annotation["height"])
         width = int(annotation["width"])
         label = int(category_numbers[annotation["Annotation tag"]])
@@ -68,21 +91,21 @@ def get_yolo_bbs(
 
         image_height, image_width, _ = image_file.shape
 
-        x = x / image_width
-        y = y / image_height
+        center_x = center_x / image_width
+        center_y = center_y / image_height
         width = width / image_width
         height = height / image_height
 
-        tmp = (label, x, y, width, height)
+        tmp = (label, center_x, center_y, width, height)
         ann_list.append(tmp)
     return ann_list
 
 
-def compute_yolo_bbs(df: pd.DataFrame) -> pd.DataFrame:
-    tl_x = df["Upper left corner X"]
-    tl_y = df["Upper left corner Y"]
-    lr_x = df["Lower right corner X"]
-    lr_y = df["Lower right corner Y"]
+def compute_yolo_bbs(data_frame: pd.DataFrame) -> pd.DataFrame:
+    tl_x = data_frame["Upper left corner X"]
+    tl_y = data_frame["Upper left corner Y"]
+    lr_x = data_frame["Lower right corner X"]
+    lr_y = data_frame["Lower right corner Y"]
 
     # Find center point, height, and width
     width = lr_x - tl_x
@@ -91,17 +114,17 @@ def compute_yolo_bbs(df: pd.DataFrame) -> pd.DataFrame:
     center_x = tl_x + width / 2
     center_y = tl_y + height / 2
 
-    df["x"] = center_x
-    df["y"] = center_y
-    df["width"] = width
-    df["height"] = height
-    return df
+    data_frame["x"] = center_x
+    data_frame["y"] = center_y
+    data_frame["width"] = width
+    data_frame["height"] = height
+    return data_frame
 
 
 def import_categories(file_name: str) -> tuple[dict[int, str], dict[str, int]]:
     # Import category names list
-    category_labels = dict()
-    category_numbers = dict()
+    category_labels = {}
+    category_numbers = {}
 
     with open(file_name, encoding="UTF-8") as file:
         line_number = 1
