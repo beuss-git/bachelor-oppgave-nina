@@ -7,7 +7,7 @@ c_tk.set_appearance_mode("System")
 c_tk.set_default_color_theme("green")
 
 
-class fileHandle(Enum):
+class FileHandle(Enum):
     """Differentiates save and load
 
     Args:
@@ -18,7 +18,7 @@ class fileHandle(Enum):
     LOAD = "Load"
 
 
-def setFrame(parent: c_tk.CTk, padding: tuple[int, int]) -> c_tk.CTkFrame:
+def set_frame(parent: c_tk.CTk, padding: tuple[int, int]) -> c_tk.CTkFrame:
     """Creates a frame
     Args:
         parent (c_tk.CTk): parented container
@@ -32,7 +32,7 @@ def setFrame(parent: c_tk.CTk, padding: tuple[int, int]) -> c_tk.CTkFrame:
     return frame
 
 
-def setLabel(
+def set_label(
     label: str, frame: c_tk.CTkFrame, padding: tuple[int, int]
 ) -> c_tk.CTkLabel:
     """Creates a label
@@ -50,7 +50,7 @@ def setLabel(
     return label
 
 
-def browseDir(label: c_tk.CTkLabel, type: fileHandle) -> str:
+def browse_dir(label: c_tk.CTkLabel, handle_type: FileHandle) -> str:
     """Setup browsing of directories
 
     Args:
@@ -60,10 +60,10 @@ def browseDir(label: c_tk.CTkLabel, type: fileHandle) -> str:
     Returns:
         str: the path to the directory
     """
-    dir = c_tk.filedialog.askdirectory()
-    if len(dir) > 0:
-        label.configure(text=f"{type} directory: {dir}")
-    return dir
+    m_dir = c_tk.filedialog.askdirectory()
+    if len(m_dir) > 0:
+        label.configure(text=f"{handle_type} directory: {m_dir}")
+    return m_dir
 
 
 class App(c_tk.CTk):
@@ -78,28 +78,28 @@ class App(c_tk.CTk):
         self.geometry(f"{1100}x{580}")
         self.title("Dead time cleaner")
 
-        frame_getdirs = setFrame(self, padding=(60, 20))
-        label_load = setLabel("Load directory", frame_getdirs, padding=(10, 10))
+        frame_getdirs = set_frame(self, padding=(60, 20))
+        label_load = set_label("Load directory", frame_getdirs, padding=(10, 10))
 
-        def browseLoad():
-            browseDir(label_load, fileHandle.LOAD.value)
+        def browse_load():
+            browse_dir(label_load, FileHandle.LOAD.value)
 
         button_get_load_dir = c_tk.CTkButton(
             master=frame_getdirs,
             text="Browse Directories",
-            command=browseLoad,
+            command=browse_load,
         )
         button_get_load_dir.pack()
 
-        label_save = setLabel("Save directory", frame_getdirs, padding=(10, 10))
+        label_save = set_label("Save directory", frame_getdirs, padding=(10, 10))
 
-        def browseSave():
-            browseDir(label_save, fileHandle.SAVE.value)
+        def browse_save():
+            browse_dir(label_save, FileHandle.SAVE.value)
 
         button_get_save_dir = c_tk.CTkButton(
             master=frame_getdirs,
             text="Browse Directories",
-            command=browseSave,
+            command=browse_save,
         )
         button_get_save_dir.pack()
 
