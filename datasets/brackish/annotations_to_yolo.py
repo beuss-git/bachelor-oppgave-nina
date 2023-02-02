@@ -28,8 +28,8 @@ def aaut_to_yolo(parsed_args: dict[str, typing.Any]) -> None:
     # for _, _, files in os.walk(os.path.abspath(yolo_txt_files_path)):
     for _, _, files in os.walk(os.path.abspath(image_folder_path)):
         for filename in files:
-            img_name = "{}.png".format(os.path.splitext(filename)[0])
-            txt_name = "{}.txt".format(os.path.splitext(filename)[0])
+            img_name = f"{os.path.splitext(filename)[0]}.png"
+            txt_name = f"{os.path.splitext(filename)[0]}.txt"
             # Check if the image has any annotations in the csv file
             if img_name in yolo_df["Filename"].values:
                 # Get a list of annotations from the frame and write it to the yolo txt file
@@ -37,7 +37,6 @@ def aaut_to_yolo(parsed_args: dict[str, typing.Any]) -> None:
                     yolo_df, img_name, category_numbers, image_folder_path
                 )
                 write_to_yolo_file(txt_name, output_path, ann_list)
-    return
 
 
 def write_to_yolo_file(
@@ -51,13 +50,12 @@ def write_to_yolo_file(
         ann_list (list[tuple[int, int, int, int, int]]): the list of annotations to write
     """
     yolo_strings = [
-        f'{ann[0]} {ann[1]} {ann[2]} {ann[3]} {ann[4]}\n'
-        for ann in ann_list
+        f"{ann[0]} {ann[1]} {ann[2]} {ann[3]} {ann[4]}\n" for ann in ann_list
     ]
-    with open(os.path.join(yolo_path, filename), "w+", encoding="UTF-8") as f:
-        for ystr in yolo_strings:
-            if ystr not in f.read():
-                f.write(ystr)
+    with open(os.path.join(yolo_path, filename), "w+", encoding="UTF-8") as file:
+        for y_str in yolo_strings:
+            if y_str not in file.read():
+                file.write(y_str)
 
 
 def get_yolo_bbs(
@@ -87,14 +85,19 @@ def get_yolo_bbs(
 
         image_path = os.path.join(os.path.abspath(image_folder_path), img_name)
 
-        image_file = cv2.imread(image_path)
+        image_height, image_width, _ = cv2.imread(image_path).shape
 
-        image_height, image_width, _ = image_file.shape
-
+        # Normalize the annotations
         center_x = center_x / image_width
         center_y = center_y / image_height
         width = width / image_width
         height = height / image_height
+
+        # Clamp the values to be between 0 and 1
+        center_x = max(0, min(center_x, 1))
+        center_y = max(0, min(center_y, 1))
+        width = max(0, min(width, 1))
+        height = max(0, min(height, 1))
 
         tmp = (label, center_x, center_y, width, height)
         ann_list.append(tmp)
@@ -102,6 +105,14 @@ def get_yolo_bbs(
 
 
 def compute_yolo_bbs(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute the YOLO annotations from the AAU annotations (not normalized)
+    Args:
+        data_frame: the dataframe containing the annotations
+
+    Returns:
+        pd.DataFrame: the dataframe containing the annotations
+    """
     tl_x = data_frame["Upper left corner X"]
     tl_y = data_frame["Upper left corner Y"]
     lr_x = data_frame["Lower right corner X"]
@@ -122,7 +133,14 @@ def compute_yolo_bbs(data_frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def import_categories(file_name: str) -> tuple[dict[int, str], dict[str, int]]:
-    # Import category names list
+    """
+    Import the category names from a file
+    Args:
+        file_name: the name of the file to import
+
+    Returns:
+        tuple[dict[int, str], dict[str, int]]: the dictionary containing the category names
+    """
     category_labels = {}
     category_numbers = {}
 
@@ -146,7 +164,8 @@ def import_categories(file_name: str) -> tuple[dict[int, str], dict[str, int]]:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(
-        description="Converts the ground truth annotations from AAU Bounding Box annotation format to YOLO format"
+        description="Converts the ground truth annotations from AAU Bounding Box annotation "
+                    "format to YOLO format "
     )
     ap.add_argument(
         "-imageFolder",
@@ -155,14 +174,6 @@ if __name__ == "__main__":
         help="Path to image folder",
         required=True,
     )
-    """
-    ap.add_argument(
-        "-yoloTxtFiles",
-        "--yoloTxtFiles",
-        type=str,
-        help="Path to YOLO txt files with annotations",
-    )
-    """
     ap.add_argument(
         "-annotationCSV",
         "--annotationCSV",

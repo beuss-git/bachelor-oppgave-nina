@@ -41,9 +41,10 @@ def extract_frames(parsed_args: dict[str, typing.Any]) -> None:
                     "scale=960:540",
                     "-sws_flags",
                     "bicubic",
-                    "{}-%04d.png".format(fileprefix),
+                    f"{fileprefix}-%04d.png",
                     "-hide_banner",
                 ]
+
                 subprocess.call(cmd_command)
 
                 # Create a .txt file with the names of all the image files in the respective folder
@@ -74,7 +75,10 @@ if __name__ == "__main__":
         "--outputFolder",
         type=str,
         required=False,
-        help="Path the image output folder. NOTE: if no outputfolder argument is provided, the images will be placed in folders corresponding to their respective video-names; if an argument IS given, all images will be placed in a folder with the provided argument name.",
+        help="Path the image output folder. NOTE: if no outputfolder argument is provided, "
+        "the images will be placed in folders corresponding to their respective video-names; "
+        "if an argument IS given, all images will be placed in a folder with the provided "
+        "argument name.",
         default="",
     )
 

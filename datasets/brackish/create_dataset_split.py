@@ -1,5 +1,6 @@
 """
-Takes an imagelist as input and splits it into training/validation/test splits, according to the provided percentages.
+Takes an imagelist as input and splits it into training/validation/test splits,
+according to the provided percentages.
 Outputs separate txt files for each split containing the image paths to the images in the splits.
 """
 import argparse
@@ -9,8 +10,10 @@ import numpy as np
 
 def create_dataset_split(parsed_args: dict[str, typing.Any]) -> None:
     """
-    Takes an imagelist as input and splits it into training/validation/test splits, according to the provided percentages.
-    Outputs separate txt files for each split containing the image paths to the images in the splits.
+    Takes an imagelist as input and splits it into training/validation/test splits,
+     according to the provided percentages.
+    Outputs separate txt files for each split containing
+     the image paths to the images in the splits.
 
     Input:
         args: Dict containing the following elements
@@ -35,9 +38,8 @@ def create_dataset_split(parsed_args: dict[str, typing.Any]) -> None:
     assert data_split_sum == 1.0, f"INVALID DATA SPLIT, {data_split_sum}"
 
     # Read input imagelist
-    text_file = open(parsed_args["inputFile"], "r", encoding="UTF-8")
-    filenames = text_file.read().split("\n")
-    text_file.close()
+    with open(parsed_args["inputFile"], "r", encoding="UTF-8") as text_file:
+        filenames = text_file.read().split("\n")
 
     # Remove empty line in the end of imagelist file if present
     if filenames[-1] == "":

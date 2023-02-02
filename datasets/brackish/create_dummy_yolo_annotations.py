@@ -6,6 +6,11 @@ import pathlib
 
 
 def create_image_list(parsed_args: dict[str, typing.Any]) -> None:
+    """
+    Create empty YOLO detection files for frames with no detections in it
+    Args:
+        parsed_args: input arguments
+    """
     root_dir = parsed_args["inputFolder"]
     output_dir = os.path.abspath(parsed_args["outputFolder"])
     # Create output dir if it doesn't exist
