@@ -6,4 +6,4 @@ val: images\valid\
 test: images\test\
 
 nc: 6
-names: ["none", "fish", "small_fish", "shrimp", "crab", "jellyfish", "starfish"]
+names: ["none", "fish", "small_fish", "crab", "shrimp", "jellyfish", "starfish"]
