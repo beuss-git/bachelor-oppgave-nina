@@ -9,3 +9,6 @@ https://developer.nvidia.com/rdp/cudnn-archive
 
 Install python requirements:
 `pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu117`
+
+Install ffmpeg:
+https://www.ffmpeg.org/
