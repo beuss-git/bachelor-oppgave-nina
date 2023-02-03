@@ -18,11 +18,8 @@ repos:
     rev: v2.15.10
     hooks:
       - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
         args: ["--rcfile=.pylintrc"]
+        additional_dependencies: [PyQt6]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.991
