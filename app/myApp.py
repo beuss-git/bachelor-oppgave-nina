@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
 
         super().__init__()
 
-        self.p = None
+        self.p: typing.Optional[QProcess] = None
 
         # Set default window settings
         self.window_width, self.window_height = 700, 400
@@ -130,18 +130,20 @@ class MainWindow(QMainWindow):
             self.p.start("python", ["app\dummy_script.py"])
 
     def handle_stderr(self) -> None:
-        data = self.p.readAllStandardError()
-        stderr = bytes(data).decode("utf8")
-        # Extract progress if it is in the data.
-        progress = simple_percent_parser(stderr)
-        if progress:
-            self.progress.setValue(progress)
-        self.message(stderr)
+        if self.p is not None:
+            data = self.p.readAllStandardError()
+            stderr = bytes(data).decode("utf8")
+            # Extract progress if it is in the data.
+            progress = simple_percent_parser(stderr)
+            if progress:
+                self.progress.setValue(progress)
+            self.message(stderr)
 
     def handle_stdout(self) -> None:
-        data = self.p.readAllStandardOutput()
-        stdout = bytes(data).decode("utf8")
-        self.message(stdout)
+        if self.p is not None:
+            data = self.p.readAllStandardOutput()
+            stdout = bytes(data).decode("utf8")
+            self.message(stdout)
 
     def handle_state(self, state: typing.Any) -> None:
         """_summary_
