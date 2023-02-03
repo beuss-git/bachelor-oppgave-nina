@@ -10,3 +10,4 @@ https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/c
 
 
 `pre-commit install` to install pre-commit hooks.
+`pre-commit install --hook-type commit-msg` to install commitlint hook.
