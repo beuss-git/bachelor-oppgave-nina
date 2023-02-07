@@ -222,3 +222,6 @@ train.txt
 valid.txt
 
 # End of https://www.toptal.com/developers/gitignore/api/python,virtualenv,jupyternotebooks,visualstudiocode
+
+.idea/
+node_modules/
