@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QDir
+from optionsWidgets import Widgets
 
 
 class FileBrowser(QWidget):
@@ -33,16 +34,7 @@ class FileBrowser(QWidget):
         self.filter_name = "All files (*.*)"
         self.dirpath = QDir.currentPath()
 
-        self.label = QLabel()
-        self.label.setText(title)
-        self.label.setFixedWidth(65)
-        self.label.setFont(
-            QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10)
-        )
-        self.label.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
-        layout.addWidget(self.label)
+        layout.addWidget(Widgets.add_label(self, title))
 
         self.lineEdit = QLineEdit(self)
         self.lineEdit.setFixedWidth(180)

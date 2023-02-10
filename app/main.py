@@ -26,6 +26,7 @@ import qdarktheme
 from fileBrowser import FileBrowser
 from globals import Globals
 from executeProcess import ProgressWindow
+from optionsWidgets import Widgets
 
 
 class MainWindow(QMainWindow):
@@ -52,12 +53,10 @@ class MainWindow(QMainWindow):
         self.fileBrowserPanel(parent_layout)
         parent_layout.addStretch()
 
-        run_btn = QPushButton("Run")
-        run_btn.setFixedWidth(100)
-        run_btn.clicked.connect(self.create_dialog)
-        run_btn.setStyleSheet("background-color: green")
-        parent_layout.addWidget(run_btn)
-        parent_layout.setAlignment(run_btn, Qt.AlignmentFlag.AlignCenter)
+        self.options_panel(parent_layout)
+        parent_layout.addStretch()
+
+        self.run_process_button(parent_layout)
 
         widget = QWidget()
         widget.setLayout(parent_layout)
@@ -79,7 +78,20 @@ class MainWindow(QMainWindow):
         vlayout.addStretch()
         parent_layout.addLayout(vlayout)
 
-    def create_dialog(self) -> None:
+    def run_process_button(self, parent_layout: typing.Any) -> None:
+        self.run_btn = QPushButton("Run")
+        self.run_btn.setFixedWidth(100)
+        self.run_btn.clicked.connect(self.create_progressbar_dialog)
+        self.run_btn.setStyleSheet("background-color: green")
+        parent_layout.addWidget(self.run_btn)
+        parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
+
+    def options_panel(self, parent_layout: typing.Any) -> None:
+        widget = Widgets()
+        parent_layout.addLayout(widget.buffertime_widget())
+        parent_layout.addLayout(widget.keep_original_checkbox())
+
+    def create_progressbar_dialog(self) -> None:
         dlg = ProgressWindow()
         dlg.exec()
 
