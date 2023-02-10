@@ -40,8 +40,6 @@ class MainWindow(QMainWindow):
 
         super().__init__()
 
-        self.p: typing.Optional[QProcess] = None
-
         # Set default window settings
         self.window_width, self.window_height = 700, 400
         self.setWindowTitle("Fish detector 3000")
@@ -81,7 +79,7 @@ class MainWindow(QMainWindow):
         vlayout.addStretch()
         parent_layout.addLayout(vlayout)
 
-    def create_dialog(self, s: QProcess) -> None:
+    def create_dialog(self) -> None:
         dlg = ProgressWindow()
         dlg.exec()
 
