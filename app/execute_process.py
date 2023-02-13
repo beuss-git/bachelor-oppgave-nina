@@ -48,19 +48,19 @@ class ProgressWindow(QDialog):
 
     def start_process(self) -> None:
         """Start the process."""
-        if Globals.Process is None:
+        if Globals.process is None:
             self.message("Starting process...")
-            Globals.Process = QProcess()
-            Globals.Process.readyReadStandardOutput.connect(self.handle_stdout)
-            Globals.Process.readyReadStandardError.connect(self.handle_stderr)
-            Globals.Process.stateChanged.connect(self.handle_state)
-            Globals.Process.finished.connect(self.process_finished)
-            Globals.Process.start("python", [Globals.ProcessPath])
+            Globals.process = QProcess()
+            Globals.process.readyReadStandardOutput.connect(self.handle_stdout)
+            Globals.process.readyReadStandardError.connect(self.handle_stderr)
+            Globals.process.stateChanged.connect(self.handle_state)
+            Globals.process.finished.connect(self.process_finished)
+            Globals.process.start("python", [Globals.process_path])
 
     def handle_stderr(self) -> None:
         """_summary_"""
-        if Globals.Process is not None:
-            data = Globals.Process.readAllStandardError()
+        if Globals.process is not None:
+            data = Globals.process.readAllStandardError()
             stderr = data.data().decode("utf8")
             # Extract progress if it is in the data.
             progress = simple_percent_parser(stderr)
@@ -70,8 +70,8 @@ class ProgressWindow(QDialog):
 
     def handle_stdout(self) -> None:
         """_summary_"""
-        if Globals.Process is not None:
-            data = Globals.Process.readAllStandardOutput()
+        if Globals.process is not None:
+            data = Globals.process.readAllStandardOutput()
             stdout = data.data().decode("utf8")
             self.message(stdout)
 
@@ -92,7 +92,7 @@ class ProgressWindow(QDialog):
     def process_finished(self) -> None:
         """Process finished."""
         self.message("Process finished.")
-        Globals.Process = None
+        Globals.process = None
 
 
 def simple_percent_parser(output: typing.Any) -> typing.Optional[int]:

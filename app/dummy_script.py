@@ -1,8 +1,10 @@
+"""_summary_"""
 import sys
 import time
 
 
 def flush_then_wait() -> None:
+    """_summary_"""
     sys.stdout.flush()
     sys.stderr.flush()
     time.sleep(0.5)
