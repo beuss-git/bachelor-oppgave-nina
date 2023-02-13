@@ -1,38 +1,32 @@
+"""Main file for our application"""
+
 # Only needed for access to command line arguments
 import sys
 import typing
+import qdarktheme
 
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,
-    QFileDialog,
     QPushButton,
-    QLabel,
     QWidget,
-    QDialog,
-    QLineEdit,
-    QHBoxLayout,
-    QComboBox,
-    QCheckBox,
-    QPlainTextEdit,
-    QProgressBar,
 )
 from PyQt6 import QtGui
-from PyQt6.QtGui import QFont
-from PyQt6.QtCore import Qt, QProcess, QDir
-import re
-import qdarktheme
-from fileBrowser import FileBrowser
-from globals import Globals
-from executeProcess import ProgressWindow
-from optionsWidgets import Widgets
+from PyQt6.QtCore import Qt
+from app.widgets.file_browser import FileBrowser
+from .globals import Globals
+from .execute_process import ProgressWindow
+from .widgets.options_widgets import (
+    buffertime_widget,
+    keep_original_checkbox,
+)
 
 
 class MainWindow(QMainWindow):
     """Main Window"""
 
-    def __init__(self, mode: int = Globals.OpenFile) -> None:
+    def __init__(self, _: int = Globals.OpenFile) -> None:
         """_summary_
 
         Args:
@@ -49,8 +43,9 @@ class MainWindow(QMainWindow):
 
         parent_layout = QVBoxLayout()
         self.setLayout(parent_layout)
+        print("Main window created")
 
-        self.fileBrowserPanel(parent_layout)
+        self.file_browser_panel(parent_layout)
         parent_layout.addStretch()
 
         self.options_panel(parent_layout)
@@ -62,23 +57,33 @@ class MainWindow(QMainWindow):
         widget.setLayout(parent_layout)
         self.setCentralWidget(widget)
 
-    def fileBrowserPanel(self, parent_layout: typing.Any) -> None:
+    def file_browser_panel(self, parent_layout: typing.Any) -> None:
+        """_summary_
+
+        Args:
+            parent_layout (typing.Any): _description_
+        """
         vlayout = QVBoxLayout()
 
-        self.fileFB = FileBrowser("Open File", FileBrowser.OpenFile)
-        self.filesFB = FileBrowser("Open Files", FileBrowser.OpenFiles)
-        self.dirFB = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
-        self.saveFB = FileBrowser("Save File", FileBrowser.SaveFile)
+        self.file_fb = FileBrowser("Open File", FileBrowser.OpenFile)
+        self.files_fb = FileBrowser("Open Files", FileBrowser.OpenFiles)
+        self.dir_fb = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
+        self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
 
-        vlayout.addWidget(self.fileFB)
-        vlayout.addWidget(self.filesFB)
-        vlayout.addWidget(self.dirFB)
-        vlayout.addWidget(self.saveFB)
+        vlayout.addWidget(self.file_fb)
+        vlayout.addWidget(self.files_fb)
+        vlayout.addWidget(self.dir_fb)
+        vlayout.addWidget(self.save_fb)
 
         vlayout.addStretch()
         parent_layout.addLayout(vlayout)
 
     def run_process_button(self, parent_layout: typing.Any) -> None:
+        """_summary_
+
+        Args:
+            parent_layout (typing.Any): _description_
+        """
         self.run_btn = QPushButton("Run")
         self.run_btn.setFixedWidth(100)
         self.run_btn.clicked.connect(self.create_progressbar_dialog)
@@ -87,26 +92,34 @@ class MainWindow(QMainWindow):
         parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
 
     def options_panel(self, parent_layout: typing.Any) -> None:
-        widget = Widgets()
-        parent_layout.addLayout(widget.buffertime_widget())
-        parent_layout.addLayout(widget.keep_original_checkbox())
+        """_summary_
+
+        Args:
+            parent_layout (typing.Any): _description_
+        """
+        parent_layout.addLayout(buffertime_widget())
+        parent_layout.addLayout(keep_original_checkbox())
 
     def create_progressbar_dialog(self) -> None:
+        """_summary_"""
         dlg = ProgressWindow()
         dlg.exec()
 
 
-# You need one (and only one) QApplication instance per application.
-# Pass in sys.argv to allow command line arguments for your app.
-# If you know you won't use command line arguments QApplication([]) works too.
-app = QApplication(sys.argv)
-# Apply the complete dark theme to your Qt App.
-qdarktheme.setup_theme("auto")
-# Default is "rounded".
-# stylesheet = qdarktheme.setup_theme(corner_shape="sharp")
+def main() -> None:
+    """_summary_"""
 
-window = MainWindow()
-window.show()  # IMPORTANT!!!!! Windows are hidden by default.
+    # You need one (and only one) QApplication instance per application.
+    # Pass in sys.argv to allow command line arguments for your app.
+    # If you know you won't use command line arguments QApplication([]) works too.
+    app = QApplication(sys.argv)
+    # Apply the complete dark theme to your Qt App.
+    qdarktheme.setup_theme("auto")
+    # Default is "rounded".
+    # stylesheet = qdarktheme.setup_theme(corner_shape="sharp")
 
-# Start the event loop.
-app.exec()
+    window = MainWindow()
+    window.show()  # IMPORTANT!!!!! Windows are hidden by default.
+
+    # Start the event loop.
+    app.exec()

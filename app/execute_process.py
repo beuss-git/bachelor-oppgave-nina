@@ -1,3 +1,4 @@
+"""Progress bar when loading AI models."""
 import typing
 import re
 
@@ -6,19 +7,19 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QDialog,
     QVBoxLayout,
-    QWidget,
 )
-from PyQt6 import QtGui
-from PyQt6.QtCore import Qt, QProcess
-from globals import Globals
+from PyQt6.QtCore import QProcess
+from .globals import Globals
 
 
 # A regular expression, to extract the % complete.
-progress_re = re.compile("Total complete: (\d+)%")
+progress_re = re.compile(r"Total complete: (\d+)%")
 
 
 class ProgressWindow(QDialog):
-    def __init__(self, mode: int = Globals.OpenFile) -> None:
+    """Progress window."""
+
+    def __init__(self, _: int = Globals.OpenFile) -> None:
         """_summary_
 
         Args:
@@ -41,9 +42,9 @@ class ProgressWindow(QDialog):
 
         self.start_process()
 
-    def message(self, s: str) -> None:
+    def message(self, message: str) -> None:
         """Print a message to the text box."""
-        self.text.appendPlainText(s)
+        self.text.appendPlainText(message)
 
     def start_process(self) -> None:
         """Start the process."""
@@ -57,9 +58,10 @@ class ProgressWindow(QDialog):
             Globals.Process.start("python", [Globals.ProcessPath])
 
     def handle_stderr(self) -> None:
+        """_summary_"""
         if Globals.Process is not None:
             data = Globals.Process.readAllStandardError()
-            stderr = bytes(data).decode("utf8")
+            stderr = data.data().decode("utf8")
             # Extract progress if it is in the data.
             progress = simple_percent_parser(stderr)
             if progress:
@@ -67,9 +69,10 @@ class ProgressWindow(QDialog):
             self.message(stderr)
 
     def handle_stdout(self) -> None:
+        """_summary_"""
         if Globals.Process is not None:
             data = Globals.Process.readAllStandardOutput()
-            stdout = bytes(data).decode("utf8")
+            stdout = data.data().decode("utf8")
             self.message(stdout)
 
     def handle_state(self, state: typing.Any) -> None:
@@ -97,8 +100,8 @@ def simple_percent_parser(output: typing.Any) -> typing.Optional[int]:
     Matches lines using the progress_re regex,
     returning a single integer for the % progress.
     """
-    m = progress_re.search(output)
-    if m:
-        pc_complete = m.group(1)
+    match = progress_re.search(output)
+    if match:
+        pc_complete = match.group(1)
         return int(pc_complete)
     return None

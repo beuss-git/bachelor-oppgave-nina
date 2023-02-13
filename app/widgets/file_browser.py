@@ -1,20 +1,29 @@
-import sys
+"""Open the file browser and return the selected file path."""
 import typing
 
 from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QFileDialog,
     QPushButton,
 )
-from PyQt6 import QtGui
-from PyQt6.QtCore import Qt, QDir
-from optionsWidgets import Widgets
+from PyQt6.QtCore import QDir
+from .options_widgets import (
+    add_label,
+)
 
 
 class FileBrowser(QWidget):
+    """_summary_
+
+    Args:
+        QWidget (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     OpenFile = 0
     OpenFiles = 1
     OpenDirectory = 2
@@ -27,6 +36,10 @@ class FileBrowser(QWidget):
             title (Any): _description_
             mode (int, optional): _description_. Defaults to OpenFile.
         """
+
+        self.filepaths: typing.List[str] = []
+        # self.mode: int = mode
+
         QWidget.__init__(self)
         layout = QHBoxLayout()
         self.setLayout(layout)
@@ -34,15 +47,16 @@ class FileBrowser(QWidget):
         self.filter_name = "All files (*.*)"
         self.dirpath = QDir.currentPath()
 
-        layout.addWidget(Widgets.add_label(self, title))
+        self.label = add_label(title)
+        layout.addWidget(self.label)
 
-        self.lineEdit = QLineEdit(self)
-        self.lineEdit.setFixedWidth(180)
+        self.line_edit = QLineEdit(self)
+        self.line_edit.setFixedWidth(180)
 
-        layout.addWidget(self.lineEdit)
+        layout.addWidget(self.line_edit)
 
         self.button = QPushButton("Browse Files")
-        self.button.clicked.connect(self.getFile)
+        self.button.clicked.connect(self.get_file)
         layout.addWidget(self.button)
         layout.addStretch()
 
@@ -53,21 +67,33 @@ class FileBrowser(QWidget):
     #    setMode(FileBrowser.OpenFiles)
     #    setMode(FileBrowser.OpenDirectory)
     #    setMode(FileBrowser.SaveFile)
-    def setMode(self, mode: int) -> None:
-        self.mode = mode
+    # def set_mode(self, mode: int) -> None:
+    #    """_summary_"""
+    #    self.mode = mode
 
     # --------------------------------------------------------------------
     # For example,
     #    setFileFilter('Images (*.png *.xpm *.jpg)')
-    def setFileFilter(self, text: str) -> None:
+    def set_file_filter(self, text: str) -> None:
+        """_summary_
+
+        Args:
+            text (str): _description_
+        """
         self.filter_name = text
 
     # --------------------------------------------------------------------
-    def setDefaultDir(self, path: str) -> None:
+    def set_default_dir(self, path: str) -> None:
+        """_summary_
+
+        Args:
+            path (str): _description_
+        """
         self.dirpath = path
 
     # --------------------------------------------------------------------
-    def getFile(self) -> None:
+    def get_file(self) -> None:
+        """_summary_"""
         self.filepaths = []
 
         if self.browser_mode == FileBrowser.OpenFile:
@@ -94,36 +120,49 @@ class FileBrowser(QWidget):
                     self, caption="Choose Directory", directory=self.dirpath
                 )
             )
-        """else:
-            options = QFileDialog.options()
-            if sys.platform == "darwin":
-                options |= QFileDialog.DontUseNativeDialog
+
+        else:
             self.filepaths.append(
                 QFileDialog.getSaveFileName(
                     self,
                     caption="Save/Save As",
                     directory=self.dirpath,
                     filter=self.filter_name,
-                    options=options,
                 )[0]
-            )"""
+            )
+
         if len(self.filepaths) == 0:
             return
-        elif len(self.filepaths) == 1:
-            self.lineEdit.setText(self.filepaths[0])
+        if len(self.filepaths) == 1:
+            self.line_edit.setText(self.filepaths[0])
         else:
-            self.lineEdit.setText(",".join(self.filepaths))
+            self.line_edit.setText(",".join(self.filepaths))
 
     # --------------------------------------------------------------------
-    def setLabelWidth(self, width: int) -> None:
+    def set_label_width(self, width: int) -> None:
+        """_summary_
+
+        Args:
+            width (int): _description_
+        """
         self.label.setFixedWidth(width)
 
     # --------------------------------------------------------------------
-    def setlineEditWidth(self, width: int) -> None:
-        self.lineEdit.setFixedWidth(width)
+    def set_line_edit_width(self, width: int) -> None:
+        """_summary_
+
+        Args:
+            width (int): _description_
+        """
+        self.line_edit.setFixedWidth(width)
 
     # --------------------------------------------------------------------
-    def getPaths(self) -> typing.List[str]:
+    def get_paths(self) -> typing.List[str]:
+        """_summary_
+
+        Returns:
+            typing.List[str]: _description_
+        """
         return self.filepaths
 
 
