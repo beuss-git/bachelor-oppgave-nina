@@ -7,10 +7,13 @@
 
 
 
+
+`poetry config virtualenvs.in-project true --local` **if** you want the virtual environment to be created in .venv at the root of the project
+
 `poetry install` to install project dependencies
 
-
 `pre-commit install` to install pre-commit hooks.
+
 `pre-commit install --hook-type commit-msg` to install commitlint hook.
 
 
