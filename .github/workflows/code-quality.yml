@@ -1,4 +1,4 @@
-name: Checks
+name: Code Quality Checks
 on: [pull_request]
 
 jobs:
@@ -10,8 +10,4 @@ jobs:
       - uses: actions/setup-python@v3
         with:
           python-version: 3.10.9
-      - run: pip install -r requirements.txt
-      - run: black --diff --check $(git ls-files '*.py')
-      - run: pylint --version
-      - run: pylint $(git ls-files '*.py') --rcfile=.pylintrc
-      - run: mypy --strict $(git ls-files '*.py')
+      - uses: pre-commit/action@v3.0.0

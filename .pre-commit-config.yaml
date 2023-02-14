@@ -18,15 +18,15 @@ repos:
     rev: v2.15.10
     hooks:
       - id: pylint
-        args: ["--rcfile=.pylintrc"]
-        additional_dependencies: [PyQt6]
+        args: [--rcfile=.pylintrc]
+        additional_dependencies: [PyQt6, pyqtdarktheme]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.991
     hooks:
       - id: mypy
         args: [--strict, --config-file=mypy.ini]
-        additional_dependencies: [PyQt6]
+        additional_dependencies: [PyQt6, pyqtdarktheme]
 
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.4.0
