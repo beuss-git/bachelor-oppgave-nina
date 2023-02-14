@@ -19,7 +19,7 @@ from app.widgets.file_browser import FileBrowser
 from .globals import Globals
 from .execute_process import ProgressWindow
 from .widgets.options_widgets import (
-    buffertime_widget,
+    OptionsWidget,
     keep_original_checkbox,
 )
 
@@ -100,8 +100,8 @@ class MainWindow(QMainWindow):
         """
 
         buffer_layout = QHBoxLayout()
-        buffer_layout.addLayout(buffertime_widget("Buffer Before"))
-        buffer_layout.addLayout(buffertime_widget("Buffer After"))
+        buffer_layout.addWidget(OptionsWidget("Buffer Before"))
+        buffer_layout.addWidget(OptionsWidget("Buffer After"))
 
         parent_layout.addLayout(buffer_layout)
         parent_layout.addLayout(keep_original_checkbox())

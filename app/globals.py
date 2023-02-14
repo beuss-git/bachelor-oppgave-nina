@@ -15,3 +15,8 @@ class Globals:
 
     process: typing.Optional[QProcess] = None
     process_path = r"app\dummy_script.py"
+
+    buffer_after = 0
+    buffer_before = 0
+
+    check = False
