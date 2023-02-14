@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "bachelor-oppgave-nina"
+version = "0.1.0"
+description = ""
+authors = ["Benjamin Letnes Bjerken <benjabj@stud.ntnu.no>", "Daniel Hao Huynh <daniehhu@stud.ntnu.no>", "Lars Blütecher Holter <larsbho@stud.ntnu.no>", "Lillian Alice Wangerud <lilliaaw@stud.ntnu.no>"]
+license = "GPLv3"
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+PyQt6 = "^6.4.2"
+pyqtdarktheme = "^2.1.0"
+ultralytics = "^8.0.38"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.0.0"
+pylint = "^2.16.2"
+black = "^23.1.0"
+pre-commit = "^3.0.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
