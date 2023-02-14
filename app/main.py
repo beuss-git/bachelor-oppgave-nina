@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,
+    QHBoxLayout,
     QPushButton,
     QWidget,
 )
@@ -65,13 +66,13 @@ class MainWindow(QMainWindow):
         """
         vlayout = QVBoxLayout()
 
-        self.file_fb = FileBrowser("Open File", FileBrowser.OpenFile)
-        self.files_fb = FileBrowser("Open Files", FileBrowser.OpenFiles)
+        # self.file_fb = FileBrowser("Open File", FileBrowser.OpenFile)
+        # self.files_fb = FileBrowser("Open Files", FileBrowser.OpenFiles)
         self.dir_fb = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
         self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
 
-        vlayout.addWidget(self.file_fb)
-        vlayout.addWidget(self.files_fb)
+        # vlayout.addWidget(self.file_fb)
+        # vlayout.addWidget(self.files_fb)
         vlayout.addWidget(self.dir_fb)
         vlayout.addWidget(self.save_fb)
 
@@ -97,7 +98,12 @@ class MainWindow(QMainWindow):
         Args:
             parent_layout (typing.Any): _description_
         """
-        parent_layout.addLayout(buffertime_widget())
+
+        buffer_layout = QHBoxLayout()
+        buffer_layout.addLayout(buffertime_widget("Buffer Before"))
+        buffer_layout.addLayout(buffertime_widget("Buffer After"))
+
+        parent_layout.addLayout(buffer_layout)
         parent_layout.addLayout(keep_original_checkbox())
 
     def create_progressbar_dialog(self) -> None:

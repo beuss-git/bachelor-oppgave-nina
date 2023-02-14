@@ -9,7 +9,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 
 
-def buffertime_widget() -> QHBoxLayout:
+def buffertime_widget(title: str) -> QHBoxLayout:
     """_summary_
 
     Returns:
@@ -20,12 +20,21 @@ def buffertime_widget() -> QHBoxLayout:
     buffer_time = QComboBox()
     buffer_time.setFixedWidth(50)
     buffer_time.addItems(["0", "1", "2", "3", "4", "5"])
-    # self.buffer_before.currentIndexChanged.connect()
+    buffer_time.currentIndexChanged.connect(index_changed)
 
     layout.addWidget(buffer_time)
-    layout.addWidget(add_label("Buffertime"))
+    layout.addWidget(add_label(title))
 
     return layout
+
+
+def index_changed(index: int) -> None:
+    """_summary_
+
+    Args:
+        index (int): _description_
+    """
+    print(index)
 
 
 def keep_original_checkbox() -> QHBoxLayout:
@@ -57,7 +66,6 @@ def add_label(title: str) -> QLabel:
     """
     label = QLabel()
     label.setText(title)
-    label.setFixedWidth(65)
     label.setFont(QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10))
     label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
     return label
