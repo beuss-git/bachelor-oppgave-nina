@@ -82,7 +82,7 @@ class MainWindow(QMainWindow):
         """_summary_
 
         Args:
-            parent_layout (typing.Any): _description_
+            parent_layout (typing.Any): Testing this :)
         """
         self.run_btn = QPushButton("Run")
         self.run_btn.setFixedWidth(100)
