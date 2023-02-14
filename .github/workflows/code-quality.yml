@@ -1,4 +1,4 @@
-name: Quality Checks
+name: Code Quality Checks
 on: [pull_request]
 
 jobs:
@@ -11,4 +11,10 @@ jobs:
         with:
           python-version: 3.10.9
       - uses: abatilo/actions-poetry@v2
-      - uses: pre-commit/action@v3.0.0
+      - run: poetry install
+      - run: poetry export -f requirements.txt --output requirements.txt
+      - run: pip install -r requirements.txt
+      - run: black --diff --check $(git ls-files '*.py')
+      - run: pylint --version
+      - run: pylint $(git ls-files '*.py') --rcfile=.pylintrc
+      - run: mypy --strict $(git ls-files '*.py')
