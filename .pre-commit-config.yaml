@@ -18,7 +18,7 @@ repos:
     rev: v2.15.10
     hooks:
       - id: pylint
-        args: ["--rcfile=.pylintrc"]
+        args: [--rcfile=.pylintrc]
         additional_dependencies: [PyQt6, pyqtdarktheme]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
