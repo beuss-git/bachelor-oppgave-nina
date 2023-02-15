@@ -15,7 +15,7 @@ from .options_widgets import (
 
 
 class FileBrowser(QWidget):
-    """_summary_
+    """Class for browsing files widget
 
     Args:
         QWidget (_type_): _description_
@@ -30,7 +30,7 @@ class FileBrowser(QWidget):
     SaveFile = 3
 
     def __init__(self, title: str, mode: int = OpenFile) -> None:
-        """_summary_
+        """Initiates the widget with LineEdit, Label and Button to browse files
 
         Args:
             title (Any): _description_
@@ -93,7 +93,7 @@ class FileBrowser(QWidget):
 
     # --------------------------------------------------------------------
     def get_file(self) -> None:
-        """_summary_"""
+        """Opens file browser to gather one or more file(s) or save a file"""
         self.filepaths = []
 
         if self.browser_mode == FileBrowser.OpenFile:

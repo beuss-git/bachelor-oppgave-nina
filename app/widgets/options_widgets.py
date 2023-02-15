@@ -13,14 +13,14 @@ from ..globals import Globals
 
 
 class BuffertimeWidget(QWidget):
-    """_summary_
+    """Class for Buffertime widgets
 
     Args:
         QWidget (_type_): _description_
     """
 
     def __init__(self, title: str) -> None:
-        """_summary_
+        """Initiates the widget with a ComboBox and Label
 
         Returns:
             QHBoxLayout: _description_
@@ -40,7 +40,7 @@ class BuffertimeWidget(QWidget):
         self.label = title
 
     def index_changed(self, index: int) -> None:
-        """_summary_
+        """Saves the changed index in the comboBox
 
         Args:
             index (int): _description_
@@ -55,7 +55,7 @@ class BuffertimeWidget(QWidget):
 
 
 class AdvancedOptions(QWidget):
-    """_summary_
+    """Class for Advanced option widget
 
     Args:
         QWidget (_type_): _description_
@@ -64,7 +64,8 @@ class AdvancedOptions(QWidget):
     options_open = False
 
     def __init__(self) -> None:
-        """_summary_"""
+        """Initiates the widget with link to open advanced options"""
+
         QWidget.__init__(self)
         layout = QVBoxLayout()
         self.advanced_layout = QVBoxLayout()
@@ -86,7 +87,8 @@ class AdvancedOptions(QWidget):
         layout.addLayout(self.advanced_layout)
 
     def show_options(self) -> None:
-        """_summary_"""
+        """Shows or removes the advanced options"""
+
         if self.options_open is False:
             print("open options")
             self.advanced_layout.addWidget(self.advanced_options())
@@ -97,11 +99,11 @@ class AdvancedOptions(QWidget):
             self.options_open = False
 
     def advanced_options(self) -> QWidget:
-        """_summary_"""
+        """Sets up the advanced options"""
         return add_label("Hei :)")
 
     def clear_layout(self, layout: QVBoxLayout) -> None:
-        """_summary_
+        """Removes all of the advanced options
 
         Args:
             layout (QHBoxLayout): _description_
@@ -117,7 +119,7 @@ class AdvancedOptions(QWidget):
 
 
 def keep_original_checkbox() -> QHBoxLayout:
-    """_summary_
+    """Sets up a checkbox for 'keeping the original video' option
 
     Returns:
         QHBoxLayout: _description_
@@ -135,7 +137,7 @@ def keep_original_checkbox() -> QHBoxLayout:
 
 
 def set_checked(checked: bool) -> None:
-    """_summary_
+    """Saves the status of the checkbox
 
     Args:
         checked (bool): _description_
@@ -146,7 +148,7 @@ def set_checked(checked: bool) -> None:
 
 
 def add_label(title: str) -> QLabel:
-    """_summary_
+    """Creates a label
 
     Args:
         title (str): _description_

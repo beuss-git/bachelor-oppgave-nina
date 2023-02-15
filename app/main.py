@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
     """Main Window"""
 
     def __init__(self, _: int = Globals.OpenFile) -> None:
-        """_summary_
+        """Initiates the main window
 
         Args:
             mode (int, optional): _description_. Defaults to OpenFile.
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
 
     def file_browser_panel(self) -> None:
-        """_summary_
+        """Sets up panel with open dir and save files
 
         Args:
             parent_layout (typing.Any): _description_
@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.parent_layout.addLayout(vlayout)
 
     def run_process_button(self, parent_layout: typing.Any) -> None:
-        """_summary_
+        """Creates button to run process
 
         Args:
             parent_layout (typing.Any): Testing this :)
@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
 
     def options_panel(self) -> None:
-        """_summary_
+        """Sets up panel with options
 
         Args:
             parent_layout (typing.Any): _description_
@@ -112,13 +112,13 @@ class MainWindow(QMainWindow):
         self.parent_layout.addLayout(keep_original_checkbox())
 
     def create_progressbar_dialog(self) -> None:
-        """_summary_"""
+        """Opens dialog with progressbar"""
         dlg = ProgressWindow()
         dlg.exec()
 
 
 def main() -> None:
-    """_summary_"""
+    """Main"""
 
     # You need one (and only one) QApplication instance per application.
     # Pass in sys.argv to allow command line arguments for your app.

@@ -20,7 +20,7 @@ class ProgressWindow(QDialog):
     """Progress window."""
 
     def __init__(self, _: int = Globals.OpenFile) -> None:
-        """_summary_
+        """Initiates the Progress Window Dialog
 
         Args:
             mode (int, optional): _description_. Defaults to OpenFile.
