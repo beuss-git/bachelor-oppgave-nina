@@ -12,15 +12,15 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QWidget,
-    QLabel,
 )
 from PyQt6 import QtGui
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
 from .globals import Globals
 from .execute_process import ProgressWindow
 from .widgets.options_widgets import (
-    OptionsWidget,
+    BuffertimeWidget,
+    AdvancedOptions,
     keep_original_checkbox,
 )
 
@@ -53,7 +53,8 @@ class MainWindow(QMainWindow):
         self.options_panel()
         self.parent_layout.addStretch()
 
-        self.advanced_options()
+        # self.advanced_options()
+        self.parent_layout.addWidget(AdvancedOptions())
         self.parent_layout.addStretch()
 
         self.run_process_button(self.parent_layout)
@@ -104,8 +105,8 @@ class MainWindow(QMainWindow):
         """
 
         buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(OptionsWidget("Buffer Before"))
-        buffer_layout.addWidget(OptionsWidget("Buffer After"))
+        buffer_layout.addWidget(BuffertimeWidget("Buffer Before"))
+        buffer_layout.addWidget(BuffertimeWidget("Buffer After"))
 
         self.parent_layout.addLayout(buffer_layout)
         self.parent_layout.addLayout(keep_original_checkbox())
@@ -114,51 +115,6 @@ class MainWindow(QMainWindow):
         """_summary_"""
         dlg = ProgressWindow()
         dlg.exec()
-
-    def advanced_options(self) -> None:
-        """_summary_
-
-        Returns:
-            QLabel: _description_
-        """
-        label = ClickLabel()
-        label.setText("<a href='#'>Advanced Options</a>")
-        label.setFont(
-            QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10)
-        )
-        label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        label.linkActivated.connect(self.show_text1)
-        label.setToolTip("Click to show advanced options")
-        self.setStyleSheet(
-            """QToolTip { color: #000000; background-color: #ffffff; border: 1px solid white; }"""
-        )
-
-        self.parent_layout.addWidget(label)
-
-    def show_text1(self) -> None:
-        """_summary_"""
-        print("clicked")
-        self.file_browser_panel()
-
-
-class ClickLabel(QLabel):
-    """_summary_
-
-    Args:
-        QLabel (_type_): _description_
-    """
-
-    clicked = pyqtSignal()
-
-    def mouse_press_event(self, event: typing.Any) -> None:
-        """_summary_
-
-        Args:
-            event (_type_): _description_
-        """
-        self.clicked.emit()
-        super().mousePressEvent(event)
-        # print("clicked")
 
 
 def main() -> None:
