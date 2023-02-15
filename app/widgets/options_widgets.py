@@ -64,7 +64,7 @@ class AdvancedOptions(QWidget):
     options_open = False
 
     def __init__(self) -> None:
-        """Initiates the widget with link to open advanced options"""
+        """Initiates the widget with link to open  advanced options"""
 
         QWidget.__init__(self)
         layout = QVBoxLayout()
