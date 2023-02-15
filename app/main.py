@@ -12,9 +12,10 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QWidget,
+    QLabel,
 )
 from PyQt6 import QtGui
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from app.widgets.file_browser import FileBrowser
 from .globals import Globals
 from .execute_process import ProgressWindow
@@ -42,23 +43,26 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(self.window_width, self.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
 
-        parent_layout = QVBoxLayout()
-        self.setLayout(parent_layout)
+        self.parent_layout = QVBoxLayout()
+        self.setLayout(self.parent_layout)
         print("Main window created")
 
-        self.file_browser_panel(parent_layout)
-        parent_layout.addStretch()
+        self.file_browser_panel()
+        self.parent_layout.addStretch()
 
-        self.options_panel(parent_layout)
-        parent_layout.addStretch()
+        self.options_panel()
+        self.parent_layout.addStretch()
 
-        self.run_process_button(parent_layout)
+        self.advanced_options()
+        self.parent_layout.addStretch()
+
+        self.run_process_button(self.parent_layout)
 
         widget = QWidget()
-        widget.setLayout(parent_layout)
+        widget.setLayout(self.parent_layout)
         self.setCentralWidget(widget)
 
-    def file_browser_panel(self, parent_layout: typing.Any) -> None:
+    def file_browser_panel(self) -> None:
         """_summary_
 
         Args:
@@ -77,7 +81,7 @@ class MainWindow(QMainWindow):
         vlayout.addWidget(self.save_fb)
 
         vlayout.addStretch()
-        parent_layout.addLayout(vlayout)
+        self.parent_layout.addLayout(vlayout)
 
     def run_process_button(self, parent_layout: typing.Any) -> None:
         """_summary_
@@ -92,7 +96,7 @@ class MainWindow(QMainWindow):
         parent_layout.addWidget(self.run_btn)
         parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
 
-    def options_panel(self, parent_layout: typing.Any) -> None:
+    def options_panel(self) -> None:
         """_summary_
 
         Args:
@@ -103,13 +107,58 @@ class MainWindow(QMainWindow):
         buffer_layout.addWidget(OptionsWidget("Buffer Before"))
         buffer_layout.addWidget(OptionsWidget("Buffer After"))
 
-        parent_layout.addLayout(buffer_layout)
-        parent_layout.addLayout(keep_original_checkbox())
+        self.parent_layout.addLayout(buffer_layout)
+        self.parent_layout.addLayout(keep_original_checkbox())
 
     def create_progressbar_dialog(self) -> None:
         """_summary_"""
         dlg = ProgressWindow()
         dlg.exec()
+
+    def advanced_options(self) -> None:
+        """_summary_
+
+        Returns:
+            QLabel: _description_
+        """
+        label = ClickLabel()
+        label.setText("<a href='#'>Advanced Options</a>")
+        label.setFont(
+            QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10)
+        )
+        label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        label.linkActivated.connect(self.show_text1)
+        label.setToolTip("Click to show advanced options")
+        self.setStyleSheet(
+            """QToolTip { color: #000000; background-color: #ffffff; border: 1px solid white; }"""
+        )
+
+        self.parent_layout.addWidget(label)
+
+    def show_text1(self) -> None:
+        """_summary_"""
+        print("clicked")
+        self.file_browser_panel()
+
+
+class ClickLabel(QLabel):
+    """_summary_
+
+    Args:
+        QLabel (_type_): _description_
+    """
+
+    clicked = pyqtSignal()
+
+    def mouse_press_event(self, event: typing.Any) -> None:
+        """_summary_
+
+        Args:
+            event (_type_): _description_
+        """
+        self.clicked.emit()
+        super().mousePressEvent(event)
+        # print("clicked")
 
 
 def main() -> None:
