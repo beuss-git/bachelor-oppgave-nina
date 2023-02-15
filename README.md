@@ -6,8 +6,8 @@
 - [poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 
-
-`poetry install` to install project dependencies
+I recommend adding poetry to your PATH.
+Add `%APPDATA%\Python\Scripts` on windows.
 
 `poetry config virtualenvs.in-project true --local` **if** you want the virtual environment to be created in .venv at the root of the project
 
