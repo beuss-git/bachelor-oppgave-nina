@@ -1,4 +1,5 @@
 """Main module for detection."""
+import argparse
 import sys
 import os
 import copy
@@ -32,9 +33,18 @@ class Yolov5:  # pylint: disable=too-many-instance-attributes
         classes: Optional[List[str]] = None,
         colors: Optional[List[List[int]]] = None,
     ) -> None:
-        self.device = select_device(device)
+        try:
+            self.device = select_device(device)
+        except Exception as err:
+            raise RuntimeError("Failed to select device", err) from err
+
         self.weights_name = os.path.split(weights_path)[-1]
-        self.model = attempt_load(weights_path, device=self.device)
+
+        try:
+            self.model = attempt_load(weights_path, device=self.device)
+        except Exception as err:
+            raise RuntimeError("Failed to load model", err) from err
+
         self.names = (
             self.model.module.names
             if hasattr(self.model, "module")
@@ -168,7 +178,7 @@ class Yolov5:  # pylint: disable=too-many-instance-attributes
             img_s: The images to prepare.
 
         Raises:
-            ValueError: If the type of the images is not supported.
+            RuntimeError: If the type of the images is not supported.
 
         Returns:
             The prepared images as a torch tensor.
@@ -182,7 +192,7 @@ class Yolov5:  # pylint: disable=too-many-instance-attributes
             img_to_send = self.reshape_copy_img((np.ndarray(img_s)))
         else:
             print(type(img_s), " is not supported")
-            raise ValueError("Not supported type")
+            raise RuntimeError("Not supported type")
 
         return self.prepare_image(img_to_send)
 
@@ -313,7 +323,7 @@ class ThreadedFrameGrabber:
     """Continuously grabs frames from a video in batches and puts them into a queue."""
 
     def __init__(
-        self, input_path: str, batch_size: int = 16, max_batches_in_queue: int = 0
+        self, input_path: str, batch_size: int = 16, max_batches_to_queue: int = 0
     ):
         """Initialize the BatchFrameGrabber.
 
@@ -323,10 +333,14 @@ class ThreadedFrameGrabber:
             max_batches_in_queue: The maximum number of batches to queue. Defaults to 0.
         """
 
-        self.dataset = dataloaders.LoadImages(input_path, img_size=640)
+        try:
+            self.dataset = dataloaders.LoadImages(input_path, img_size=640)
+        except Exception as err:
+            raise RuntimeError(f"Failed to open {input_path}", err) from err
+
         self.frame_count = self.dataset.frames
         self.image_list: List[Any] = []
-        self.batch_queue: Queue[List[Any]] = Queue(max_batches_in_queue)
+        self.batch_queue: Queue[List[Any]] = Queue(max_batches_to_queue)
         self.batch_size = batch_size
 
         self.thread = Thread(target=self.__run)
@@ -393,24 +407,43 @@ def process_batch(batch: List[np.ndarray[Any, Any]], model: Yolov5) -> float:
     return delta
 
 
-def main() -> int:
-    """The main function.
+def process_video(
+    video_path: str,
+    weights_path: str,
+    device: str,
+    batch_size: int,
+    max_batches_to_queue: int,
+) -> bool:
+    """Runs inference on a video.
+
+    Args:
+        video_path: The path to the video to process.
+        weights_path: The path to the weights file.
+        device: The device to run inference on.
+        batch_size: The batch size.
+        max_batches_to_queue: The maximum number of batches to queue.
 
     Returns:
-        int: The exit code
+        True if the video was processed successfully, False otherwise.
     """
 
-    model = Yolov5(r"C:\Users\benja\Downloads\yolov5s-imgsize-640.pt", device="cuda:0")
-    input_path = r"C:\Users\benja\Pictures\myggbuktav2.mp4"
+    try:
+        frame_grabber = ThreadedFrameGrabber(
+            video_path, batch_size=batch_size, max_batches_to_queue=max_batches_to_queue
+        )
+    except RuntimeError as err:
+        print("Failed to initialize frame grabber", err)
+        return False
 
-    frame_grabber = ThreadedFrameGrabber(
-        input_path, batch_size=64, max_batches_in_queue=5
-    )
+    try:
+        model = Yolov5(weights_path=weights_path, device=device)
+    except RuntimeError as err:
+        print("Failed to initialize model", err)
+        return False
 
     try:
         total_fps = 0.0
 
-        batch_count = 0
         with tqdm(
             total=frame_grabber.total_batch_count(), desc="Processing batches"
         ) as pbar:
@@ -421,19 +454,77 @@ def main() -> int:
                     time.sleep(0.1)
                     continue
 
-                batch_count += 1
                 delta = process_batch(batch, model)
 
                 batch_fps = len(batch) / delta
                 total_fps += batch_fps
                 pbar.update(1)
+                pbar.set_description(f"Processing batches (FPS: {batch_fps:.2f})")
 
-        print(f"Average FPS: {total_fps / batch_count}")
+        print(f"Average FPS: {total_fps / frame_grabber.total_batch_count()}")
     except RuntimeError as err:
         print(err)
-        return 1
+        return False
+    return True
 
-    return 0
+
+def main() -> int:
+    """The main function.
+
+    Returns:
+        int: The exit code
+    """
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--video_path",
+        type=str,
+        required=True,
+        help="The path to the video to process",
+    )
+    parser.add_argument(
+        "--weights_path",
+        type=str,
+        required=True,
+        help="The path to the weights to use",
+    )
+
+    parser.add_argument(
+        "--device",
+        type=str,
+        required=False,
+        default="cuda:0",
+        help="The device to use. Defaults to cuda:0",
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        required=False,
+        default=32,
+        help="The batch size to use. Defaults to 32",
+    )
+
+    parser.add_argument(
+        "--max_batches_to_queue",
+        type=int,
+        required=False,
+        default=4,
+        help="Max number of batches to queue. Defaults to 4",
+    )
+
+    args = parser.parse_args()
+
+    if process_video(
+        args.video_path,
+        args.weights_path,
+        args.device,
+        args.batch_size,
+        args.max_batches_to_queue,
+    ):
+        return 0
+    return 1
 
 
 if __name__ == "__main__":
