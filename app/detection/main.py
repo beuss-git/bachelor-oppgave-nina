@@ -6,6 +6,7 @@ import time
 from typing import List, Optional, Any, Dict
 import torch
 import numpy as np
+from tqdm import tqdm
 
 from yolov5.utils import dataloaders
 from yolov5.models.experimental import attempt_load
@@ -315,39 +316,30 @@ def main() -> int:
 
     model = Yolov5(r"C:\Users\benja\Downloads\yolov5s-imgsize-640.pt", device="cuda:0")
     input_path = r"C:\Users\benja\Pictures\myggbuktav2.mp4"
-    print("Loading video..")
     dataset = dataloaders.LoadImages(input_path, img_size=640)
 
     image_list = []
-    for _, _, im0s, _, _ in dataset:
-        # img = model.send_whatever_to_device(img)
+    for _, _, im0s, _, _ in tqdm(
+        dataset, total=dataset.frames, desc="Loading video frames"
+    ):
         image_list += [im0s]
 
-    del dataset
-    print(f"Loaded {len(image_list)} images from video")
-
     batches = create_batches(image_list, batch_size=64)
-    print(f"Trying batch size {len(batches[-1])}")
-    print(f"Number of batches: {len(batches)}")
 
     try:
-        batch_count = 0
         batch_size = len(batches)
         fps = 0.0
-        for batch in batches:
+
+        for batch in tqdm(batches, total=batch_size, desc="Predicting batches"):
             start_time = time.time()
             _ = model.predict_batch(batch)
             end_time = time.time()
             delta = end_time - start_time
-            batch_count += 1
             batch_fps = len(batch) / delta
             fps += batch_fps
-            print(f"Finished batch {batch_count} out of {batch_size}")
-            print(f"Time taken: {delta} to make {len(batch)} predictions")
-            print(f"FPS: {batch_fps}")
-
+            # print(f"Time taken: {delta} to make {len(batch)} predictions")
+            # print(f"FPS: {batch_fps}")
         print(f"Average FPS: {fps / batch_size}")
-        print("Done")
     except RuntimeError as err:
         print(err)
         return 1
