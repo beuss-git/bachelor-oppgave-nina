@@ -445,7 +445,7 @@ def process_video(
         with tqdm(
             total=frame_grabber.total_batch_count(), desc="Processing batches"
         ) as pbar:
-            while not frame_grabber.is_done():
+            while not frame_grabber.is_done() or not frame_grabber.batch_queue.empty():
                 batch = frame_grabber.get_next_batch()
                 if batch is None:
                     # Wait for more batches to be available
