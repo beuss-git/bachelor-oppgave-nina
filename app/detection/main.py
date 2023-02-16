@@ -123,7 +123,9 @@ class Yolov5:  # pylint: disable=too-many-instance-attributes
 
         return batch_output
 
-    def prepare_image(self, original_img: np.ndarray[Any, Any]) -> torch.Tensor:
+    def prepare_image(
+        self, original_img: np.ndarray[Any, Any] | List[Any]
+    ) -> torch.Tensor:
         """Prepare image for inference by normalizing and reshaping.
 
         Args:
@@ -179,7 +181,7 @@ class Yolov5:  # pylint: disable=too-many-instance-attributes
             print(type(img_s), " is not supported")
             raise ValueError("Not supported type")
 
-        return self.prepare_image(np.ndarray(img_to_send))
+        return self.prepare_image(img_to_send)
 
     @staticmethod
     def pad_batch_of_images(
