@@ -7,8 +7,6 @@
 
 
 
-`poetry install` to install project dependencies
-
 `poetry config virtualenvs.in-project true --local` **if** you want the virtual environment to be created in .venv at the root of the project
 
 `poetry install` to install project dependencies
