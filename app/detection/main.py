@@ -3,9 +3,11 @@ import sys
 import os
 import copy
 import time
+import math
 from typing import List, Optional, Any, Dict
 from queue import Queue
 from threading import Thread
+from tqdm import tqdm
 import torch
 import numpy as np
 from yolov5.utils import dataloaders
@@ -365,6 +367,14 @@ class ThreadedFrameGrabber:
         """
         return self.done
 
+    def total_batch_count(self) -> int:
+        """Get the total number of batches that will be processed.
+
+        Returns:
+            The total number of batches.
+        """
+        return int(math.ceil(self.frame_count / self.batch_size))
+
 
 def process_batch(batch: List[np.ndarray[Any, Any]], model: Yolov5) -> float:
     """Process a batch of frames.
@@ -402,21 +412,22 @@ def main() -> int:
         total_fps = 0.0
 
         batch_count = 0
-        while not frame_grabber.is_done():
+        with tqdm(
+            total=frame_grabber.total_batch_count(), desc="Processing batches"
+        ) as pbar:
+            while not frame_grabber.is_done():
+                batch = frame_grabber.get_next_batch()
+                if batch is None:
+                    # Wait for more batches to be available
+                    time.sleep(0.1)
+                    continue
 
-            batch = frame_grabber.get_next_batch()
-            if batch is None:
-                print("No more batches available")
-                # Wait for more batches to be available
-                time.sleep(0.1)
-                continue
+                batch_count += 1
+                delta = process_batch(batch, model)
 
-            batch_count += 1
-            delta = process_batch(batch, model)
-
-            batch_fps = len(batch) / delta
-            total_fps += batch_fps
-            print(f"FPS: {batch_fps}")
+                batch_fps = len(batch) / delta
+                total_fps += batch_fps
+                pbar.update(1)
 
         print(f"Average FPS: {total_fps / batch_count}")
     except RuntimeError as err:
