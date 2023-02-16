@@ -402,7 +402,6 @@ def main() -> int:
 
     model = Yolov5(r"C:\Users\benja\Downloads\yolov5s-imgsize-640.pt", device="cuda:0")
     input_path = r"C:\Users\benja\Pictures\myggbuktav2.mp4"
-    # dataset = dataloaders.LoadImages(input_path, img_size=640)
 
     frame_grabber = ThreadedFrameGrabber(
         input_path, batch_size=64, max_batches_in_queue=5
