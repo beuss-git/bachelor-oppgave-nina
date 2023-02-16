@@ -6,17 +6,20 @@ from PyQt6.QtCore import QProcess
 
 @dataclass
 class Globals:
-    """_summary_"""
+    """Data class with global data"""
 
+    #
     OpenFile = 0
     OpenFiles = 1
     OpenDirectory = 2
     SaveFile = 3
 
-    process: typing.Optional[QProcess] = None
-    process_path = r"app\dummy_script.py"
+    process: typing.Optional[QProcess] = None  # The process to be executed
+    process_path = r"app\dummy_script.py"  # The path to script executed
 
+    # Buffer time saved
     buffer_after = 0
     buffer_before = 0
 
+    # Variable for keeping the original video
     check = False

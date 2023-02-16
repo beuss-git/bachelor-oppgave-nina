@@ -2,7 +2,6 @@
 
 # Only needed for access to command line arguments
 import sys
-import typing
 import qdarktheme
 
 from PyQt6.QtWidgets import (
@@ -16,7 +15,6 @@ from PyQt6.QtWidgets import (
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
-from .globals import Globals
 from .execute_process import ProgressWindow
 from .widgets.options_widgets import (
     BuffertimeWidget,
@@ -28,12 +26,8 @@ from .widgets.options_widgets import (
 class MainWindow(QMainWindow):
     """Main Window"""
 
-    def __init__(self, _: int = Globals.OpenFile) -> None:
-        """Initiates the main window
-
-        Args:
-            mode (int, optional): _description_. Defaults to OpenFile.
-        """
+    def __init__(self) -> None:
+        """Initiates the main window"""
 
         super().__init__()
 
@@ -43,66 +37,55 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(self.window_width, self.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
 
+        # Sets main layout for the window
         self.parent_layout = QVBoxLayout()
         self.setLayout(self.parent_layout)
         print("Main window created")
 
+        # Adds file browser panel
         self.file_browser_panel()
         self.parent_layout.addStretch()
 
+        # Adds options panel
         self.options_panel()
         self.parent_layout.addStretch()
 
-        # self.advanced_options()
+        # Adds advanced options panel
         self.parent_layout.addWidget(AdvancedOptions())
         self.parent_layout.addStretch()
 
-        self.run_process_button(self.parent_layout)
+        # Adds run button
+        self.run_process_button()
 
+        # Sets the layout
         widget = QWidget()
         widget.setLayout(self.parent_layout)
         self.setCentralWidget(widget)
 
     def file_browser_panel(self) -> None:
-        """Sets up panel with open dir and save files
-
-        Args:
-            parent_layout (typing.Any): _description_
-        """
+        """Sets up panel with open dir and save files"""
         vlayout = QVBoxLayout()
 
-        # self.file_fb = FileBrowser("Open File", FileBrowser.OpenFile)
-        # self.files_fb = FileBrowser("Open Files", FileBrowser.OpenFiles)
         self.dir_fb = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
         self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
 
-        # vlayout.addWidget(self.file_fb)
-        # vlayout.addWidget(self.files_fb)
         vlayout.addWidget(self.dir_fb)
         vlayout.addWidget(self.save_fb)
 
         vlayout.addStretch()
         self.parent_layout.addLayout(vlayout)
 
-    def run_process_button(self, parent_layout: typing.Any) -> None:
-        """Creates button to run process
-
-        Args:
-            parent_layout (typing.Any): Testing this :)
-        """
+    def run_process_button(self) -> None:
+        """Creates button to run process"""
         self.run_btn = QPushButton("Run")
         self.run_btn.setFixedWidth(100)
         self.run_btn.clicked.connect(self.create_progressbar_dialog)
         self.run_btn.setStyleSheet("background-color: green")
-        parent_layout.addWidget(self.run_btn)
-        parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
+        self.parent_layout.addWidget(self.run_btn)
+        self.parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
 
     def options_panel(self) -> None:
-        """Sets up panel with options
-
-        Args:
-            parent_layout (typing.Any): _description_
-        """
+        """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()
         buffer_layout.addWidget(BuffertimeWidget("Buffer Before"))
@@ -113,7 +96,11 @@ class MainWindow(QMainWindow):
 
     def create_progressbar_dialog(self) -> None:
         """Opens dialog with progressbar"""
+
+        # Creates an instance of the Progress window class
         dlg = ProgressWindow()
+
+        # Executes the window
         dlg.exec()
 
 
