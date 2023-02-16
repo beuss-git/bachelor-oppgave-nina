@@ -51,6 +51,14 @@ def main() -> int:
         help="Max number of batches to queue. Defaults to 4",
     )
 
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        required=False,
+        default=None,
+        help="Output video path.",
+    )
+
     args = parser.parse_args()
 
     if process_video(
@@ -59,6 +67,7 @@ def main() -> int:
         args.device,
         args.batch_size,
         args.max_batches_to_queue,
+        args.output_path,
     ):
         return 0
     return 1
