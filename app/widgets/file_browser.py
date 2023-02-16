@@ -50,7 +50,6 @@ class FileBrowser(QWidget):
 
         # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
-        self.line_edit.setFixedWidth(180)
         layout.addWidget(self.line_edit)
 
         # Creates a button to open the file browser

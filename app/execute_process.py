@@ -30,6 +30,7 @@ class ProgressWindow(QDialog):
 
         # Set default window settings
         self.dialog_layout = QVBoxLayout()
+        self.setWindowTitle("Processing...")
 
         # Text box
         self.text = QPlainTextEdit()

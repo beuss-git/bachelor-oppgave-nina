@@ -17,10 +17,11 @@ from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
 from .execute_process import ProgressWindow
 from .widgets.options_widgets import (
-    BuffertimeWidget,
+    DropDownWidget,
     AdvancedOptions,
-    keep_original_checkbox,
+    Checkbox,
 )
+from .globals import Globals
 
 
 class MainWindow(QMainWindow):
@@ -88,11 +89,11 @@ class MainWindow(QMainWindow):
         """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(BuffertimeWidget("Buffer Before"))
-        buffer_layout.addWidget(BuffertimeWidget("Buffer After"))
+        buffer_layout.addWidget(DropDownWidget("Buffer Before", Globals.buffer_options))
+        buffer_layout.addWidget(DropDownWidget("Buffer After", Globals.buffer_options))
 
         self.parent_layout.addLayout(buffer_layout)
-        self.parent_layout.addLayout(keep_original_checkbox())
+        self.parent_layout.addWidget(Checkbox("Keep original video"))
 
     def create_progressbar_dialog(self) -> None:
         """Opens dialog with progressbar"""

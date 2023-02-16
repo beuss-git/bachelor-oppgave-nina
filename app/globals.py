@@ -20,6 +20,10 @@ class Globals:
     # Buffer time saved
     buffer_after = 0
     buffer_before = 0
+    buffer_options = ["0", "1", "2", "3", "4", "5"]
 
     # Variable for keeping the original video
     check = False
+
+    # Report variables
+    formats = ["PDF", "CSV", "XML"]

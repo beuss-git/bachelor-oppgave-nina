@@ -12,14 +12,18 @@ from PyQt6.QtCore import Qt
 from ..globals import Globals
 
 
-class BuffertimeWidget(QWidget):
+class DropDownWidget(QWidget):
     """Class for Buffertime widgets
 
     Args:
         QWidget (QWidget): Inherits from the QWidget class
     """
 
-    def __init__(self, title: str) -> None:
+    def __init__(
+        self,
+        title: str,
+        buffer: list[str],
+    ) -> None:
         """Initiates the widget with a ComboBox and Label
 
         Args:
@@ -37,7 +41,7 @@ class BuffertimeWidget(QWidget):
         # Sets up a combobox
         buffer_time = QComboBox()
         buffer_time.setFixedWidth(50)
-        buffer_time.addItems(["0", "1", "2", "3", "4", "5"])
+        buffer_time.addItems(buffer)
         buffer_time.currentIndexChanged.connect(
             self.index_changed
         )  # connects interaction to the index changed function
@@ -106,22 +110,21 @@ class AdvancedOptions(QWidget):
 
         # Checks if the advanced options are open or not
         if self.options_open is False:
-
             # If not open, then it shows the advanced options
             print("open options")
-            self.advanced_layout.addWidget(self.advanced_options())
+            self.advanced_options()
             self.options_open = True
 
         else:
-
             # If it is open, then the advanced options are removed from view
             print("close options")
             self.clear_layout(self.advanced_layout)
             self.options_open = False
 
-    def advanced_options(self) -> QWidget:
+    def advanced_options(self) -> None:
         """Sets up the advanced options"""
-        return add_label("Hei :)")
+        self.advanced_layout.addWidget(Checkbox("Get report"))
+        self.advanced_layout.addWidget(DropDownWidget("Report format", Globals.formats))
 
     def clear_layout(self, layout: QVBoxLayout) -> None:
         """Removes all of the advanced options
@@ -129,50 +132,54 @@ class AdvancedOptions(QWidget):
         Args:
             layout (QHBoxLayout): the local layout that is to be cleared
         """
+        if layout is None:  # Checks if the layout is empty
+            return
 
         # Iterates through the items in the layout to delete them
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-                else:
-                    self.clearLayout(item.layout())
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+            else:
+                self.clear_layout(item.layout())
 
 
-def keep_original_checkbox() -> QHBoxLayout:
-    """Sets up a checkbox for 'keeping the original video' option
+class Checkbox(QWidget):
+    """Class for Checkbox widget"""
 
-    Returns:
-        QHBoxLayout: local layout for the checkbox and label
-    """
+    def __init__(self, msg: str) -> None:
+        """Sets up a checkbox for 'keeping the original video' option
 
-    # Creates the local layout
-    layout = QHBoxLayout()
+        Returns:
+            QHBoxLayout: local layout for the checkbox and label
+        """
 
-    # Sets up the checkbox
-    keep_original = QCheckBox()
-    keep_original.setCheckState(Qt.CheckState.Checked)
-    keep_original.setFixedWidth(20)
-    keep_original.stateChanged.connect(set_checked)
+        # Creates the local layout
+        QWidget.__init__(self)
+        layout = QHBoxLayout()
 
-    # Adds widgets to layout
-    layout.addWidget(keep_original)
-    layout.addWidget(add_label("Keep original"))
+        # Sets up the checkbox
+        keep_original = QCheckBox()
+        keep_original.setCheckState(Qt.CheckState.Checked)
+        keep_original.setFixedWidth(20)
+        keep_original.stateChanged.connect(self.set_checked)
 
-    return layout
+        # Adds widgets to layout
+        layout.addWidget(keep_original)
+        layout.addWidget(add_label(msg))
 
+        self.setLayout(layout)
 
-def set_checked(checked: bool) -> None:
-    """Saves the status of the checkbox
+    def set_checked(self, checked: bool) -> None:
+        """Saves the status of the checkbox
 
-    Args:
-        checked (bool): a bool for whether or not the checkbox is checked or not
-    """
-    Globals.check = checked
-    print("Keep original: " + str(checked))
-    print("Global" + str(Globals.check))
+        Args:
+            checked (bool): a bool for whether or not the checkbox is checked or not
+        """
+        Globals.check = checked
+        print("Keep original: " + str(checked))
+        print("Global " + str(Globals.check))
 
 
 def add_label(title: str) -> QLabel:
