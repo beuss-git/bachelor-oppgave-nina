@@ -4,10 +4,10 @@ import os
 import copy
 import time
 from typing import List, Optional, Any, Dict
+from queue import Queue
+from threading import Thread
 import torch
 import numpy as np
-from tqdm import tqdm
-
 from yolov5.utils import dataloaders
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.augmentations import letterbox
@@ -307,6 +307,82 @@ def create_batches(
     return batches
 
 
+class ThreadedFrameGrabber:
+    """Continuously grabs frames from a video in batches and puts them into a queue."""
+
+    def __init__(
+        self, input_path: str, batch_size: int = 16, max_batches_in_queue: int = 0
+    ):
+        """Initialize the BatchFrameGrabber.
+
+        Args:
+            input_path: The path to the video.
+            batch_size: The batch size. Defaults to 16.
+            max_batches_in_queue: The maximum number of batches to queue. Defaults to 0.
+        """
+
+        self.dataset = dataloaders.LoadImages(input_path, img_size=640)
+        self.frame_count = self.dataset.frames
+        self.image_list: List[Any] = []
+        self.batch_queue: Queue[List[Any]] = Queue(max_batches_in_queue)
+        self.batch_size = batch_size
+
+        self.thread = Thread(target=self.__run)
+        self.thread.start()
+
+        self.done = False
+
+    def __run(self) -> None:
+        """
+        This function is run in a separate thread and continuously grabs frames from the video.
+        """
+        for _, _, im0s, _, _ in self.dataset:
+            self.image_list.append(im0s)
+            if len(self.image_list) >= self.batch_size:
+                self.batch_queue.put(self.image_list)
+                self.image_list = []
+
+            # Wait for the queue to have space
+            while self.batch_queue.full():
+                time.sleep(0.1)
+        self.done = True
+
+    def get_next_batch(self) -> Optional[List[np.ndarray[Any, Any]]]:
+        """Get the next batch of frames.
+
+        Returns:
+            The next batch of frames.
+        """
+        if not self.batch_queue.empty():
+            return self.batch_queue.get()
+        return None
+
+    def is_done(self) -> bool:
+        """Check if we have processed all frames.
+
+        Returns:
+            True if we have processed all frames, False otherwise.
+        """
+        return self.done
+
+
+def process_batch(batch: List[np.ndarray[Any, Any]], model: Yolov5) -> float:
+    """Process a batch of frames.
+
+    Args:
+        batch: Batch of frames
+        model: The Yolov5 model
+
+    Returns:
+        The time it took to process the batch.
+    """
+    start_time = time.time()
+    _ = model.predict_batch(batch)
+    end_time = time.time()
+    delta = end_time - start_time
+    return delta
+
+
 def main() -> int:
     """The main function.
 
@@ -316,30 +392,33 @@ def main() -> int:
 
     model = Yolov5(r"C:\Users\benja\Downloads\yolov5s-imgsize-640.pt", device="cuda:0")
     input_path = r"C:\Users\benja\Pictures\myggbuktav2.mp4"
-    dataset = dataloaders.LoadImages(input_path, img_size=640)
+    # dataset = dataloaders.LoadImages(input_path, img_size=640)
 
-    image_list = []
-    for _, _, im0s, _, _ in tqdm(
-        dataset, total=dataset.frames, desc="Loading video frames"
-    ):
-        image_list += [im0s]
-
-    batches = create_batches(image_list, batch_size=64)
+    frame_grabber = ThreadedFrameGrabber(
+        input_path, batch_size=64, max_batches_in_queue=5
+    )
 
     try:
-        batch_size = len(batches)
-        fps = 0.0
+        total_fps = 0.0
 
-        for batch in tqdm(batches, total=batch_size, desc="Predicting batches"):
-            start_time = time.time()
-            _ = model.predict_batch(batch)
-            end_time = time.time()
-            delta = end_time - start_time
+        batch_count = 0
+        while not frame_grabber.is_done():
+
+            batch = frame_grabber.get_next_batch()
+            if batch is None:
+                print("No more batches available")
+                # Wait for more batches to be available
+                time.sleep(0.1)
+                continue
+
+            batch_count += 1
+            delta = process_batch(batch, model)
+
             batch_fps = len(batch) / delta
-            fps += batch_fps
-            # print(f"Time taken: {delta} to make {len(batch)} predictions")
-            # print(f"FPS: {batch_fps}")
-        print(f"Average FPS: {fps / batch_size}")
+            total_fps += batch_fps
+            print(f"FPS: {batch_fps}")
+
+        print(f"Average FPS: {total_fps / batch_count}")
     except RuntimeError as err:
         print(err)
         return 1
