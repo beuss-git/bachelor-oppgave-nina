@@ -12,6 +12,7 @@ python = ">=3.10,<3.12"
 PyQt6 = "^6.4.2"
 pyqtdarktheme = "^2.1.0"
 ultralytics = "^8.0.38"
+yolov5 = "^7.0.9"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.0.0"
