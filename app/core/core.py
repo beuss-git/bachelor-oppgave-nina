@@ -23,6 +23,9 @@ class Core:
         except RuntimeError as err:
             raise RuntimeError("Failed to initialize model", err) from err
 
+        self._batch_size = 64
+        self._max_batches_to_queue = 4
+
     def process_folder(self, folder_path: str) -> None:
         """Process a folder of videos."""
         for filename in os.listdir(folder_path):
@@ -38,8 +41,8 @@ class Core:
         frames_with_fish = detection.process_video(
             model=self._model,
             video_path=video_path,
-            batch_size=64,
-            max_batches_to_queue=4,
+            batch_size=self._batch_size,
+            max_batches_to_queue=self._max_batches_to_queue,
             output_path=None,
         )
         print(f"Found {len(frames_with_fish)} frames with fish")
@@ -47,6 +50,10 @@ class Core:
         # Convert the detected frames to frame ranges to cut the video
         frame_ranges = self.__detected_frames_to_range(frames_with_fish, frame_buffer=3)
         print(f"Found {len(frame_ranges)} frame ranges with fish")
+
+        if len(frame_ranges) == 0:
+            print("No fish detected, skipping video")
+            return
 
         vid_path = Path(video_path)
         out_path = vid_path.parent / f"{vid_path.stem}_processed.mp4"
