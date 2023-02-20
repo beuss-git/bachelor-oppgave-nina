@@ -1,5 +1,10 @@
 # bachelor-oppgave-nina
 
+[![CI][ci-badge]][ci]
+
+[ci-badge]: https://github.com/beuss-git/bachelor-oppgave-nina/actions/workflows/code-quality.yml/badge.svg
+[ci]: https://github.com/beuss-git/bachelor-oppgave-nina/actions/workflows/code-quality.yml
+
 ### Requirements
 - [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - [commitlint (not husky)](https://commitlint.js.org/#/./guides-local-setup?id=guides-local-setup)
