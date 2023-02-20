@@ -1,17 +1,13 @@
-name: Checks
+name: Code Quality Checks
 on: [pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     name: Checks
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
-          python-version: 3.x
-      - run: pip install --upgrade pip
-      - run: pip install -r requirements.txt
-      - run: black --diff --check $(git ls-files '*.py')
-      - run: pylint --disable=all --enable=unused-import $(git ls-files '*.py')
-      - run: mypy --strict $(git ls-files '*.py')
+          python-version: 3.10.9
+      - uses: pre-commit/action@v3.0.0
