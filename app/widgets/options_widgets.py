@@ -39,15 +39,15 @@ class DropDownWidget(QWidget):
         self.setLayout(layout)
 
         # Sets up a combobox
-        buffer_time = QComboBox()
-        buffer_time.setFixedWidth(50)
-        buffer_time.addItems(buffer)
-        buffer_time.currentIndexChanged.connect(
+        self.buffer_time = QComboBox()
+        self.buffer_time.setFixedWidth(50)
+        self.buffer_time.addItems(buffer)
+        self.buffer_time.currentIndexChanged.connect(
             self.index_changed
         )  # connects interaction to the index changed function
 
         # Adds the combobox widget and label
-        layout.addWidget(buffer_time)
+        layout.addWidget(self.buffer_time)
         layout.addWidget(add_label(title))
 
         # saves label as a class variable for later use
@@ -87,22 +87,25 @@ class AdvancedOptions(QWidget):
         self.setLayout(layout)
 
         # Adds a clickable label
-        label = QLabel()
-        label.setText("<a href='#'>Advanced Options</a>")
-        label.setFont(
+        self.label = QLabel()
+        self.text = "<a href='#'>Advanced Options</a>"
+        self.label.setText(self.text)
+        self.label.setFont(
             QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10)
         )
-        label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         self.setStyleSheet(
             """QToolTip { color: #000000; background-color: #ffffff; border: 1px solid white; }"""
         )
-        label.setToolTip("Click to show advanced options")
+        self.label.setToolTip("Click to show advanced options")
 
         # Adds function to clickable link
-        label.linkActivated.connect(self.show_options)
+        self.label.linkActivated.connect(self.show_options)
 
         # Adds widgets to the layout
-        layout.addWidget(label)
+        layout.addWidget(self.label)
         layout.addLayout(self.advanced_layout)
 
     def show_options(self) -> None:
@@ -160,13 +163,13 @@ class Checkbox(QWidget):
         layout = QHBoxLayout()
 
         # Sets up the checkbox
-        keep_original = QCheckBox()
-        keep_original.setCheckState(Qt.CheckState.Checked)
-        keep_original.setFixedWidth(20)
-        keep_original.stateChanged.connect(self.set_checked)
+        self.keep_original = QCheckBox()
+        self.keep_original.setCheckState(Qt.CheckState.Checked)
+        self.keep_original.setFixedWidth(20)
+        self.keep_original.stateChanged.connect(self.set_checked)
 
         # Adds widgets to layout
-        layout.addWidget(keep_original)
+        layout.addWidget(self.keep_original)
         layout.addWidget(add_label(msg))
 
         self.setLayout(layout)

@@ -45,8 +45,9 @@ class FileBrowser(QWidget):
         self.filter_name = "All files (*.*)"
         self.dirpath = QDir.currentPath()
 
-        self.label = add_label(title)
-        layout.addWidget(self.label)
+        # Adds the label
+        self.label = title
+        layout.addWidget(add_label(title))
 
         # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
