@@ -3,6 +3,7 @@ import argparse
 import sys
 
 from .detection import process_video
+from .batch_yolov5 import BatchYolov5
 
 
 def main() -> int:
@@ -61,16 +62,23 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    if process_video(
+    try:
+        model = BatchYolov5(args.weights_path, args.device)
+    except RuntimeError as err:
+        print("Failed to initialize detector", err)
+        return 1
+
+    frames_with_fish = process_video(
+        model,
         args.video_path,
-        args.weights_path,
-        args.device,
         args.batch_size,
         args.max_batches_to_queue,
         args.output_path,
-    ):
-        return 0
-    return 1
+    )
+
+    print(f"Found {len(frames_with_fish)} frames with fish")
+
+    return 0
 
 
 if __name__ == "__main__":

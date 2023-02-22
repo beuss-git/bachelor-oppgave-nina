@@ -12,7 +12,7 @@ from .batch_yolov5 import BatchYolov5
 from .frame_grabber import ThreadedFrameGrabber
 
 
-def create_video_writer(
+def __create_video_writer(
     save_path: str,
     fps: float,
     width: int,
@@ -39,11 +39,11 @@ def create_video_writer(
     )
 
 
-def annotate_batch(
+def __annotate_batch(
     vid_writer: cv2.VideoWriter,
-    names: List[str],
     results: List[torch.Tensor],
     img0s: List[Any],
+    names: List[str],
 ) -> None:
     """Annotates a batch of images and writes them to a video."""
 
@@ -66,7 +66,8 @@ def annotate_batch(
 
 
 def __process_batch(
-    batch: List[np.ndarray[Any, Any]], model: BatchYolov5
+    batch: List[np.ndarray[Any, Any]],
+    model: BatchYolov5,
 ) -> Tuple[List[torch.Tensor], float]:
     """Process a batch of frames.
 
@@ -77,6 +78,7 @@ def __process_batch(
     Returns:
         The time it took to process the batch.
     """
+
     start_time = time.time()
     predictions = model.predict_batch(batch)
     end_time = time.time()
@@ -87,39 +89,33 @@ def __process_batch(
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 def process_video(
+    model: BatchYolov5,
     video_path: str,
-    weights_path: str,
-    device: str,
     batch_size: int,
     max_batches_to_queue: int,
     output_path: Optional[str],
-) -> bool:
-    """Runs inference on a video.
+) -> List[int]:
+    """Runs inference on a video. And returns a list of frames containing fish.
 
     Args:
         video_path: The path to the video to process.
-        weights_path: The path to the weights file.
-        device: The device to run inference on.
         batch_size: The batch size.
         max_batches_to_queue: The maximum number of batches to queue.
+        output_path: The path to save the output video to.
 
     Returns:
-        True if the video was processed successfully, False otherwise.
+        A list of frames containing fish.
     """
 
     try:
         frame_grabber = ThreadedFrameGrabber(
-            video_path, batch_size=batch_size, max_batches_to_queue=max_batches_to_queue
+            video_path,
+            batch_size=batch_size,
+            max_batches_to_queue=max_batches_to_queue,
         )
     except RuntimeError as err:
         print("Failed to initialize frame grabber", err)
-        return False
-
-    try:
-        model = BatchYolov5(weights_path=weights_path, device=device)
-    except RuntimeError as err:
-        print("Failed to initialize model", err)
-        return False
+        return []
 
     # Wait for the first batch to be ready
     while frame_grabber.batches_in_queue() == 0:
@@ -127,14 +123,17 @@ def process_video(
 
     if output_path is not None:
         vid_cap = frame_grabber.dataset.cap
-        video_writer = create_video_writer(
+        video_writer = __create_video_writer(
             save_path=output_path,
             fps=vid_cap.get(cv2.CAP_PROP_FPS),
             width=int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
             height=int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
         )
+
+    frames_with_fish = []
     try:
-        total_fps = 0.0
+        fps_count = 0.0
+        frame_count = 0
 
         with tqdm(
             total=frame_grabber.total_batch_count(), desc="Processing batches"
@@ -142,8 +141,8 @@ def process_video(
             while not frame_grabber.is_done() or not frame_grabber.batch_queue.empty():
                 batch = frame_grabber.get_next_batch()
                 if batch is None:
-                    # This will happen if the batch size is too large or if the disk is too slow.
-                    # The grabber can't keep up with the inference speed.
+                    # This will happen if the batch size is too large or if the disk is too slow
+                    # The grabber can't keep up with the inference speed
                     print("No batch available, waiting...")
                     # Wait for more batches to be available
                     time.sleep(0.1)
@@ -152,21 +151,30 @@ def process_video(
                 (predictions, delta) = __process_batch(batch, model)
 
                 batch_fps = len(batch) / delta
-                total_fps += batch_fps
+                fps_count += batch_fps
                 pbar.update(1)
                 pbar.set_description(f"Processing batches (FPS: {batch_fps:.2f})")
 
                 # Annotate the batch
                 if output_path is not None:
-                    annotate_batch(
+                    __annotate_batch(
                         vid_writer=video_writer,
-                        names=model.names,
                         results=predictions,
                         img0s=batch,
+                        names=model.names,
                     )
 
-        print(f"Average FPS: {total_fps / frame_grabber.total_batch_count()}")
+                # Check if any of the frames in the batch contain fish
+                for i, pred in enumerate(predictions):
+                    if len(pred) > 0:
+                        frames_with_fish.append(frame_count + i)
+
+                # Update the frame count
+                frame_count += len(batch)
+
+        print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
     except RuntimeError as err:
         print(err)
-        return False
-    return True
+        return []
+
+    return frames_with_fish
