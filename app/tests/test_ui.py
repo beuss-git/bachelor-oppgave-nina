@@ -7,7 +7,7 @@ import unittest
 
 # from ..globals import Globals
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import QEventLoop  # , Qt, qCritical
+from PyQt6.QtCore import QEventLoop, qCritical  # , Qt
 
 # from pytestqt.qtbot import QtBot
 
@@ -56,13 +56,14 @@ class TestUI(unittest.TestCase):
         # loop.exec()
         self.assertTrue(self.window.isVisible())
 
-    # def test_run_button(self) -> None:
-    #    """_summary_"""
-    #    qtbot = QtBot
-    #    qtbot.mouseClick(self.window.run_btn, Qt.MouseButton.LeftButton)
-    #    # QTest.mouseClick(self.window.run_btn, Qt.MouseButton.LeftButton)
-    #    self.assertEqual(self.window.run_btn.text(), "Running...")
-    # qCritical("Test")
+    def test_run_button(self) -> None:
+        """_summary_"""
+        # qtbot = QtBot
+        # qtbot.mouseClick(self.window.run_btn, Qt.MouseButton.LeftButton)
+        # QTest.mouseClick(self.window.run_btn, Qt.MouseButton.LeftButton)
+        assert self.window.run_btn.text() == "Run"
+        # self.assertEqual(self.window.run_btn.text(), "Running...")
+        qCritical("Test")
 
     def test_default_values(self) -> None:
         """Tests the default values"""
@@ -79,13 +80,15 @@ class TestUI(unittest.TestCase):
 
         # self.assertEqual(self.checkbox., ["1", "2", "3"])
 
-    # def test_drop_down_widget(self) -> None:
-    #    """Tests the drop down widget"""
-    #    widget = options_widgets.DropDownWidget("Test", ["1", "2", "3"])
-    #    self.window.show()
-    #    # QTest.qWaitForWindowExposed(self.window)
-    #    self.window.layout().addWidget(widget)
-    #    self.assertTrue(widget.isVisible())
+    def test_drop_down_widget(self) -> None:
+        """Tests the drop down widget"""
+        widget = DropDownWidget("Test", ["1", "2", "3"])
+        self.window.show()
+        # qtbot = QtBot
+        # qtbot.waitExposed(widget)
+        # QTest.qWaitForWindowExposed(widget)
+        self.window.layout().addWidget(widget)
+        self.assertTrue(widget.isVisible())
 
     def test_add_label(self) -> None:
         """Tests the add_label function"""
