@@ -91,6 +91,23 @@ class FileBrowser(QWidget):
         """
         self.dirpath = path
 
+    def set_default_paths(self, paths: typing.List[str]) -> None:
+        """Set the default paths.
+
+        Args:
+            paths: A list of paths.
+        """
+        self.filepaths = paths
+        self.__update()
+
+    def __update(self) -> None:
+        if len(self.filepaths) == 0:
+            return
+        if len(self.filepaths) == 1:
+            self.line_edit.setText(self.filepaths[0])
+        else:
+            self.line_edit.setText(",".join(self.filepaths))
+
     # --------------------------------------------------------------------
     def get_file(self) -> None:
         """_summary_"""
@@ -131,12 +148,7 @@ class FileBrowser(QWidget):
                 )[0]
             )
 
-        if len(self.filepaths) == 0:
-            return
-        if len(self.filepaths) == 1:
-            self.line_edit.setText(self.filepaths[0])
-        else:
-            self.line_edit.setText(",".join(self.filepaths))
+        self.__update()
 
     # --------------------------------------------------------------------
     def set_label_width(self, width: int) -> None:
