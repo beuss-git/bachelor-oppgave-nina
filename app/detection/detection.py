@@ -1,7 +1,7 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-from typing import List, Optional, Any, Tuple
+from typing import List, Optional, Any, Tuple, Callable
 import cv2
 from tqdm import tqdm
 import torch
@@ -94,6 +94,7 @@ def process_video(
     batch_size: int,
     max_batches_to_queue: int,
     output_path: Optional[str],
+    notify_progress: Optional[Callable[[int], None]] = None,
 ) -> List[int]:
     """Runs inference on a video. And returns a list of frames containing fish.
 
@@ -171,7 +172,10 @@ def process_video(
 
                 # Update the frame count
                 frame_count += len(batch)
-
+                if notify_progress is not None:
+                    notify_progress((pbar.n / pbar.total) * 100)
+        if notify_progress is not None:
+            notify_progress(100)
         print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
     except RuntimeError as err:
         print(err)

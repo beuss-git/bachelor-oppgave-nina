@@ -3,6 +3,7 @@
 # Only needed for access to command line arguments
 import sys
 import typing
+import os
 import qdarktheme
 
 from PyQt6.QtWidgets import (
@@ -16,11 +17,13 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
 from .globals import Globals
-from .execute_process import ProgressWindow
+
 from .widgets.options_widgets import (
     buffertime_widget,
     keep_original_checkbox,
 )
+from .widgets.error_dialog import ErrorDialog
+from .widgets.detection_window import DetectionWindow
 
 
 class MainWindow(QMainWindow):
@@ -65,15 +68,23 @@ class MainWindow(QMainWindow):
         """
         vlayout = QVBoxLayout()
 
-        self.file_fb = FileBrowser("Open File", FileBrowser.OpenFile)
-        self.files_fb = FileBrowser("Open Files", FileBrowser.OpenFiles)
-        self.dir_fb = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
-        self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
+        # self.file_fb = FileBrowser("Open File", FileBrowser.OpenFile)
+        # self.files_fb = FileBrowser("Open Files", FileBrowser.OpenFiles)
+        self.in_dir_fb = FileBrowser("Input Dir", FileBrowser.OpenDirectory)
+        self.out_dir_fb = FileBrowser("Save Dir", FileBrowser.OpenDirectory)
+        # self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
 
-        vlayout.addWidget(self.file_fb)
-        vlayout.addWidget(self.files_fb)
-        vlayout.addWidget(self.dir_fb)
-        vlayout.addWidget(self.save_fb)
+        # Set default file paths
+        self.in_dir_fb.set_default_paths([r"C:\Users\benja\Pictures\test_folder"])
+        self.out_dir_fb.set_default_paths(
+            [r"C:\Users\benja\Pictures\test_folder\output"]
+        )
+
+        # vlayout.addWidget(self.file_fb)
+        # vlayout.addWidget(self.files_fb)
+        vlayout.addWidget(self.in_dir_fb)
+        vlayout.addWidget(self.out_dir_fb)
+        # vlayout.addWidget(self.save_fb)
 
         vlayout.addStretch()
         parent_layout.addLayout(vlayout)
@@ -86,7 +97,7 @@ class MainWindow(QMainWindow):
         """
         self.run_btn = QPushButton("Run")
         self.run_btn.setFixedWidth(100)
-        self.run_btn.clicked.connect(self.create_progressbar_dialog)
+        self.run_btn.clicked.connect(self.run)
         self.run_btn.setStyleSheet("background-color: green")
         parent_layout.addWidget(self.run_btn)
         parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
@@ -100,10 +111,38 @@ class MainWindow(QMainWindow):
         parent_layout.addLayout(buffertime_widget())
         parent_layout.addLayout(keep_original_checkbox())
 
-    def create_progressbar_dialog(self) -> None:
-        """_summary_"""
-        dlg = ProgressWindow()
+    def run(self) -> None:
+        """This will run core.process_folder with the selected folder"""
+        print(f"Paths: {self.in_dir_fb.get_paths()}")
+        input_paths = self.in_dir_fb.get_paths()
+        if len(input_paths) == 0:
+            ErrorDialog("No input folder selected", parent=self).exec()
+            return
+
+        output_paths = self.out_dir_fb.get_paths()
+        if len(output_paths) == 0:
+            ErrorDialog("No output folder selected", parent=self).exec()
+            return
+
+        # Disable run button while processing
+        self.run_btn.setEnabled(False)
+
+        input_folder_path = input_paths[0]
+        output_folder_path = output_paths[0]
+
+        if not os.path.exists(input_folder_path):
+            ErrorDialog("Input folder does not exist", parent=self).exec()
+            return
+
+        if not os.path.exists(output_folder_path):
+            ErrorDialog("Output folder does not exist", parent=self).exec()
+            return
+
+        dlg = DetectionWindow(input_folder_path, output_folder_path, parent=self)
         dlg.exec()
+
+        # Re-enable button now that processing is done
+        self.run_btn.setEnabled(True)
 
 
 def main() -> None:
