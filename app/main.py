@@ -75,6 +75,7 @@ class MainWindow(QMainWindow):
         # self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
 
         # Set default file paths
+        # TODO: use QSettings to save last used paths
         self.in_dir_fb.set_default_paths([r"C:\Users\benja\Pictures\test_folder"])
         self.out_dir_fb.set_default_paths(
             [r"C:\Users\benja\Pictures\test_folder\output"]
