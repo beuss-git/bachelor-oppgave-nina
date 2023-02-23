@@ -23,8 +23,8 @@ class BatchYolov5:  # pylint: disable=too-many-instance-attributes
         iou_thres: float = 0.5,
         augment: bool = False,
         agnostic_nms: bool = False,
-        classes: Optional[List[str]] = None,
-        colors: Optional[List[List[int]]] = None,
+        classes: List[str] | None = None,
+        colors: List[List[int]] | None = None,
     ) -> None:
         try:
             self.device = select_device(device)
