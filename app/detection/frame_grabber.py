@@ -45,7 +45,10 @@ class ThreadedFrameGrabber:
         """
         for _, _, im0s, _, _ in self.dataset:
             self.image_list.append(im0s)
-            if len(self.image_list) >= self.batch_size:
+            if (
+                len(self.image_list) >= self.batch_size
+                or len(self.image_list) >= self.frame_count
+            ):
                 self.batch_queue.put(self.image_list)
                 self.image_list = []
 
