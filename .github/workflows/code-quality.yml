@@ -8,14 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-pypoetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pypoetry-
-
       - name: Install poetry
         run: |
           pip install poetry
@@ -26,8 +18,6 @@ jobs:
           python-version: "3.10.10"
           cache: "poetry"
 
-      - run: poetry env use py3.10
-      - run: poetry config virtualenvs.create true
       - run: poetry install
 
       - name: Cache pre-commit dependencies

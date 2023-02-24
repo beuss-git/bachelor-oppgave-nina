@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.9,<3.12"
 PyQt6 = "^6.4.2"
 pyqtdarktheme = "^2.1.0"
 ultralytics = "^8.0.38"
