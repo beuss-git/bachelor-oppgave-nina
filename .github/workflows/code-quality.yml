@@ -21,6 +21,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           poetry config virtualenvs.create true
+          poetry env use 3.10.10
           poetry install
 
       - name: Cache pre-commit dependencies
