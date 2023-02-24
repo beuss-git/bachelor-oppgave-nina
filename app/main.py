@@ -125,9 +125,6 @@ class MainWindow(QMainWindow):
             ErrorDialog("No output folder selected", parent=self).exec()
             return
 
-        # Disable run button while processing
-        self.run_btn.setEnabled(False)
-
         input_folder_path = input_paths[0]
         output_folder_path = output_paths[0]
 
@@ -138,6 +135,9 @@ class MainWindow(QMainWindow):
         if not os.path.exists(output_folder_path):
             ErrorDialog("Output folder does not exist", parent=self).exec()
             return
+
+        # Disable run button while processing
+        self.run_btn.setEnabled(False)
 
         dlg = DetectionWindow(input_folder_path, output_folder_path, parent=self)
         dlg.exec()
