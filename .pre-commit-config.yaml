@@ -18,7 +18,7 @@ repos:
     hooks:
       - id: pylint
         name: pylint
-        entry: poetry run python -m pylint
+        entry: poetry run pylint
         language: system
         types: [python]
         args: [--rcfile=.pylintrc, --output-format=colorized]
