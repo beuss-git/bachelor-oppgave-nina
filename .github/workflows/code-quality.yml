@@ -15,7 +15,7 @@ jobs:
           pip install --constraint=.github/workflows/constraints.txt pre-commit
 
       - name: Install poetry
-        uses: snok/install-poetry@v1.0.0
+        uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
