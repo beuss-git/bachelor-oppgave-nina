@@ -1,4 +1,5 @@
-﻿# Analyse import fallback blocks. This can be used to support both Python 2 and
+﻿[MAIN]
+# Analyse import fallback blocks. This can be used to support both Python 2 and
 # 3 compatible code, which means that the block might have code that exists
 # only in one or another interpreter, leading to false positives when analysed.
 analyse-fallback-blocks=no
@@ -57,7 +58,7 @@ ignore-patterns=^\.#
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis). It
 # supports qualified module names, as well as Unix pattern matching.
-ignored-modules=PyQt6, PyQt6.*
+ignored-modules=
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
