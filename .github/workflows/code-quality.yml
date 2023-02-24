@@ -2,32 +2,34 @@ name: Code Quality Checks
 on: [pull_request]
 
 jobs:
-  build:
+  pre-commit:
     runs-on: ubuntu-latest
-    name: Checks
+    name: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install poetry
-        run: |
-          pip install poetry
-
-      - name: Set up Python 3.10.10
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4.5.0
         with:
           python-version: "3.10.10"
-          cache: "poetry"
-
-      - run: poetry install
-
-      - name: Cache pre-commit dependencies
-        uses: actions/cache@v2
+      - run: |
+          pip install --constraint=.github/workflows/constraints.txt pip
+          pip install --constraint=.github/workflows/constraints.txt pre-commit
+      - name: Compute cache key prefix
+        if: matrix.os != 'windows-latest'
+        id: cache_key_prefix
+        shell: python
+        run: |
+          import hashlib
+          import sys
+          python = "py{}.{}".format(*sys.version_info[:2])
+          payload = sys.version.encode() + sys.executable.encode()
+          digest = hashlib.sha256(payload).hexdigest()
+          result = "${{ runner.os }}-{}-{}-pre-commit".format(python, digest)
+          print("::set-output name=result::{}".format(result))
+      - uses: actions/cache@v3
+        if: matrix.os != 'windows-latest'
         with:
           path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: ${{ steps.cache_key_prefix.outputs.result }}-${{ hashFiles('.pre-commit-config.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pre-commit-
-
-      - name: Run pre-commit
-        run: |
-          poetry run pre-commit run --all-files
+            ${{ steps.cache_key_prefix.outputs.result }}-
+      - run: pre-commit run --all-files --show-diff-on-failure --color=always

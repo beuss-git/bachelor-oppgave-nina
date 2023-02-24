@@ -18,14 +18,14 @@ repos:
     hooks:
       - id: pylint
         name: pylint
-        entry: poetry run pylint
+        entry: pylint --rcfile=.pylintrc --output-format=colorized
         language: system
         types: [python]
         args: [--rcfile=.pylintrc, --output-format=colorized]
 
       - id: mypy
         name: mypy
-        entry: poetry run mypy
+        entry: mypy --strict --config-file=mypy.ini
         language: system
         types: [python]
         args: [--strict, --config-file=mypy.ini]
