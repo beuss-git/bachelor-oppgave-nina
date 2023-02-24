@@ -20,3 +20,5 @@ Add `%APPDATA%\Python\Scripts` on windows.
 
 See the commitlint config:
 https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional
+
+test
