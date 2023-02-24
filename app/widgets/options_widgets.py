@@ -12,7 +12,7 @@ from PyQt6.QtCore import Qt
 from ..globals import Globals
 
 
-class DropDownWidget(QWidget):
+class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
     """Class for Buffertime widgets
 
     Args:
@@ -148,7 +148,7 @@ class AdvancedOptions(QWidget):
                 self.clear_layout(item.layout())
 
 
-class Checkbox(QWidget):
+class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
     """Class for Checkbox widget"""
 
     def __init__(self, msg: str) -> None:

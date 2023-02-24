@@ -14,7 +14,7 @@ from .options_widgets import (
 )
 
 
-class FileBrowser(QWidget):
+class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
     """Class for browsing files widget
 
     Args:
