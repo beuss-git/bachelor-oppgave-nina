@@ -18,6 +18,9 @@ Add `%APPDATA%\Python\Scripts` on windows.
 
 `poetry install` to install project dependencies
 
+
+`poetry run poe torch-cuda` to install torch with cuda.
+
 `pre-commit install` to install pre-commit hooks.
 
 `pre-commit install --hook-type commit-msg` to install commitlint hook.
