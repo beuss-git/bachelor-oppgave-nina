@@ -20,15 +20,7 @@ repos:
       - id: pylint
         args: [--rcfile=.pylintrc]
         additional_dependencies:
-          [
-            PyQt6,
-            pyqtdarktheme,
-            torch,
-            torchvision,
-            numpy,
-            yolov5,
-            ffmpeg-python,
-          ]
+          [PyQt6, pyqtdarktheme, torch, numpy, ffmpeg-python]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.991
@@ -36,15 +28,7 @@ repos:
       - id: mypy
         args: [--strict, --config-file=mypy.ini]
         additional_dependencies:
-          [
-            PyQt6,
-            pyqtdarktheme,
-            torch,
-            torchvision,
-            numpy,
-            yolov5,
-            ffmpeg-python,
-          ]
+          [PyQt6, pyqtdarktheme, torch, numpy, ffmpeg-python]
 
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.4.0
