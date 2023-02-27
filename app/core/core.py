@@ -4,7 +4,7 @@ import os
 from typing import List, Tuple
 
 from pathlib import Path
-from app.detection.batch_yolov5 import BatchYolov5
+from app.detection.batch_yolov8 import BatchYolov8
 from ..detection import detection
 from ..video_processor import video_processor
 
@@ -19,7 +19,7 @@ class Core:
 
     def __init__(self, weights_path: str, device: str):
         try:
-            self._model = BatchYolov5(weights_path=weights_path, device=device)
+            self._model = BatchYolov8(weights_path=weights_path, device=device)
         except RuntimeError as err:
             raise RuntimeError("Failed to initialize model", err) from err
 

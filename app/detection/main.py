@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from .detection import process_video
-from .batch_yolov5 import BatchYolov5
+from .batch_yolov8 import BatchYolov8
 
 
 def main() -> int:
@@ -63,7 +63,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        model = BatchYolov5(args.weights_path, args.device)
+        model = BatchYolov8(args.weights_path, args.device)
     except RuntimeError as err:
         print("Failed to initialize detector", err)
         return 1

@@ -6,9 +6,11 @@ import cv2
 from tqdm import tqdm
 import torch
 import numpy as np
-from yolov5.utils.plots import Annotator
 
-from .batch_yolov5 import BatchYolov5
+# from yolov5.utils.plots import Annotator
+from ultralytics.yolo.utils.plotting import Annotator
+
+from .batch_yolov8 import BatchYolov8
 from .frame_grabber import ThreadedFrameGrabber
 
 
@@ -51,7 +53,6 @@ def __annotate_batch(
         # pred = F.softmax(res, dim=1)  # probabilities
         annotator = Annotator(img0, line_width=2, example=str(names), pil=True)
         for pred in predictions:
-
             # top5i = prob.argsort(0, descending=True)[:5].tolist()  # top 5 indices
             text = f"{pred['conf']:.2f} {pred['name']}"
             # annotator.text((32, 32), text, txt_color=(0, 255, 255))
@@ -67,7 +68,7 @@ def __annotate_batch(
 
 def __process_batch(
     batch: List[np.ndarray[Any, Any]],
-    model: BatchYolov5,
+    model: BatchYolov8,
 ) -> Tuple[List[torch.Tensor], float]:
     """Process a batch of frames.
 
@@ -89,7 +90,7 @@ def __process_batch(
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 def process_video(
-    model: BatchYolov5,
+    model: BatchYolov8,
     video_path: str,
     batch_size: int,
     max_batches_to_queue: int,
