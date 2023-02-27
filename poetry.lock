@@ -25,6 +25,33 @@ files = [
 ]
 
 [[package]]
+name = "aspose-cells"
+version = "23.2.0"
+description = "A powerful library for manipulating and converting Excel (XLS, XLSX, XLSB), ODS, CSV and HTML files."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "aspose-cells-23.2.0.tar.gz", hash = "sha256:87b1dc70d735f4e7de1e175f4b6d281c11d167e791b5d1c1847a662684c13750"},
+]
+
+[package.dependencies]
+JPype1 = ">=1.2.1"
+
+[[package]]
+name = "aspose-cells-python"
+version = "23.2.0"
+description = "Aspose.Cells for Python via .Net is a scalable and feature-rich API to process Excel spreadsheets using Python. Developers can format worksheets, rows, columns or cells, create manipulate chart and pivot tables, render worksheets, charts and specific data ranges to PDF or images, add calculate Excel’s builtin and custom formulas - all without any dependency on Microsoft Office or Excel application."
+category = "main"
+optional = false
+python-versions = ">=3.6,<3.12"
+files = [
+    {file = "aspose_cells_python-23.2.0-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:c27e7dd0be50680690db5c0ad5b389fadc07d82c1450706f935ac33d4884e401"},
+    {file = "aspose_cells_python-23.2.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:c36d763ce319886d97853270acfc58c37b6462318761941f95e24058d867cb91"},
+    {file = "aspose_cells_python-23.2.0-py3-none-win_amd64.whl", hash = "sha256:a098bb7d9fba5b8bf32ea209f601d274498538e12e8ebdd569992fc26ff87e0f"},
+]
+
+[[package]]
 name = "astroid"
 version = "2.14.2"
 description = "An abstract syntax tree for Python with inference support."
@@ -553,6 +580,17 @@ unicode = ["unicodedata2 (>=14.0.0)"]
 woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
+name = "fpdf"
+version = "1.7.2"
+description = "Simple PDF generation for Python"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "fpdf-1.7.2.tar.gz", hash = "sha256:125840783289e7d12552b1e86ab692c37322e7a65b96a99e0ea86cca041b6779"},
+]
+
+[[package]]
 name = "future"
 version = "0.18.3"
 description = "Clean single-source support for Python 3 and 2"
@@ -841,6 +879,44 @@ files = [
     {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
     {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
 ]
+
+[[package]]
+name = "jpype1"
+version = "1.4.1"
+description = "A Python to Java bridge."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "JPype1-1.4.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:233a6a1a9c7f3633e7d74c14039f7ea35df81e138241f1acc8f94f65a8bd086e"},
+    {file = "JPype1-1.4.1-cp310-cp310-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:0099e77c6e99af13089b1c89cd99681b485fbf74daa492ee38e35d90d6349ffc"},
+    {file = "JPype1-1.4.1-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:213f7154a7cc859dead7143cfee255bd3ce57938e0a5f2250b6768af0cef62c8"},
+    {file = "JPype1-1.4.1-cp310-cp310-win_amd64.whl", hash = "sha256:8d94013dfed3d1c7ee193e86393b2aea756a9910d222b7167ed493f9a0b1b3d5"},
+    {file = "JPype1-1.4.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:34373696c3457f1d686639d928ef53b6a121203d9c0e651ed44dd3adf78bedb3"},
+    {file = "JPype1-1.4.1-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7622d07408e6d9a89e9eb70d4a9a675e51d5411657ac434ccec23cc94b828d9c"},
+    {file = "JPype1-1.4.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5d960ce12c3913242f9e4a11e55afa9c38e1a5410d0a38cc5a21086415c38a02"},
+    {file = "JPype1-1.4.1-cp311-cp311-win_amd64.whl", hash = "sha256:5473a89d2cab327e38382fd69d1209517bad44158fb3ee9e699ebfeb5bc1cd51"},
+    {file = "JPype1-1.4.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:d85489a27c58b1b21feb8601406319b6a51d233ae9fa27de9b24c4dfea560b22"},
+    {file = "JPype1-1.4.1-cp37-cp37m-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:9ce364d26ccbf7a21e35737f62663ce8d3aeb4e4b0f05d7e71f6126a6eb81059"},
+    {file = "JPype1-1.4.1-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:b9e29a0ea763c16d0fb05528785d4ed0fa56a421d600eca87e43398b569d2dea"},
+    {file = "JPype1-1.4.1-cp37-cp37m-win_amd64.whl", hash = "sha256:8c2fef2d0c298c8e69b2880ff866fa5db5f477ddd78ef310a357d697362c9f89"},
+    {file = "JPype1-1.4.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:6089cd28067d77e5b4a09e272525ecd70f838b92a7c08d91d4fa7d192ec3f3bb"},
+    {file = "JPype1-1.4.1-cp38-cp38-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:24e601a31fb3b44decd5389ea87cbc39aaa0c61980c39b060561f9dc604f4cc5"},
+    {file = "JPype1-1.4.1-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:000556d5839ffbe61c12f1fa41cbfd4e9a0abe103e0100febacc069d75defa8f"},
+    {file = "JPype1-1.4.1-cp38-cp38-win_amd64.whl", hash = "sha256:7039db1a522af55cf89f6a4a72120f8b074abcde2535543da34616640ecbb3c1"},
+    {file = "JPype1-1.4.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:bd8bd76bf8741fa20d44ded776e6a3ea7fe103bcab7156f53ba7a72c50b7dd2f"},
+    {file = "JPype1-1.4.1-cp39-cp39-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:d483a6c3e6cb19065e71d322c4742efcfafc44bf1a67ef8ef75f78626158c3d9"},
+    {file = "JPype1-1.4.1-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:04ea4be3e9471bf62ccdeccc2417ad6b9a300effcc0e5f6af9534eafa14e3978"},
+    {file = "JPype1-1.4.1-cp39-cp39-win_amd64.whl", hash = "sha256:8692a7b14e807b224673010a648ab12415d3bc32323e351f03e6c64814ee319b"},
+    {file = "JPype1-1.4.1.tar.gz", hash = "sha256:dc8ee854073474ad79ae168d90c2f6893854f58936cfa18f3587cadae0d3696d"},
+]
+
+[package.dependencies]
+packaging = "*"
+
+[package.extras]
+docs = ["readthedocs-sphinx-ext", "sphinx", "sphinx-rtd-theme"]
+tests = ["pytest"]
 
 [[package]]
 name = "kiwisolver"
@@ -2763,4 +2839,4 @@ tqdm = ">=4.64.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "310f58501f96f93595ed05d022bec679b9fd483eead8284c29379abb6c1be3e7"
+content-hash = "72cac93c88e2893fca00a858ddac4c993ddf8bad9b8d5f6aff1fc7362b585fcd"
