@@ -1,12 +1,15 @@
 """Core module for the application."""
 
 import os
+import logging
 from typing import List, Tuple
 
 from pathlib import Path
 from app.detection.batch_yolov8 import BatchYolov8
 from ..detection import detection
 from ..video_processor import video_processor
+
+logger = logging.getLogger(__name__)
 
 
 class Core:
@@ -21,6 +24,7 @@ class Core:
         try:
             self._model = BatchYolov8(weights_path=weights_path, device=device)
         except RuntimeError as err:
+            logger.error("Failed to initialize model", exc_info=err)
             raise RuntimeError("Failed to initialize model", err) from err
 
         self._batch_size = 64

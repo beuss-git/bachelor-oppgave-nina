@@ -2,6 +2,7 @@
 import os
 from typing import List, Optional, Any, Dict
 import copy
+import logging
 import torch
 import numpy as np
 
@@ -10,6 +11,8 @@ from ultralytics.yolo.data.augment import LetterBox
 from ultralytics.yolo.utils.ops import non_max_suppression, scale_boxes
 from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.yolo.utils.checks import check_imgsz
+
+logger = logging.getLogger(__name__)
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
@@ -30,6 +33,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         try:
             self.device = select_device(device)
         except Exception as err:
+            logger.error("Failed to select device", exc_info=err)
             raise RuntimeError("Failed to select device", err) from err
 
         self.weights_name = os.path.split(weights_path)[-1]
@@ -38,6 +42,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             (self.model, _) = attempt_load_one_weight(weights_path, device=self.device)
             # self.model = attempt_load(weights_path, device=self.device) V5
         except Exception as err:
+            logger.error("Failed to load model", exc_info=err)
             raise RuntimeError("Failed to load model", err) from err
 
         self.names = (
@@ -50,6 +55,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
                 [np.random.randint(0, 255) for _ in range(3)]
                 for _ in range(len(self.names))
             ]
+            logger.debug("Color is none, setting random colors.")
         else:
             self.colors = colors
         self.imgsz = check_imgsz(img_size, stride=self.model.stride.max())
@@ -186,7 +192,8 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         elif isinstance(img_s, np.ndarray):
             img_to_send = self.reshape_copy_img((np.ndarray(img_s)))
         else:
-            print(type(img_s), " is not supported")
+            logger.error("%s is not supported", type(img_s))
+            # print(type(img_s), " is not supported")
             raise RuntimeError("Not supported type")
 
         return self.prepare_image(img_to_send)

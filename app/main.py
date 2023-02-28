@@ -2,6 +2,10 @@
 
 # Only needed for access to command line arguments
 import sys
+import logging
+from logging.handlers import TimedRotatingFileHandler
+import time
+
 import qdarktheme
 
 from PyQt6.QtWidgets import (
@@ -108,7 +112,37 @@ class MainWindow(QMainWindow):
 def main() -> None:
     """Main"""
 
-    # You need one (and only one) QApplication instance per application.
+    # log_location = "main"
+    logger = logging.getLogger("log")
+    logger.setLevel(logging.DEBUG)
+
+    # Set up logging
+    # format the log entries
+    formatter = logging.Formatter(
+        "%(asctime)s %(name)s %(levelname)s %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+    handler = TimedRotatingFileHandler(
+        "app/log/logfile.log",
+        when="midnight",
+        backupCount=10,
+    )
+
+    def namer(default_name: str) -> str:
+        base_filename, ext, filedate = default_name.split(".")
+        return f"{base_filename}.{filedate}.{ext}"
+
+    handler.suffix = "%d-%m-%Y"
+    handler.namer = namer
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    while True:
+        logger.debug("Logger created")
+        time.sleep(2)
+        logger.debug("Hei")
     # Pass in sys.argv to allow command line arguments for your app.
     # If you know you won't use command line arguments QApplication([]) works too.
     app = QApplication(sys.argv)

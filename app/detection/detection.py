@@ -2,6 +2,8 @@
 import time
 from pathlib import Path
 from typing import List, Optional, Any, Tuple
+import logging
+
 import cv2
 from tqdm import tqdm
 import torch
@@ -12,6 +14,8 @@ from ultralytics.yolo.utils.plotting import Annotator
 
 from .batch_yolov8 import BatchYolov8
 from .frame_grabber import ThreadedFrameGrabber
+
+logger = logging.getLogger("log")
 
 
 def __create_video_writer(
@@ -115,7 +119,8 @@ def process_video(
             max_batches_to_queue=max_batches_to_queue,
         )
     except RuntimeError as err:
-        print("Failed to initialize frame grabber", err)
+        logger.error("Failed to initialize frame grabber", exc_info=err)
+        # print("Failed to initialize frame grabber", err)
         return []
 
     # Wait for the first batch to be ready
@@ -144,7 +149,8 @@ def process_video(
                 if batch is None:
                     # This will happen if the batch size is too large or if the disk is too slow
                     # The grabber can't keep up with the inference speed
-                    print("No batch available, waiting...")
+                    logger.warning("No batch available, waiting...")
+                    # print("No batch available, waiting...")
                     # Wait for more batches to be available
                     time.sleep(0.1)
                     continue
@@ -175,7 +181,8 @@ def process_video(
 
         print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
     except RuntimeError as err:
-        print(err)
+        logger.error("Failed to process video", exc_info=err)
+        # print(err)
         return []
 
     return frames_with_fish
