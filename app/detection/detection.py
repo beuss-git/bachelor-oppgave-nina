@@ -7,7 +7,6 @@ from tqdm import tqdm
 import torch
 import numpy as np
 
-# from yolov5.utils.plots import Annotator
 from ultralytics.yolo.utils.plotting import Annotator
 
 from .batch_yolov8 import BatchYolov8
@@ -82,7 +81,7 @@ def __process_batch(
     predictions = model.predict_batch(batch)
     end_time = time.time()
     delta = end_time - start_time
-    return (predictions, delta)
+    return predictions, delta
 
 
 # pylint: disable=too-many-arguments

@@ -14,12 +14,12 @@ from ultralytics.yolo.utils.checks import check_imgsz
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
-    """Yolov8 class for running inference on video."""
+    """Yolov8 class for running inference on video in batches."""
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         weights_path: Path,
-        device: str = "",
+        device: str = "cuda:0",
         img_size: int = 640,
         conf_thres: float = 0.4,
         iou_thres: float = 0.5,
