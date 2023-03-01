@@ -2,6 +2,7 @@
 import os
 from typing import List, Any, Dict
 import copy
+from pathlib import Path
 import torch
 import numpy as np
 
@@ -17,7 +18,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        weights_path: str,
+        weights_path: Path,
         device: str = "",
         img_size: int = 640,
         conf_thres: float = 0.4,
@@ -35,7 +36,9 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         self.weights_name = os.path.split(weights_path)[-1]
 
         try:
-            (self.model, _) = attempt_load_one_weight(weights_path, device=self.device)
+            (self.model, _) = attempt_load_one_weight(
+                str(weights_path), device=self.device
+            )
             # self.model = attempt_load(weights_path, device=self.device) V5
         except Exception as err:
             raise RuntimeError("Failed to load model", err) from err

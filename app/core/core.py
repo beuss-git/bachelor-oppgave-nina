@@ -17,7 +17,7 @@ class Core:
     In the future it will also handle report generation and management (through a different module)
     """
 
-    def __init__(self, weights_path: str, device: str):
+    def __init__(self, weights_path: Path, device: str):
         try:
             self._model = BatchYolov8(weights_path=weights_path, device=device)
         except RuntimeError as err:
@@ -26,14 +26,14 @@ class Core:
         self._batch_size = 64
         self._max_batches_to_queue = 4
 
-    def process_folder(self, folder_path: str) -> None:
+    def process_folder(self, folder_path: Path) -> None:
         """Process a folder of videos."""
         for filename in os.listdir(folder_path):
             if filename.endswith(".mp4"):
                 print(f"Processing {filename}")
-                self.process_video(os.path.join(folder_path, filename))
+                self.process_video(folder_path / filename)
 
-    def process_video(self, video_path: str) -> None:
+    def process_video(self, video_path: Path) -> None:
         """
         Process a video and save the processed video to the same folder as the original video.
         """
@@ -55,11 +55,10 @@ class Core:
             print("No fish detected, skipping video")
             return
 
-        vid_path = Path(video_path)
-        out_path = vid_path.parent / f"{vid_path.stem}_processed.mp4"
+        out_path = video_path.parent / f"{video_path.stem}_processed.mp4"
         print(f"Cutting video to {out_path}")
         # Cut the video to the detected frames
-        video_processor.cut_video(video_path, str(out_path), frame_ranges)
+        video_processor.cut_video(video_path, out_path, frame_ranges)
 
     def __detected_frames_to_range(
         self, frames: List[int], frame_buffer: int

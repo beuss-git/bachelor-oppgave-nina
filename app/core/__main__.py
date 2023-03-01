@@ -1,6 +1,7 @@
 """Video Processor main"""
 import sys
 
+from pathlib import Path
 from .core import Core
 
 
@@ -10,9 +11,11 @@ def main() -> int:
     # output_path = r"C:\Users\Lars\Documents\NTNU\Semester-6\test-videos\myggbukta_cut.mp4"
     core = Core(
         device="cuda:0",
-        weights_path=r"C:\Users\Lars\Documents\NTNU\Semester-6\test-videos\yolov8s.pt",
+        weights_path=Path(
+            r"C:\Users\Lars\Documents\NTNU\Semester-6\test-videos\yolov8s.pt"
+        ),
     )
-    core.process_video(input_path)
+    core.process_video(Path(input_path))
     # cut_video(input_path, output_path, [(0, 10), (20, 30), (40, 50)])
     return 0
 
