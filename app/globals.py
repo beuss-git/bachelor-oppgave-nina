@@ -1,5 +1,4 @@
 """_summary_"""
-import typing
 from dataclasses import dataclass
 from PyQt6.QtCore import QProcess
 
@@ -14,7 +13,7 @@ class Globals:
     OpenDirectory = 2
     SaveFile = 3
 
-    process: typing.Optional[QProcess] = None  # The process to be executed
+    process: QProcess | None = None  # The process to be executed
     process_path = r"app\dummy_script.py"  # The path to script executed
 
     # Buffer time saved

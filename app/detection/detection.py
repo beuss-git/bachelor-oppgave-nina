@@ -1,7 +1,7 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-from typing import List, Optional, Any, Tuple
+from typing import List, Any, Tuple
 import cv2
 from tqdm import tqdm
 import torch
@@ -94,7 +94,7 @@ def process_video(
     video_path: str,
     batch_size: int,
     max_batches_to_queue: int,
-    output_path: Optional[str],
+    output_path: str | None,
 ) -> List[int]:
     """Runs inference on a video. And returns a list of frames containing fish.
 

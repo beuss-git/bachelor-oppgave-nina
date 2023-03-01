@@ -1,6 +1,6 @@
 """Yolov5 class for running inference on video. """
 import os
-from typing import List, Optional, Any, Dict
+from typing import List, Any, Dict
 import copy
 import torch
 import numpy as np
@@ -24,8 +24,8 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         iou_thres: float = 0.5,
         augment: bool = False,
         agnostic_nms: bool = False,
-        classes: Optional[List[str]] = None,
-        colors: Optional[List[List[int]]] = None,
+        classes: List[str] | None = None,
+        colors: List[List[int]] | None = None,
     ) -> None:
         try:
             self.device = select_device(device)
@@ -91,7 +91,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
     def predict_batch(
         self,
         img0s: List[Any] | np.ndarray[Any, Any],
-        max_objects: Optional[Dict[Any, Any]] = None,
+        max_objects: Dict[Any, Any] | None = None,
     ) -> List[Any]:
         """Predict on a batch of images.
 
@@ -233,7 +233,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             return np.array(padded_img_list)
         return padded_img_list
 
-    def min_max_list(self, det: Any) -> Optional[List[Any]]:
+    def min_max_list(self, det: Any) -> List[Any] | None:
         """Create a list of bounding boxes from the detection.
 
         Args:

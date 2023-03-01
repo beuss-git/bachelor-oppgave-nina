@@ -3,7 +3,7 @@
 
 from queue import Queue
 from threading import Thread
-from typing import List, Optional, Any
+from typing import List, Any
 import math
 import time
 import numpy as np
@@ -59,7 +59,7 @@ class ThreadedFrameGrabber:
                 time.sleep(0.1)
         self.done = True
 
-    def get_next_batch(self) -> Optional[List[np.ndarray[Any, Any]]]:
+    def get_next_batch(self) -> List[np.ndarray[Any, Any]] | None:
         """Get the next batch of frames.
 
         Returns:
