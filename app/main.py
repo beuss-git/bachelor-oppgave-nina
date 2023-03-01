@@ -122,12 +122,14 @@ def main() -> None:
         datefmt="%H:%M:%S",
     )
 
+    # Set up logging to file to rotate every midnight
     handler = TimedRotatingFileHandler(
         "app/log/logfile.log",
         when="midnight",
         backupCount=10,
     )
 
+    # Set up custom naming for log files
     def namer(default_name: str) -> str:
         base_filename, ext, filedate = default_name.split(".")
         return f"{base_filename}.{filedate}.{ext}"
@@ -137,6 +139,12 @@ def main() -> None:
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+
+    # Set up logging to console
+    root_logger = logging.getLogger()
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
 
     logger.info("Logger created")
 
