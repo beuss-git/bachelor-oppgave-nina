@@ -11,7 +11,7 @@ class ReportManager:
         self,
         file_format: str,
         output_path: str,
-        # frame_ranges: typing.List[typing.Tuple[int, int]],
+        # Datamanager :),
     ) -> None:
         """_summary_
 
