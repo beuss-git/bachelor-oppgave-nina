@@ -88,6 +88,24 @@ class DataManager:
         except sqlite3.Error as error:
             print("Failed to insert multiple records into sqlite table", error)
 
+    def get_detection_data(
+        self,
+    ) -> typing.List[typing.Any]:
+        """_summary_"""
+        try:
+            cursor = self.sqlite_connection.cursor()
+
+            sqlite_select_query = """SELECT * from detection"""
+            cursor.execute(sqlite_select_query)
+            records = cursor.fetchall()
+            cursor.close()
+
+            return records
+
+        except sqlite3.Error as error:
+            print("Failed to read data from sqlite table", error)
+            return []
+
     def close_connection(self) -> None:
         """Closes the connection with sqlite"""
         if self.sqlite_connection:

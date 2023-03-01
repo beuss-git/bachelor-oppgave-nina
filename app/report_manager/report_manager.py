@@ -2,6 +2,7 @@
 from xml.dom import minidom
 import csv
 from fpdf import FPDF
+from app.data_manager.data_manager import DataManager
 
 
 class ReportManager:
@@ -9,28 +10,20 @@ class ReportManager:
 
     def __init__(
         self,
-        file_format: str,
+        input_path: str,
         output_path: str,
-        # Datamanager :),
+        data: DataManager,
     ) -> None:
         """_summary_
 
         Args:
-            file_format (str): _description_
+            input_path (str): _description_
             output_path (str): _description_
-            frame_ranges (typing.List[typing.Tuple[int, int]]): _description_
+            data (DataManager):
         """
         self.output_path = output_path
-
-        if file_format == "xml":
-            print("xml file written")
-            self.write_xml_file()
-        if file_format == "csv":
-            print("csv file written")
-            self.write_csv_file()
-        if file_format == "PDF":
-            print("pdf file written")
-            self.write_pdf_file()
+        self.input_path = input_path
+        self.datamanager = data
 
     def write_xml_file(self) -> None:
         """_summary_"""
@@ -55,15 +48,13 @@ class ReportManager:
         """_summary_"""
         save_path_file = self.output_path + "/meh.csv"
 
+        row_list = self.datamanager.get_detection_data()
+
         with open(
             save_path_file, "w", newline="", encoding="ascii", errors="ignore"
         ) as file:
             writer = csv.writer(file)
-
-            writer.writerow(["SNo", "Name", "Subject"])
-            writer.writerow([1, "Ash Ketchum", "English"])
-            writer.writerow([2, "Gary Oak", "Mathematics"])
-            writer.writerow([3, "Brock Lesner", "Physics"])
+            writer.writerows(row_list)
 
     def write_pdf_file(self) -> None:
         """_summary_"""
@@ -74,7 +65,3 @@ class ReportManager:
         pdf.set_font("Arial", "B", 16)
         pdf.cell(40, 10, "Hello World!")
         pdf.output(save_path_file, "F")
-
-    def write_hello(self) -> None:
-        """_summary_"""
-        print("Hello")

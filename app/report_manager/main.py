@@ -14,10 +14,14 @@ def main() -> int:
         10,
         [("12:00:00", "13:00:00"), ("12:00:00", "13:00:00"), ("12:00:00", "13:00:00")],
     )
-    datamanager.close_connection()
+    # datamanager.get_detection_data()
 
-    report = ReportManager("xml", "C:/Users/lilli/Documents/hello")
-    report.write_hello()
+    report = ReportManager(
+        "C:/Users/lilli/Documents/hello", "C:/Users/lilli/Documents/hello", datamanager
+    )
+    report.write_csv_file()
+    report.write_xml_file()
     # report2 = ReportManager("csv", "C:/Users/lilli/Documents/hello")
     # report3 = ReportManager("PDF", "C:/Users/lilli/Documents/hello")
+    datamanager.close_connection()
     return 0
