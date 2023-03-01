@@ -179,7 +179,8 @@ def process_video(
                 # Update the frame count
                 frame_count += len(batch)
 
-        print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
+        # print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
+        logger.info("Average FPS: %s", fps_count / frame_grabber.total_batch_count())
     except RuntimeError as err:
         logger.error("Failed to process video", exc_info=err)
         # print(err)

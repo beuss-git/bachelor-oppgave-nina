@@ -4,7 +4,6 @@
 import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
-import time
 
 import qdarktheme
 
@@ -139,10 +138,8 @@ def main() -> None:
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    while True:
-        logger.debug("Logger created")
-        time.sleep(2)
-        logger.debug("Hei")
+    logger.info("Logger created")
+
     # Pass in sys.argv to allow command line arguments for your app.
     # If you know you won't use command line arguments QApplication([]) works too.
     app = QApplication(sys.argv)

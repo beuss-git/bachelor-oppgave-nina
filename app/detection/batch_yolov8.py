@@ -12,7 +12,7 @@ from ultralytics.yolo.utils.ops import non_max_suppression, scale_boxes
 from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.yolo.utils.checks import check_imgsz
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("log")
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes

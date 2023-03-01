@@ -6,10 +6,13 @@ from threading import Thread
 from typing import List, Optional, Any
 import math
 import time
+import logging
 import numpy as np
 from yolov5.utils import dataloaders
 
 # from torch.utils.data.dataloader import DataLoader
+
+logger = logging.getLogger("log")
 
 
 class ThreadedFrameGrabber:
@@ -29,6 +32,7 @@ class ThreadedFrameGrabber:
         try:
             self.dataset = dataloaders.LoadImages(input_path, img_size=640)
         except Exception as err:
+            logger.error("Failed to open %s", input_path, exc_info=err)
             raise RuntimeError(f"Failed to open {input_path}", err) from err
 
         self.frame_count = self.dataset.frames
