@@ -29,13 +29,22 @@ class ReportManager:
         """_summary_"""
         root: minidom.Document = minidom.Document()
 
-        xml = root.createElement("root")
+        item_list = self.datamanager.get_data()
+
+        xml = root.createElement("Fish Detections")
         root.appendChild(xml)  # type: ignore
 
-        product_child = root.createElement("product")
-        product_child.setAttribute("name", "Geeks for Geeks")
+        previous_video = ""
 
-        xml.appendChild(product_child)  # type: ignore
+        for item in item_list:
+            if str(item[0]) != previous_video:
+                video = root.createElement("Video: " + str(item[0]))
+                previous_video = str(item[0])
+                xml.appendChild(video)  # type: ignore
+            child = root.createElement("Detection" + str(item[1]))
+            child.setAttribute("starttime", str(item[2]))
+            child.setAttribute("endtime", str(item[3]))
+            video.appendChild(child)  # type: ignore
 
         xml_str = root.toprettyxml(indent="\t")
 
@@ -48,7 +57,7 @@ class ReportManager:
         """_summary_"""
         save_path_file = self.output_path + "/meh.csv"
 
-        row_list = self.datamanager.get_detection_data()
+        row_list = self.datamanager.get_data()
 
         with open(
             save_path_file, "w", newline="", encoding="ascii", errors="ignore"

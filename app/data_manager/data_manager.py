@@ -73,7 +73,7 @@ class DataManager:
 
             detections_list: typing.List[typing.Tuple[int, int, str, str]] = []
             for num, detection in enumerate(detections):
-                ids = (num, video_id)
+                ids = (video_id + num, video_id)
                 detections_list.append(ids + detection)
 
             cursor.executemany(sqlite_insert_query, detections_list)
@@ -88,14 +88,17 @@ class DataManager:
         except sqlite3.Error as error:
             print("Failed to insert multiple records into sqlite table", error)
 
-    def get_detection_data(
+    def get_data(
         self,
     ) -> typing.List[typing.Any]:
         """_summary_"""
         try:
             cursor = self.sqlite_connection.cursor()
 
-            sqlite_select_query = """SELECT * from detection"""
+            sqlite_select_query = """SELECT video.title, detection.id,
+                                    detection.starttime, detection.endtime
+                                    FROM detection
+                                    INNER JOIN video ON video.id = detection.videoid"""
             cursor.execute(sqlite_select_query)
             records = cursor.fetchall()
             cursor.close()

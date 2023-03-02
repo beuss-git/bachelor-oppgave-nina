@@ -8,12 +8,12 @@ def main() -> int:
 
     datamanager = DataManager()
     # datamanager.create_table()
-    datamanager.create_tables()
-    datamanager.add_video_data(10, "test", "2023-02-23", "30:00:00")
-    datamanager.add_detection_data(
-        10,
-        [("12:00:00", "13:00:00"), ("12:00:00", "13:00:00"), ("12:00:00", "13:00:00")],
-    )
+    # datamanager.create_tables()
+    # datamanager.add_video_data(11, "help", "2023-02-23", "30:00:00")
+    # datamanager.add_detection_data(
+    #    11,
+    #    [("12:00:00", "13:00:00"), ("12:00:00", "13:00:00"), ("12:00:00", "13:00:00")],
+    # )
     # datamanager.get_detection_data()
 
     report = ReportManager(
