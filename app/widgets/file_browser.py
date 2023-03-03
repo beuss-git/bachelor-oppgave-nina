@@ -1,5 +1,7 @@
 """Creates a widget for browsing files depending on the mode"""
 import typing
+import os
+from pathlib import Path
 
 from PyQt6.QtWidgets import (
     QWidget,
@@ -8,10 +10,20 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QPushButton,
 )
-from PyQt6.QtCore import QDir
+from PyQt6.QtCore import QDir, QSettings
+import app.settings as Settings
 from .options_widgets import (
     add_label,
 )
+
+settings = QSettings("\bachelor-oppgave-nina")
+config_dat_dir = Path(os.path.dirname("bachelor-oppgave-nina"))
+
+
+if settings.contains("dirpath"):
+    dirpath = settings.value("dirpath")
+else:
+    settings.setValue("dirpath", "dirpath")
 
 
 class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
@@ -51,6 +63,10 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
         # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
+        if self.browser_mode == self.SaveFile:
+            self.line_edit.setText(Settings.Settings.get_save_path())
+        else:
+            self.line_edit.setText(Settings.Settings.get_open_path())
         layout.addWidget(self.line_edit)
 
         # Creates a button to open the file browser
@@ -111,7 +127,22 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         # If the user selects only one file, the filepaths list will have only one element
         if len(self.filepaths) == 1:
             self.line_edit.setText(self.filepaths[0])
+            self.path_changed(self.filepaths[0])
 
         # If the user selects more than one file, the filepaths list will have more than one element
         else:
             self.line_edit.setText(",".join(self.filepaths))
+            self.path_changed(",".join(self.filepaths))
+
+    def path_changed(self, path: str) -> None:
+        """Saves the changed path to the global variables
+
+        Args:
+            path (str): The path to save
+        """
+        if self.browser_mode == FileBrowser.SaveFile:
+            Settings.Settings.set_path_values(save_dir=path)
+            print("save")
+        else:
+            Settings.Settings.set_path_values(open_dir=path)
+            print("open")

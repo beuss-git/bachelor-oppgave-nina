@@ -25,20 +25,28 @@ from .widgets.options_widgets import (
     Checkbox,
 )
 from .globals import Globals
+from .settings import Settings
 
 
-class MainWindow(QMainWindow):
+class MainWindow(
+    QMainWindow
+):  # pylint: disable=too-many-instance-attributes, disable=no-member
     """Main Window"""
 
     def __init__(self) -> None:
         """Initiates the main window"""
 
         super().__init__()
+        Settings()
 
         # Set default window settings
-        self.window_width, self.window_height = 700, 400
+        self.window_width = Settings.get_window_width()
+        self.window_height = Settings.get_window_height()
+        print(self.window_width, self.window_height)
+        self.min_window_width, self.min_window_height = 700, 400
         self.setWindowTitle("Fish detector 3000")
-        self.setMinimumSize(self.window_width, self.window_height)
+        self.setMinimumSize(self.min_window_width, self.min_window_height)
+        self.resize(self.window_width, self.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
 
         # Sets main layout for the window
@@ -62,9 +70,9 @@ class MainWindow(QMainWindow):
         self.run_process_button()
 
         # Sets the layout
-        widget = QWidget()
-        widget.setLayout(self.parent_layout)
-        self.setCentralWidget(widget)
+        self.widget = QWidget()
+        self.widget.setLayout(self.parent_layout)
+        self.setCentralWidget(self.widget)
 
     def file_browser_panel(self) -> None:
         """Sets up panel with open dir and save files"""
@@ -106,6 +114,27 @@ class MainWindow(QMainWindow):
 
         # Executes the window
         dlg.exec()
+
+    # def get_setting_values(self) -> None:
+    #    """Gets the settings values"""
+    #    self.setting_window = QSettings("MainWindow", "Window Size")
+    #    self.setting_variables = QSettings("MainWindow", "Variables")
+
+    def close_event(self, event: QtGui.QCloseEvent) -> None:
+        """Saves settings when window is closed. Overrides the closeEvent method"""
+        Settings.set_window_size(
+            self.widget.frameGeometry().width(), self.widget.frameGeometry().height()
+        )
+        Settings.set_path_values(Settings.get_save_path(), Settings.get_open_path())
+        Settings.set_buffer_values(
+            Settings.get_buffer_before(), Settings.get_buffer_after()
+        )
+        Settings.set_keep_original(Settings.get_keep_original())
+        Settings.set_get_report(Settings.get_get_report())
+        Settings.set_report_format(Settings.get_report_format())
+        # Settings.close_event
+
+        super().closeEvent(event)
 
 
 def main() -> None:

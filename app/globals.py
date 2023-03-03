@@ -22,6 +22,8 @@ class Globals:
     buffer_before = 0
     buffer_options = ["0", "1", "2", "3", "4", "5"]
 
+    keep_original = False  # Keep original video
+
     # Variable for keeping the original video
     check = False
 
