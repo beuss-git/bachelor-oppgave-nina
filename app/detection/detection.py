@@ -1,13 +1,11 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-from typing import List, Optional, Any, Tuple
+from typing import List, Optional, Tuple, Any
 import cv2
 from tqdm import tqdm
 import torch
-import numpy as np
 
-# from yolov5.utils.plots import Annotator
 from ultralytics.yolo.utils.plotting import Annotator
 
 from .batch_yolov8 import BatchYolov8
@@ -67,7 +65,8 @@ def __annotate_batch(
 
 
 def __process_batch(
-    batch: List[np.ndarray[Any, Any]],
+    original_batch: List[Any],
+    processed_batch: torch.Tensor,
     model: BatchYolov8,
 ) -> Tuple[List[torch.Tensor], float]:
     """Process a batch of frames.
@@ -81,7 +80,7 @@ def __process_batch(
     """
 
     start_time = time.time()
-    predictions = model.predict_batch(batch)
+    predictions = model.predict_batch(original_batch, processed_batch)
     end_time = time.time()
     delta = end_time - start_time
     return (predictions, delta)
@@ -110,7 +109,8 @@ def process_video(
 
     try:
         frame_grabber = ThreadedFrameGrabber(
-            video_path,
+            model=model,
+            video_path=video_path,
             batch_size=batch_size,
             max_batches_to_queue=max_batches_to_queue,
         )
@@ -123,7 +123,7 @@ def process_video(
         time.sleep(0.1)
 
     if output_path is not None:
-        vid_cap = frame_grabber.dataset.cap
+        vid_cap = frame_grabber.capture
         video_writer = __create_video_writer(
             save_path=output_path,
             fps=vid_cap.get(cv2.CAP_PROP_FPS),
@@ -140,8 +140,8 @@ def process_video(
             total=frame_grabber.total_batch_count(), desc="Processing batches"
         ) as pbar:
             while not frame_grabber.is_done() or not frame_grabber.batch_queue.empty():
-                batch = frame_grabber.get_next_batch()
-                if batch is None:
+                [processed_batch, original_batch] = frame_grabber.get_batch()
+                if processed_batch is None:
                     # This will happen if the batch size is too large or if the disk is too slow
                     # The grabber can't keep up with the inference speed
                     print("No batch available, waiting...")
@@ -149,9 +149,11 @@ def process_video(
                     time.sleep(0.1)
                     continue
 
-                (predictions, delta) = __process_batch(batch, model)
+                (predictions, delta) = __process_batch(
+                    original_batch, processed_batch, model
+                )
 
-                batch_fps = len(batch) / delta
+                batch_fps = len(processed_batch) / delta
                 fps_count += batch_fps
                 pbar.update(1)
                 pbar.set_description(f"Processing batches (FPS: {batch_fps:.2f})")
@@ -161,7 +163,7 @@ def process_video(
                     __annotate_batch(
                         vid_writer=video_writer,
                         results=predictions,
-                        img0s=batch,
+                        img0s=original_batch,
                         names=model.names,
                     )
 
@@ -171,7 +173,7 @@ def process_video(
                         frames_with_fish.append(frame_count + i)
 
                 # Update the frame count
-                frame_count += len(batch)
+                frame_count += len(processed_batch)
 
         print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
     except RuntimeError as err:
