@@ -21,6 +21,7 @@ def main() -> int:
     )
     report.write_csv_file()
     report.write_xml_file()
+    report.write_pdf_file()
     # report2 = ReportManager("csv", "C:/Users/lilli/Documents/hello")
     # report3 = ReportManager("PDF", "C:/Users/lilli/Documents/hello")
     datamanager.close_connection()

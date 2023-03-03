@@ -17,7 +17,7 @@ class ReportManager:
         """_summary_
 
         Args:
-            input_path (str): _description_
+            input_path (str): path and filename the
             output_path (str): _description_
             data (DataManager):
         """
@@ -57,7 +57,9 @@ class ReportManager:
         """_summary_"""
         save_path_file = self.output_path + "/meh.csv"
 
-        row_list = self.datamanager.get_data()
+        row_list = [
+            ("Video", "detectionID", "Start", "End")
+        ] + self.datamanager.get_data()
 
         with open(
             save_path_file, "w", newline="", encoding="ascii", errors="ignore"
@@ -69,8 +71,23 @@ class ReportManager:
         """_summary_"""
         save_path_file = self.output_path + "/meh.pdf"
 
+        item_list = self.datamanager.get_data()
+
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Arial", "B", 16)
-        pdf.cell(40, 10, "Hello World!")
+
+        previous_video = ""
+        for item in item_list:
+            if str(item[0]) != previous_video:
+                pdf.set_font("Arial", "B", 12)
+                pdf.cell(40, 10, str(item[0]))
+                pdf.ln(10)
+                previous_video = str(item[0])
+            pdf.set_font("Arial", "", 11)
+            pdf.cell(20, 10, "Detection" + str(item[1]))
+            pdf.ln(6)
+            pdf.cell(50, 10, "StartTime: " + str(item[2]))
+            pdf.cell(50, 10, "EndTime: " + str(item[3]))
+            pdf.ln(8)
+
         pdf.output(save_path_file, "F")
