@@ -2,7 +2,6 @@
 import os
 from typing import List, Optional, Any, Dict
 import copy
-import logging
 from pathlib import Path
 from torch import Tensor
 import torch
@@ -15,7 +14,9 @@ from ultralytics.yolo.utils.ops import non_max_suppression, scale_boxes
 from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.yolo.utils.checks import check_imgsz
 
-logger = logging.getLogger("log")
+from app.logger import get_logger
+
+logger = get_logger()
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
