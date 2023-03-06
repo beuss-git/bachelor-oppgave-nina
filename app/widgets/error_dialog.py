@@ -5,7 +5,7 @@ from app.logger import get_logger
 logger = get_logger()
 
 
-class ErrorDialog(QDialog):
+class ErrorDialog(QDialog):  # pylint: disable=too-few-public-methods
     """This is an error dialog.
     It will display an error message and a OK/CANCEL button layout."""
 

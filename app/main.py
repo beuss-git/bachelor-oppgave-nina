@@ -26,7 +26,7 @@ from .panels import WidgetPanel
 logger = get_logger()
 
 
-class MainWindow(QMainWindow):
+class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
     """Main Window"""
 
     def __init__(self) -> None:
