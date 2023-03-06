@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 from PyQt6.QtCore import QProcess
-from .globals import Globals
+from .formats import Formats
 
 
 # A regular expression, to extract the % complete.
@@ -54,23 +54,23 @@ class ProgressWindow(QDialog):
         """Start the process."""
 
         # Start the process if it is not already running.
-        if Globals.process is None:
+        if Formats.process is None:
             self.message("Starting process...")
-            Globals.process = QProcess()
+            Formats.process = QProcess()
 
             # Connect the process signals to the appropriate slots.
-            Globals.process.readyReadStandardOutput.connect(self.handle_stdout)
-            Globals.process.readyReadStandardError.connect(self.handle_stderr)
-            Globals.process.stateChanged.connect(self.handle_state)
-            Globals.process.finished.connect(self.process_finished)
+            Formats.process.readyReadStandardOutput.connect(self.handle_stdout)
+            Formats.process.readyReadStandardError.connect(self.handle_stderr)
+            Formats.process.stateChanged.connect(self.handle_state)
+            Formats.process.finished.connect(self.process_finished)
 
             # Start the process.
-            Globals.process.start("python", [Globals.process_path])
+            Formats.process.start("python", [Formats.process_path])
 
     def handle_stderr(self) -> None:
         """Gets the errors and progress from the process and prints them to the text box."""
-        if Globals.process is not None:
-            data = Globals.process.readAllStandardError()
+        if Formats.process is not None:
+            data = Formats.process.readAllStandardError()
             stderr = data.data().decode("utf8")
             # Extract progress if it is in the data.
             progress = simple_percent_parser(stderr)
@@ -82,8 +82,8 @@ class ProgressWindow(QDialog):
 
     def handle_stdout(self) -> None:
         """Prints out the standard output from the process to the text box."""
-        if Globals.process is not None:
-            data = Globals.process.readAllStandardOutput()
+        if Formats.process is not None:
+            data = Formats.process.readAllStandardOutput()
             stdout = data.data().decode("utf8")
             self.message(stdout)
 
@@ -104,7 +104,7 @@ class ProgressWindow(QDialog):
     def process_finished(self) -> None:
         """Print out finsihed message and reset the process."""
         self.message("Process finished.")
-        Globals.process = None
+        Formats.process = None
 
 
 def simple_percent_parser(output: typing.Any) -> int | None:

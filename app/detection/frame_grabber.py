@@ -6,10 +6,13 @@ from typing import List, Any, Tuple
 import math
 import threading
 from pathlib import Path
+import logging
 import cv2
 from torch import Tensor
 
 from app.detection.batch_yolov8 import BatchYolov8
+
+logger = logging.getLogger("log")
 
 
 class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes

@@ -10,20 +10,18 @@ from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,
-    QHBoxLayout,
     QPushButton,
     QWidget,
 )
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
-from .globals import Globals
-from .widgets.options_widgets import (
-    DropDownWidget,
-    AdvancedOptions,
-)
+from .formats import Formats
+from .widgets.options_widgets import AdvancedOptions
 from .widgets.error_dialog import ErrorDialog
 from .widgets.detection_window import DetectionWindow
+from .panels import WidgetPanel
+from .logger import Logger
 
 
 class MainWindow(QMainWindow):
@@ -46,11 +44,16 @@ class MainWindow(QMainWindow):
         print("Main window created")
 
         # Adds file browser panel
-        self.file_browser_panel()
+
+        self.open_dir = FileBrowser("Open Dir", Formats.FileType.OPEN_DIR)
+        self.save_dir = FileBrowser("Save Dir", Formats.FileType.OPEN_DIR)
+        WidgetPanel.add_file_browser_panel(
+            self.parent_layout, self.open_dir, self.save_dir
+        )
         self.parent_layout.addStretch()
 
         # Adds options panel
-        self.options_panel()
+        WidgetPanel.add_options_panel(self.parent_layout)
         self.parent_layout.addStretch()
 
         # Adds advanced options panel
@@ -58,28 +61,6 @@ class MainWindow(QMainWindow):
         self.parent_layout.addStretch()
 
         # Adds run button
-        self.run_process_button()
-
-        # Sets the layout
-        widget = QWidget()
-        widget.setLayout(self.parent_layout)
-        self.setCentralWidget(widget)
-
-    def file_browser_panel(self) -> None:
-        """Sets up panel with open dir and save files"""
-        vlayout = QVBoxLayout()
-
-        self.dir_fb = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
-        self.save_fb = FileBrowser("Save File", FileBrowser.OpenDirectory)
-
-        vlayout.addWidget(self.dir_fb)
-        vlayout.addWidget(self.save_fb)
-
-        vlayout.addStretch()
-        self.parent_layout.addLayout(vlayout)
-
-    def run_process_button(self) -> None:
-        """Creates button to run process"""
         self.run_btn = QPushButton("Run")
         self.run_btn.setFixedWidth(100)
         self.run_btn.clicked.connect(self.run)
@@ -87,22 +68,20 @@ class MainWindow(QMainWindow):
         self.parent_layout.addWidget(self.run_btn)
         self.parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
 
-    def options_panel(self) -> None:
-        """Sets up panel with options"""
-
-        buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(DropDownWidget("Buffer Before", Globals.buffer_options))
-        buffer_layout.addWidget(DropDownWidget("Buffer After", Globals.buffer_options))
+        # Sets the layout
+        widget = QWidget()
+        widget.setLayout(self.parent_layout)
+        self.setCentralWidget(widget)
 
     def run(self) -> None:
         """This will run core.process_folder with the selected folder"""
-        print(f"Paths: {self.dir_fb.get_paths()}")
-        input_paths = self.dir_fb.get_paths()
+        print("Paths: %s", self.open_dir.get_paths())
+        input_paths = self.open_dir.get_paths()
         if len(input_paths) == 0:
             ErrorDialog("No input folder selected", parent=self).exec()
             return
 
-        output_paths = self.save_fb.get_paths()
+        output_paths = self.save_dir.get_paths()
         if len(output_paths) == 0:
             ErrorDialog("No output folder selected", parent=self).exec()
             return
@@ -132,6 +111,8 @@ class MainWindow(QMainWindow):
 
 def main() -> None:
     """Main"""
+    logger = Logger()
+    logger.connect_console()
 
     # You need one (and only one) QApplication instance per application.
     # Pass in sys.argv to allow command line arguments for your app.
