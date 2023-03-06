@@ -1,5 +1,10 @@
 # bachelor-oppgave-nina
 
+[![CI][ci-badge]][ci]
+
+[ci-badge]: https://github.com/beuss-git/bachelor-oppgave-nina/actions/workflows/code-quality.yml/badge.svg
+[ci]: https://github.com/beuss-git/bachelor-oppgave-nina/actions/workflows/code-quality.yml
+
 ### Requirements
 - [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - [commitlint (not husky)](https://commitlint.js.org/#/./guides-local-setup?id=guides-local-setup)
@@ -13,6 +18,9 @@ Add `%APPDATA%\Python\Scripts` on windows.
 
 `poetry install` to install project dependencies
 
+
+`poetry run poe torch-cuda` to install torch with cuda.
+
 `pre-commit install` to install pre-commit hooks.
 
 `pre-commit install --hook-type commit-msg` to install commitlint hook.
@@ -20,3 +28,9 @@ Add `%APPDATA%\Python\Scripts` on windows.
 
 See the commitlint config:
 https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional
+
+## Run using Docker
+
+```
+docker compose up --build"
+```

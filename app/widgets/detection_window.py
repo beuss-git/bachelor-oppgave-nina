@@ -15,8 +15,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
 )
 from PyQt6.QtCore import pyqtSignal, QThread
-from app.detection.batch_yolov5 import BatchYolov5
-from app.globals import Globals
+from app.detection.batch_yolov8 import BatchYolov8
 from app.detection import detection
 from app.video_processor import video_processor
 
@@ -28,6 +27,7 @@ class DetectionWorker(QThread):
     add_text = pyqtSignal(str)
     input_folder_path: Path | None = None
     output_folder_path: Path | None = None
+    model: BatchYolov8 | None = None
 
     def __init__(self, folder_path: Path, output_folder_path: Path) -> None:
         super().__init__()
@@ -37,10 +37,11 @@ class DetectionWorker(QThread):
 
     def run(self) -> None:
         """Run the detection."""
-        if Globals.model is None:
+        if self.model is None:
             self.log("Initializing the model...")
-            Globals.model = BatchYolov5(
-                "C:\\Users\\benja\\Downloads\\yolov5s-imgsize-640.pt", "cuda:0"
+            self.model = BatchYolov8(
+                Path(r"G:\repos\bachelor-oppgave-nina\model_research\yolov8s.pt"),
+                "cuda:0",
             )
         stream_target = io.StringIO()
         with redirect_stdout(stream_target):
@@ -63,19 +64,19 @@ class DetectionWorker(QThread):
 
         for i, video in enumerate(videos):
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
-            self.process_video(os.path.join(self.input_folder_path, video))
+            self.process_video(self.input_folder_path / video)
 
-    def process_video(self, video_path: str) -> None:
+    def process_video(self, video_path: Path) -> None:
         """
         Process a video and save the processed video to the same folder as the original video.
         """
-        if Globals.model is None or self.output_folder_path is None:
+        if self.model is None or self.output_folder_path is None:
             return
 
         # self.add_text.emit(f"Processing {video_path}")
 
         frames_with_fish = detection.process_video(
-            model=Globals.model,
+            model=self.model,
             video_path=video_path,
             batch_size=64,
             max_batches_to_queue=4,
@@ -100,7 +101,7 @@ class DetectionWorker(QThread):
         out_path = self.output_folder_path / f"{vid_path.stem}_processed.mp4"
 
         # Cut the video to the detected frames
-        video_processor.cut_video(video_path, str(out_path), frame_ranges)
+        video_processor.cut_video(video_path, out_path, frame_ranges)
         self.log(f"Saved processed video to {out_path}")
 
         self.progress_changed.emit(100)
