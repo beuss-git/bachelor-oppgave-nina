@@ -1,10 +1,12 @@
 """Yolov5 class for running inference on video. """
 import os
-from typing import List, Any, Dict
+from typing import List, Optional, Any, Dict
 import copy
 from pathlib import Path
+from torch import Tensor
 import torch
 import numpy as np
+
 
 from ultralytics.nn.tasks import attempt_load_one_weight
 from ultralytics.yolo.data.augment import LetterBox
@@ -14,19 +16,19 @@ from ultralytics.yolo.utils.checks import check_imgsz
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
-    """Yolov8 class for running inference on video in batches."""
+    """Yolov8 class for running inference on video."""
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         weights_path: Path,
-        device: str = "cuda:0",
+        device: str = "",
         img_size: int = 640,
         conf_thres: float = 0.4,
         iou_thres: float = 0.5,
         augment: bool = False,
         agnostic_nms: bool = False,
-        classes: List[str] | None = None,
-        colors: List[List[int]] | None = None,
+        classes: Optional[List[str]] = None,
+        colors: Optional[List[List[int]]] = None,
     ) -> None:
         try:
             self.device = select_device(device)
@@ -36,9 +38,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         self.weights_name = os.path.split(weights_path)[-1]
 
         try:
-            (self.model, _) = attempt_load_one_weight(
-                str(weights_path), device=self.device
-            )
+            (self.model, _) = attempt_load_one_weight(weights_path, device=self.device)
             # self.model = attempt_load(weights_path, device=self.device) V5
         except Exception as err:
             raise RuntimeError("Failed to load model", err) from err
@@ -68,108 +68,9 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         if self.device.type != "cpu":
             self.burn()
 
-    def __str__(self) -> str:
-        out = [
-            f"Model: {self.weights_name}",
-            f"Image size: {self.imgsz}",
-            f"Confidence threshold: {self.conf_thres}",
-            f"IoU threshold: {self.iou_thres}",
-            f"Augment: {self.augment}",
-            f"Agnostic nms: {self.agnostic_nms}",
-        ]
-        if self.classes is not None:
-            filter_classes = [self.names[each_class] for each_class in self.classes]
-            out.append(f"Classes filter: {filter_classes}")
-        out.append(f"Classes: {self.names}")
-
-        return "\n".join(out)
-
-    def burn(self) -> None:
-        """Burn in the model for better performance when starting inference."""
-        img = torch.zeros(
-            (1, 3, self.imgsz, self.imgsz), device=self.device
-        )  # init img
-        _ = self.model(img.half() if self.half else img)  # run once
-
-    def predict_batch(
-        self,
-        img0s: List[Any] | np.ndarray[Any, Any],
-        max_objects: Dict[Any, Any] | None = None,
-    ) -> List[Any]:
-        """Predict on a batch of images.
-
-        Args:
-            img0s: The list of images to predict on.
-            max_objects: Max number of objects to return per image for each class.
-
-        Returns:
-            A list of predictions.
-        """
-
-        imgs = self.prepare_images(img0s)
-
-        with torch.no_grad():
-            # Run model
-            inf_out, _ = self.model(
-                imgs, augment=self.augment
-            )  # inference and training outputs
-
-            # Run NMS
-            preds = non_max_suppression(
-                inf_out, conf_thres=self.conf_thres, iou_thres=self.iou_thres
-            )
-
-        batch_output = []
-        for det, img0, img in zip(preds, img0s, imgs):
-            if det is not None and len(det):
-                det[:, :4] = scale_boxes(img.shape[1:], det[:, :4], img0.shape).round()
-            min_max_list = self.min_max_list(det)
-            if min_max_list is not None and max_objects is not None:
-                min_max_list = self.max_objects_filter(
-                    min_max_list, max_objects, name_key="name"
-                )
-
-            batch_output.append(min_max_list)
-
-        return batch_output
-
-    def prepare_image(
-        self, original_img: np.ndarray[Any, Any] | List[Any]
-    ) -> torch.Tensor:
-        """Prepare image for inference by normalizing and reshaping.
-
-        Args:
-            original_img: The image to prepare.
-
-        Returns:
-            The prepared image as a torch tensor.
-        """
-        new_img = torch.from_numpy(original_img).to(self.device)
-        new_img = new_img.half() if self.half else new_img.float()
-        new_img /= 255.0  # 0 - 255 to 0.0 - 1.0
-        if new_img.ndimension() == 3:
-            new_img = new_img.unsqueeze(0)
-
-        return new_img
-
-    def reshape_copy_img(self, img: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
-        """Reshape and copy image.
-
-        Args:
-            img: The image to reshape and copy.
-
-        Returns:
-            The reshaped and copied image.
-        """
-        _img = LetterBox(stride=32, new_shape=self.imgsz)(image=img)
-        # _img = letterbox(img, new_shape=self.imgsz)[0] V5
-        _img = _img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
-        new_img: np.ndarray[Any, Any] = np.ascontiguousarray(_img)  # uint8 to float32
-        return new_img
-
     def prepare_images(
         self, img_s: List[np.ndarray[Any, Any]] | np.ndarray[Any, Any]
-    ) -> torch.Tensor:
+    ) -> Tensor:
         """Prepare a batch of images for inference by normalizing and reshaping them.
 
         Args:
@@ -182,9 +83,12 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             The prepared images as a torch tensor.
         """
         if isinstance(img_s, list):
+
             img_list = []
+
             for img in img_s:
-                img_list.append(self.reshape_copy_img(img))
+                img_list += [self.reshape_copy_img(img)]
+
             img_to_send = self.pad_batch_of_images(img_list)
         elif isinstance(img_s, np.ndarray):
             img_to_send = self.reshape_copy_img((np.ndarray(img_s)))
@@ -236,7 +140,105 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             return np.array(padded_img_list)
         return padded_img_list
 
-    def min_max_list(self, det: Any) -> List[Any] | None:
+    def __str__(self) -> str:
+        out = [
+            f"Model: {self.weights_name}",
+            f"Image size: {self.imgsz}",
+            f"Confidence threshold: {self.conf_thres}",
+            f"IoU threshold: {self.iou_thres}",
+            f"Augment: {self.augment}",
+            f"Agnostic nms: {self.agnostic_nms}",
+        ]
+        if self.classes is not None:
+            filter_classes = [self.names[each_class] for each_class in self.classes]
+            out.append(f"Classes filter: {filter_classes}")
+        out.append(f"Classes: {self.names}")
+
+        return "\n".join(out)
+
+    def burn(self) -> None:
+        """Burn in the model for better performance when starting inference."""
+        img = torch.zeros(
+            (1, 3, self.imgsz, self.imgsz), device=self.device
+        )  # init img
+        _ = self.model(img.half() if self.half else img)  # run once
+
+    def predict_batch(
+        self,
+        img0s: List[Any],
+        imgs: torch.Tensor,
+        max_objects: Optional[Dict[Any, Any]] = None,
+    ) -> List[Any]:
+        """Predict on a batch of images.
+
+        Args:
+            img0s: The list of images to predict on.
+            max_objects: Max number of objects to return per image for each class.
+
+        Returns:
+            A list of predictions.
+        """
+
+        # imgs = self.prepare_images(img0s)
+
+        with torch.no_grad():
+            # Run model
+            inf_out, _ = self.model(
+                imgs, augment=self.augment
+            )  # inference and training outputs
+
+            # Run NMS
+            preds = non_max_suppression(
+                inf_out, conf_thres=self.conf_thres, iou_thres=self.iou_thres
+            )
+
+        batch_output = []
+        for det, img0, img in zip(preds, img0s, imgs):
+            if det is not None and len(det):
+                det[:, :4] = scale_boxes(img.shape[1:], det[:, :4], img0.shape).round()
+            min_max_list = self.min_max_list(det)
+            if min_max_list is not None and max_objects is not None:
+                min_max_list = self.max_objects_filter(
+                    min_max_list, max_objects, name_key="name"
+                )
+
+            batch_output.append(min_max_list)
+
+        return batch_output
+
+    def prepare_image(self, original_img: np.ndarray[Any, Any] | List[Any]) -> Tensor:
+        """Prepare image for inference by normalizing and reshaping.
+
+        Args:
+            original_img: The image to prepare.
+
+        Returns:
+            The prepared image as a torch tensor.
+        """
+        new_img = torch.from_numpy(original_img).to(self.device)
+        new_img = new_img.half() if self.half else new_img.float()
+        new_img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        if new_img.ndimension() == 3:
+            new_img = new_img.unsqueeze(0)
+
+        return new_img
+
+    def reshape_copy_img(self, img: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
+        """Reshape and copy image.
+
+        Args:
+            img: The image to reshape and copy.
+
+        Returns:
+            The reshaped and copied image.
+        """
+        _img = LetterBox(stride=32, new_shape=self.imgsz)(image=img)
+        # _img = letterbox(img, new_shape=self.imgsz)[0] V5
+        _img = _img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
+        new_img: np.ndarray[Any, Any] = np.ascontiguousarray(_img)  # uint8 to float32
+        return new_img
+
+    def min_max_list(self, det: Any) -> Optional[List[Any]]:
         """Create a list of bounding boxes from the detection.
 
         Args:
