@@ -31,7 +31,7 @@ class ReportManager:
         root: minidom.Document = minidom.Document()
 
         # gets data from teh database
-        item_list = self.datamanager.get_data()
+        item_list = self.datamanager.get_data(["tihi"])
 
         # Sets up the root element of the file
         xml = root.createElement("Fish Detections")
@@ -65,7 +65,7 @@ class ReportManager:
         # Gets data from database and appends it to column titles
         row_list = [
             ("Video", "detectionID", "Start", "End")
-        ] + self.datamanager.get_data()
+        ] + self.datamanager.get_data(["oof"])
 
         # opens the output pathway and saves the file
         with open(
@@ -80,7 +80,7 @@ class ReportManager:
         save_path_file = self.output_path + "/meh.pdf"
 
         # Gets data from the data base
-        item_list = self.datamanager.get_data()
+        item_list = self.datamanager.get_data(["tihi", "awe"])
 
         # sets up the pdf
         pdf = FPDF()

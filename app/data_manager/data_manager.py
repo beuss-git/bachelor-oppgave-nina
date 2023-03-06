@@ -45,7 +45,7 @@ class DataManager:
             # Log error if anything fails in the process
             print("Error while creating a sqlite table", error)
 
-    def add_video_data(self, video_id: int, title: str, date: str, time: str) -> None:
+    def add_video_data(self, video_id: str, title: str, date: str, time: str) -> None:
         """Adds a video into the video table
 
         Args:
@@ -80,7 +80,7 @@ class DataManager:
             print(traceback.format_exception(exc_type, exc_value, exc_tb))
 
     def add_detection_data(
-        self, video_id: int, detections: typing.List[typing.Tuple[str, str]]
+        self, video_id: str, detections: typing.List[typing.Tuple[str, str]]
     ) -> None:
         """Adds data about detections for one video
 
@@ -100,9 +100,9 @@ class DataManager:
                           VALUES (?, ?, ?, ?);"""
 
             # Setting up list of detections with video id and detection id
-            detections_list: typing.List[typing.Tuple[str, int, str, str]] = []
+            detections_list: typing.List[typing.Tuple[str, str, str, str]] = []
             for num, detection in enumerate(detections):
-                ids = (str(video_id) + str(num), video_id)
+                ids = (video_id + str(num), video_id)
                 detections_list.append(ids + detection)
 
             # execute query to add data to table
@@ -119,10 +119,12 @@ class DataManager:
             # If error occurs log the error
             print("Failed to insert multiple records into sqlite table", error)
 
-    def get_data(
-        self,
-    ) -> typing.List[typing.Any]:
+    def get_data(self, video_search: typing.List[str]) -> typing.List[typing.Any]:
         """Returns all the data necessary to write a report
+
+        Args:
+            video_search (List[str]): A list of videoIds which are used to find data about
+                                      detections the given videos
 
         Returns:
             Typing.List[typing.Any]: A list of all selected elements from the database,
@@ -138,10 +140,18 @@ class DataManager:
             sqlite_select_query = """SELECT video.title, detection.id,
                                     detection.starttime, detection.endtime
                                     FROM detection
-                                    INNER JOIN video ON video.id = detection.videoid"""
+                                    INNER JOIN video ON video.id = detection.videoid
+                                    WHERE video.id"""
+
+            # sets up the last part of the query based on the searches wanted
+            addition_query = """ """
+            if len(video_search) > 1:
+                addition_query = " IN " + (str(tuple(video_search)))
+            else:
+                addition_query = "='" + str(video_search[0]) + "'"
 
             # executes selection query and saves the data in records
-            cursor.execute(sqlite_select_query)
+            cursor.execute(sqlite_select_query + addition_query)
             records = cursor.fetchall()
             cursor.close()
 

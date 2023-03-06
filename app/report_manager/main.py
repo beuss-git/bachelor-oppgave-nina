@@ -9,9 +9,10 @@ def main() -> int:
     datamanager = DataManager()
     # datamanager.create_table()
     # datamanager.create_tables()
-    # datamanager.add_video_data(3, "test", "2023-02-23", "30:00:00")
+    # datamanager.add_video_data("awe", "test", "2023-02-23", "30:00:00")
+    # datamanager.add_video_data("oof", "mm", "2023-02-23", "30:00:00")
     # datamanager.add_detection_data(
-    #    3,
+    #    "oof",
     #    [
     #        ("12:00:00", "13:00:00"),
     #        ("12:00:00", "13:00:00"),
