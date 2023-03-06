@@ -1,13 +1,12 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-from typing import List, Optional, Any, Tuple
+from typing import List, Any, Tuple
 import cv2
 from tqdm import tqdm
 import torch
 import numpy as np
 
-# from yolov5.utils.plots import Annotator
 from ultralytics.yolo.utils.plotting import Annotator
 
 from .batch_yolov8 import BatchYolov8
@@ -15,7 +14,7 @@ from .frame_grabber import ThreadedFrameGrabber
 
 
 def __create_video_writer(
-    save_path: str,
+    save_path: Path,
     fps: float,
     width: int,
     height: int,
@@ -33,11 +32,9 @@ def __create_video_writer(
     Returns:
         The video writer object.
     """
-    save_path = str(
-        Path(save_path).with_suffix(".mp4")
-    )  # force *.mp4 suffix on results videos
+    save_path = save_path.with_suffix(".mp4")  # force *.mp4 suffix on results videos
     return cv2.VideoWriter(
-        save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (width, height)
+        str(save_path), cv2.VideoWriter_fourcc(*fourcc), fps, (width, height)
     )
 
 
@@ -84,21 +81,22 @@ def __process_batch(
     predictions = model.predict_batch(batch)
     end_time = time.time()
     delta = end_time - start_time
-    return (predictions, delta)
+    return predictions, delta
 
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 def process_video(
     model: BatchYolov8,
-    video_path: str,
+    video_path: Path,
     batch_size: int,
     max_batches_to_queue: int,
-    output_path: Optional[str],
+    output_path: Path | None,
 ) -> List[int]:
     """Runs inference on a video. And returns a list of frames containing fish.
 
     Args:
+        model: The Yolov8 batcher model.
         video_path: The path to the video to process.
         batch_size: The batch size.
         max_batches_to_queue: The maximum number of batches to queue.

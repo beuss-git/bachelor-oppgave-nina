@@ -107,7 +107,7 @@ class ProgressWindow(QDialog):
         Globals.process = None
 
 
-def simple_percent_parser(output: typing.Any) -> typing.Optional[int]:
+def simple_percent_parser(output: typing.Any) -> int | None:
     """
     Matches lines using the progress_re regex,
     returning a single integer for the % progress.

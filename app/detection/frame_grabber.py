@@ -3,9 +3,10 @@
 
 from queue import Queue
 from threading import Thread
-from typing import List, Optional, Any
+from typing import List, Any
 import math
 import time
+from pathlib import Path
 import numpy as np
 from yolov5.utils import dataloaders
 
@@ -16,7 +17,7 @@ class ThreadedFrameGrabber:
     """Continuously grabs frames from a video in batches and puts them into a queue."""
 
     def __init__(
-        self, input_path: str, batch_size: int = 16, max_batches_to_queue: int = 0
+        self, input_path: Path, batch_size: int = 16, max_batches_to_queue: int = 0
     ):
         """Initialize the BatchFrameGrabber.
 
@@ -27,7 +28,7 @@ class ThreadedFrameGrabber:
         """
 
         try:
-            self.dataset = dataloaders.LoadImages(input_path, img_size=640)
+            self.dataset = dataloaders.LoadImages(str(input_path), img_size=640)
         except Exception as err:
             raise RuntimeError(f"Failed to open {input_path}", err) from err
 
@@ -59,7 +60,7 @@ class ThreadedFrameGrabber:
                 time.sleep(0.1)
         self.done = True
 
-    def get_next_batch(self) -> Optional[List[np.ndarray[Any, Any]]]:
+    def get_next_batch(self) -> List[np.ndarray[Any, Any]] | None:
         """Get the next batch of frames.
 
         Returns:

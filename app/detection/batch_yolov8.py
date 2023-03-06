@@ -1,7 +1,8 @@
 """Yolov5 class for running inference on video. """
 import os
-from typing import List, Optional, Any, Dict
+from typing import List, Any, Dict
 import copy
+from pathlib import Path
 import torch
 import numpy as np
 
@@ -13,19 +14,19 @@ from ultralytics.yolo.utils.checks import check_imgsz
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
-    """Yolov8 class for running inference on video."""
+    """Yolov8 class for running inference on video in batches."""
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        weights_path: str,
-        device: str = "",
+        weights_path: Path,
+        device: str = "cuda:0",
         img_size: int = 640,
         conf_thres: float = 0.4,
         iou_thres: float = 0.5,
         augment: bool = False,
         agnostic_nms: bool = False,
-        classes: Optional[List[str]] = None,
-        colors: Optional[List[List[int]]] = None,
+        classes: List[str] | None = None,
+        colors: List[List[int]] | None = None,
     ) -> None:
         try:
             self.device = select_device(device)
@@ -35,7 +36,9 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         self.weights_name = os.path.split(weights_path)[-1]
 
         try:
-            (self.model, _) = attempt_load_one_weight(weights_path, device=self.device)
+            (self.model, _) = attempt_load_one_weight(
+                str(weights_path), device=self.device
+            )
             # self.model = attempt_load(weights_path, device=self.device) V5
         except Exception as err:
             raise RuntimeError("Failed to load model", err) from err
@@ -91,7 +94,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
     def predict_batch(
         self,
         img0s: List[Any] | np.ndarray[Any, Any],
-        max_objects: Optional[Dict[Any, Any]] = None,
+        max_objects: Dict[Any, Any] | None = None,
     ) -> List[Any]:
         """Predict on a batch of images.
 
@@ -233,7 +236,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             return np.array(padded_img_list)
         return padded_img_list
 
-    def min_max_list(self, det: Any) -> Optional[List[Any]]:
+    def min_max_list(self, det: Any) -> List[Any] | None:
         """Create a list of bounding boxes from the detection.
 
         Args:
