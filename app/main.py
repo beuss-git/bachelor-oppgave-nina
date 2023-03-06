@@ -24,13 +24,11 @@ from .widgets.options_widgets import (
     AdvancedOptions,
     Checkbox,
 )
-from .globals import Globals
+from .formats import Formats
 from .settings import Settings
 
 
-class MainWindow(
-    QMainWindow
-):  # pylint: disable=too-many-instance-attributes, disable=no-member
+class MainWindow(QMainWindow):
     """Main Window"""
 
     def __init__(self) -> None:
@@ -42,69 +40,67 @@ class MainWindow(
         # Set default window settings
         self.window_width = Settings.get_window_width()
         self.window_height = Settings.get_window_height()
-        print(self.window_width, self.window_height)
-        self.min_window_width, self.min_window_height = 700, 400
+        self.min_window_width, self.min_window_height = (
+            Settings.default_window_width,
+            Settings.default_window_height,
+        )
         self.setWindowTitle("Fish detector 3000")
         self.setMinimumSize(self.min_window_width, self.min_window_height)
         self.resize(self.window_width, self.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
 
-        # Sets main layout for the window
-        self.parent_layout = QVBoxLayout()
-        self.setLayout(self.parent_layout)
+        # Initializes the main layout for the window
+        self.widget = QWidget()
+        parent_layout = QVBoxLayout()
+        # Sets the layout
+        self.widget.setLayout(parent_layout)
+        self.setCentralWidget(self.widget)
         print("Main window created")
 
         # Adds file browser panel
-        self.file_browser_panel()
-        self.parent_layout.addStretch()
+        self.file_browser_panel(parent_layout)
+        parent_layout.addStretch()
 
         # Adds options panel
-        self.options_panel()
-        self.parent_layout.addStretch()
+        self.options_panel(parent_layout)
+        parent_layout.addStretch()
 
         # Adds advanced options panel
-        self.parent_layout.addWidget(AdvancedOptions())
-        self.parent_layout.addStretch()
+        parent_layout.addWidget(AdvancedOptions())
+        parent_layout.addStretch()
 
         # Adds run button
-        self.run_process_button()
+        self.run_process_button(parent_layout)
 
-        # Sets the layout
-        self.widget = QWidget()
-        self.widget.setLayout(self.parent_layout)
-        self.setCentralWidget(self.widget)
-
-    def file_browser_panel(self) -> None:
+    def file_browser_panel(self, parent_layout: QVBoxLayout) -> None:
         """Sets up panel with open dir and save files"""
         vlayout = QVBoxLayout()
-
-        self.dir_fb = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
-        self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
-
-        vlayout.addWidget(self.dir_fb)
-        vlayout.addWidget(self.save_fb)
+        open_dir = FileBrowser("Open Dir", Formats.FileType.OPEN_DIR)
+        save_file = FileBrowser("Save File", Formats.FileType.SAVE_FILE)
+        vlayout.addWidget(open_dir)
+        vlayout.addWidget(save_file)
 
         vlayout.addStretch()
-        self.parent_layout.addLayout(vlayout)
+        parent_layout.addLayout(vlayout)
 
-    def run_process_button(self) -> None:
+    def run_process_button(self, parent_layout: QVBoxLayout) -> None:
         """Creates button to run process"""
         self.run_btn = QPushButton("Run")
         self.run_btn.setFixedWidth(100)
         self.run_btn.clicked.connect(self.create_progressbar_dialog)
         self.run_btn.setStyleSheet("background-color: green")
-        self.parent_layout.addWidget(self.run_btn)
-        self.parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
+        parent_layout.addWidget(self.run_btn)
+        parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
 
-    def options_panel(self) -> None:
+    def options_panel(self, parent_layout: QVBoxLayout) -> None:
         """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(DropDownWidget("Buffer Before", Globals.buffer_options))
-        buffer_layout.addWidget(DropDownWidget("Buffer After", Globals.buffer_options))
+        buffer_layout.addWidget(DropDownWidget("Buffer Before", Formats.buffer_options))
+        buffer_layout.addWidget(DropDownWidget("Buffer After", Formats.buffer_options))
 
-        self.parent_layout.addLayout(buffer_layout)
-        self.parent_layout.addWidget(Checkbox("Keep original video"))
+        parent_layout.addLayout(buffer_layout)
+        parent_layout.addWidget(Checkbox("Keep original video"))
 
     def create_progressbar_dialog(self) -> None:
         """Opens dialog with progressbar"""
@@ -125,7 +121,8 @@ class MainWindow(
         Settings.set_window_size(
             self.widget.frameGeometry().width(), self.widget.frameGeometry().height()
         )
-        Settings.set_path_values(Settings.get_save_path(), Settings.get_open_path())
+        Settings.set_path_values(Settings.get_save_path(), Formats.FileType.SAVE_FILE)
+        Settings.set_path_values(Settings.get_open_path(), Formats.FileType.OPEN_DIR)
         Settings.set_buffer_values(
             Settings.get_buffer_before(), Settings.get_buffer_after()
         )
