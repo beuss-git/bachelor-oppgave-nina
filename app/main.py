@@ -11,21 +11,18 @@ from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,
-    QHBoxLayout,
     QPushButton,
     QWidget,
 )
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
-from app.widgets.file_browser import FileBrowser
-from .execute_process import ProgressWindow
-from .widgets.options_widgets import (
-    DropDownWidget,
+from app.execute_process import ProgressWindow
+from app.widgets.options_widgets import (
     AdvancedOptions,
-    Checkbox,
 )
-from .formats import Formats
-from .settings import Settings
+from app.panels import WidgetPanel
+from app.formats import Formats
+from app.settings import Settings
 
 
 class MainWindow(QMainWindow):
@@ -35,14 +32,16 @@ class MainWindow(QMainWindow):
         """Initiates the main window"""
 
         super().__init__()
-        Settings()
 
-        # Set default window settings
-        self.window_width = Settings.get_window_width()
-        self.window_height = Settings.get_window_height()
+        # Set concurrent window settings
+        self.window_width, self.window_height = (
+            Settings.get_window_width(),
+            Settings.get_window_height(),
+        )
+        # Set minimum/default window settings
         self.min_window_width, self.min_window_height = (
-            Settings.default_window_width,
-            Settings.default_window_height,
+            Formats.default_window_width,
+            Formats.default_window_height,
         )
         self.setWindowTitle("Fish detector 3000")
         self.setMinimumSize(self.min_window_width, self.min_window_height)
@@ -51,72 +50,50 @@ class MainWindow(QMainWindow):
 
         # Initializes the main layout for the window
         self.widget = QWidget()
-        parent_layout = QVBoxLayout()
+        self.parent_layout = QVBoxLayout()
+
         # Sets the layout
-        self.widget.setLayout(parent_layout)
+        self.widget.setLayout(self.parent_layout)
         self.setCentralWidget(self.widget)
         print("Main window created")
 
         # Adds file browser panel
-        self.file_browser_panel(parent_layout)
-        parent_layout.addStretch()
+        WidgetPanel().file_browser_panel(self.parent_layout)
+        self.parent_layout.addStretch()
 
         # Adds options panel
-        self.options_panel(parent_layout)
-        parent_layout.addStretch()
+        WidgetPanel().options_panel(self.parent_layout)
+        self.parent_layout.addStretch()
 
         # Adds advanced options panel
-        parent_layout.addWidget(AdvancedOptions())
-        parent_layout.addStretch()
+        self.parent_layout.addWidget(AdvancedOptions())
+        self.parent_layout.addStretch()
 
         # Adds run button
-        self.run_process_button(parent_layout)
+        self.run_btn = self.run_process_button()
 
-    def file_browser_panel(self, parent_layout: QVBoxLayout) -> None:
-        """Sets up panel with open dir and save files"""
-        vlayout = QVBoxLayout()
-        open_dir = FileBrowser("Open Dir", Formats.FileType.OPEN_DIR)
-        save_file = FileBrowser("Save File", Formats.FileType.SAVE_FILE)
-        vlayout.addWidget(open_dir)
-        vlayout.addWidget(save_file)
-
-        vlayout.addStretch()
-        parent_layout.addLayout(vlayout)
-
-    def run_process_button(self, parent_layout: QVBoxLayout) -> None:
+    def run_process_button(self) -> QPushButton:
         """Creates button to run process"""
-        self.run_btn = QPushButton("Run")
-        self.run_btn.setFixedWidth(100)
-        self.run_btn.clicked.connect(self.create_progressbar_dialog)
-        self.run_btn.setStyleSheet("background-color: green")
-        parent_layout.addWidget(self.run_btn)
-        parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
+        run_btn = QPushButton("Run")
+        run_btn.setFixedWidth(100)
 
-    def options_panel(self, parent_layout: QVBoxLayout) -> None:
-        """Sets up panel with options"""
+        def create_progressbar_dialog() -> None:
+            """Opens dialog with progressbar"""
+            # Creates an instance of the Progress window class and executes the window
+            ProgressWindow().exec()
 
-        buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(DropDownWidget("Buffer Before", Formats.buffer_options))
-        buffer_layout.addWidget(DropDownWidget("Buffer After", Formats.buffer_options))
-
-        parent_layout.addLayout(buffer_layout)
-        parent_layout.addWidget(Checkbox("Keep original video"))
-
-    def create_progressbar_dialog(self) -> None:
-        """Opens dialog with progressbar"""
-
-        # Creates an instance of the Progress window class
-        dlg = ProgressWindow()
-
-        # Executes the window
-        dlg.exec()
+        run_btn.clicked.connect(create_progressbar_dialog)
+        run_btn.setStyleSheet("background-color: green")
+        self.parent_layout.addWidget(run_btn)
+        self.parent_layout.setAlignment(run_btn, Qt.AlignmentFlag.AlignCenter)
+        return run_btn
 
     # def get_setting_values(self) -> None:
     #    """Gets the settings values"""
     #    self.setting_window = QSettings("MainWindow", "Window Size")
     #    self.setting_variables = QSettings("MainWindow", "Variables")
 
-    def close_event(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
         """Saves settings when window is closed. Overrides the closeEvent method"""
         Settings.set_window_size(
             self.widget.frameGeometry().width(), self.widget.frameGeometry().height()
@@ -130,7 +107,6 @@ class MainWindow(QMainWindow):
         Settings.set_get_report(Settings.get_get_report())
         Settings.set_report_format(Settings.get_report_format())
         # Settings.close_event
-
         super().closeEvent(event)
 
 

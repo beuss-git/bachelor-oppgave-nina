@@ -14,8 +14,8 @@ class Settings:
     # Window settings
     setting_window = QSettings("MainWindow", "WindowSize")
     setting_variables = QSettings("MainWindow", "Variables")
-    default_window_width: int = 700
-    default_window_height: int = 400
+    window_width: int = 700
+    window_height: int = 400
 
     # File settings
     open_path: str = ""  # Path to open file
@@ -96,14 +96,14 @@ class Settings:
     def get_window_width() -> typing.Any:
         """Gets the window width"""
         return Settings.setting_window.value(
-            "window_width", Settings.default_window_width, type=int
+            "window_width", Settings.window_width, type=int
         )
 
     @staticmethod
     def get_window_height() -> typing.Any:
         """Gets the window height"""
         return Settings.setting_window.value(
-            "window_height", Settings.default_window_height, type=int
+            "window_height", Settings.window_height, type=int
         )
 
     @staticmethod

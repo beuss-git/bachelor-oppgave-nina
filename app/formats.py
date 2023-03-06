@@ -24,6 +24,10 @@ class Formats:
     process: typing.Optional[QProcess] = None  # The process to be executed
     process_path = r"app\dummy_script.py"  # The path to script executed
 
+    # default window size
+    default_window_width: int = 700
+    default_window_height: int = 400
+
     # Buffer time saved
     buffer_options = ["0", "1", "2", "3", "4", "5"]
 
