@@ -2,26 +2,26 @@
 
 # Only needed for access to command line arguments
 import sys
+
 import qdarktheme
 
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,
-    QHBoxLayout,
     QPushButton,
     QWidget,
 )
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
-from app.widgets.file_browser import FileBrowser
-from .execute_process import ProgressWindow
-from .widgets.options_widgets import (
-    DropDownWidget,
+from app.execute_process import ProgressWindow
+from app.widgets.options_widgets import (
     AdvancedOptions,
-    Checkbox,
 )
-from .globals import Globals
+from app.logger import Logger
+from app.panels import WidgetPanel
+from app.formats import Formats
+from app.settings import Settings
 
 
 class MainWindow(QMainWindow):
@@ -32,23 +32,36 @@ class MainWindow(QMainWindow):
 
         super().__init__()
 
-        # Set default window settings
-        self.window_width, self.window_height = 700, 400
+        # Set concurrent window settings
+        self.window_width, self.window_height = (
+            Settings.get_window_width(),
+            Settings.get_window_height(),
+        )
+        # Set minimum/default window settings
+        self.min_window_width, self.min_window_height = (
+            Formats.default_window_width,
+            Formats.default_window_height,
+        )
         self.setWindowTitle("Fish detector 3000")
-        self.setMinimumSize(self.window_width, self.window_height)
+        self.setMinimumSize(self.min_window_width, self.min_window_height)
+        self.resize(self.window_width, self.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
 
-        # Sets main layout for the window
+        # Initializes the main layout for the window
+        self.widget = QWidget()
         self.parent_layout = QVBoxLayout()
-        self.setLayout(self.parent_layout)
+
+        # Sets the layout
+        self.widget.setLayout(self.parent_layout)
+        self.setCentralWidget(self.widget)
         print("Main window created")
 
         # Adds file browser panel
-        self.file_browser_panel()
+        WidgetPanel().file_browser_panel(self.parent_layout)
         self.parent_layout.addStretch()
 
         # Adds options panel
-        self.options_panel()
+        WidgetPanel().options_panel(self.parent_layout)
         self.parent_layout.addStretch()
 
         # Adds advanced options panel
@@ -56,59 +69,52 @@ class MainWindow(QMainWindow):
         self.parent_layout.addStretch()
 
         # Adds run button
-        self.run_process_button()
+        self.run_btn = self.run_process_button()
 
-        # Sets the layout
-        widget = QWidget()
-        widget.setLayout(self.parent_layout)
-        self.setCentralWidget(widget)
-
-    def file_browser_panel(self) -> None:
-        """Sets up panel with open dir and save files"""
-        vlayout = QVBoxLayout()
-
-        self.dir_fb = FileBrowser("Open Dir", FileBrowser.OpenDirectory)
-        self.save_fb = FileBrowser("Save File", FileBrowser.SaveFile)
-
-        vlayout.addWidget(self.dir_fb)
-        vlayout.addWidget(self.save_fb)
-
-        vlayout.addStretch()
-        self.parent_layout.addLayout(vlayout)
-
-    def run_process_button(self) -> None:
+    def run_process_button(self) -> QPushButton:
         """Creates button to run process"""
-        self.run_btn = QPushButton("Run")
-        self.run_btn.setFixedWidth(100)
-        self.run_btn.clicked.connect(self.create_progressbar_dialog)
-        self.run_btn.setStyleSheet("background-color: green")
-        self.parent_layout.addWidget(self.run_btn)
-        self.parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
+        run_btn = QPushButton("Run")
+        run_btn.setFixedWidth(100)
 
-    def options_panel(self) -> None:
-        """Sets up panel with options"""
+        def create_progressbar_dialog() -> None:
+            """Opens dialog with progressbar"""
+            # Creates an instance of the Progress window class and executes the window
+            ProgressWindow().exec()
 
-        buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(DropDownWidget("Buffer Before", Globals.buffer_options))
-        buffer_layout.addWidget(DropDownWidget("Buffer After", Globals.buffer_options))
+        run_btn.clicked.connect(create_progressbar_dialog)
+        run_btn.setStyleSheet("background-color: green")
+        self.parent_layout.addWidget(run_btn)
+        self.parent_layout.setAlignment(run_btn, Qt.AlignmentFlag.AlignCenter)
+        return run_btn
 
-        self.parent_layout.addLayout(buffer_layout)
-        self.parent_layout.addWidget(Checkbox("Keep original video"))
+    # def get_setting_values(self) -> None:
+    #    """Gets the settings values"""
+    #    self.setting_window = QSettings("MainWindow", "Window Size")
+    #    self.setting_variables = QSettings("MainWindow", "Variables")
 
-    def create_progressbar_dialog(self) -> None:
-        """Opens dialog with progressbar"""
-
-        # Creates an instance of the Progress window class
-        dlg = ProgressWindow()
-
-        # Executes the window
-        dlg.exec()
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
+        """Saves settings when window is closed. Overrides the closeEvent method"""
+        Settings.set_window_size(
+            self.widget.frameGeometry().width(), self.widget.frameGeometry().height()
+        )
+        Settings.set_path_values(Settings.get_save_path(), Formats.FileType.SAVE_FILE)
+        Settings.set_path_values(Settings.get_open_path(), Formats.FileType.OPEN_DIR)
+        Settings.set_buffer_values(
+            Settings.get_buffer_before(), Settings.get_buffer_after()
+        )
+        Settings.set_keep_original(Settings.get_keep_original())
+        Settings.set_get_report(Settings.get_get_report())
+        Settings.set_report_format(Settings.get_report_format())
+        # Settings.close_event
+        super().closeEvent(event)
 
 
 def main() -> None:
     """Main"""
-
-    # You need one (and only one) QApplication instance per application.
+    # Set up logging
+    logger = Logger()
+    # Set up logging to console
+    logger.connect_console()
     # Pass in sys.argv to allow command line arguments for your app.
     # If you know you won't use command line arguments QApplication([]) works too.
     app = QApplication(sys.argv)

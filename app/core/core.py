@@ -1,12 +1,15 @@
 """Core module for the application."""
 
 import os
+import logging
 from typing import List, Tuple
 
 from pathlib import Path
 from app.detection.batch_yolov8 import BatchYolov8
 from ..detection import detection
 from ..video_processor import video_processor
+
+logger = logging.getLogger("log")
 
 
 class Core:
@@ -21,6 +24,7 @@ class Core:
         try:
             self._model = BatchYolov8(weights_path=weights_path, device=device)
         except RuntimeError as err:
+            logger.error("Failed to initialize model", exc_info=err)
             raise RuntimeError("Failed to initialize model", err) from err
 
         self._batch_size = 64
@@ -45,18 +49,23 @@ class Core:
             max_batches_to_queue=self._max_batches_to_queue,
             output_path=None,
         )
-        print(f"Found {len(frames_with_fish)} frames with fish")
+        # print(f"Found {len(frames_with_fish)} frames with fish")
+        logger.info("Found {len(frames_with_fish)} frames with fish")
 
         # Convert the detected frames to frame ranges to cut the video
         frame_ranges = self.__detected_frames_to_range(frames_with_fish, frame_buffer=3)
-        print(f"Found {len(frame_ranges)} frame ranges with fish")
+        # print(f"Found {len(frame_ranges)} frame ranges with fish")
+        logger.info("Found {len(frame_ranges)} frame ranges with fish")
 
         if len(frame_ranges) == 0:
-            print("No fish detected, skipping video")
+            # print("No fish detected, skipping video")
+            logger.warning("No fish detected, skipping video")
             return
 
-        out_path = video_path.parent / f"{video_path.stem}_processed.mp4"
-        print(f"Cutting video to {out_path}")
+        vid_path = Path(video_path)
+        out_path = vid_path.parent / f"{vid_path.stem}_processed.mp4"
+        # print(f"Cutting video to {out_path}")
+        logger.info("Cutting video to {out_path}")
         # Cut the video to the detected frames
         video_processor.cut_video(video_path, out_path, frame_ranges)
 

@@ -2,6 +2,7 @@
 import os
 from typing import List, Optional, Any, Dict
 import copy
+import logging
 from pathlib import Path
 from torch import Tensor
 import torch
@@ -13,6 +14,8 @@ from ultralytics.yolo.data.augment import LetterBox
 from ultralytics.yolo.utils.ops import non_max_suppression, scale_boxes
 from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.yolo.utils.checks import check_imgsz
+
+logger = logging.getLogger("log")
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
@@ -33,6 +36,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         try:
             self.device = select_device(device)
         except Exception as err:
+            logger.error("Failed to select device", exc_info=err)
             raise RuntimeError("Failed to select device", err) from err
 
         self.weights_name = os.path.split(weights_path)[-1]
@@ -41,6 +45,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             (self.model, _) = attempt_load_one_weight(weights_path, device=self.device)
             # self.model = attempt_load(weights_path, device=self.device) V5
         except Exception as err:
+            logger.error("Failed to load model", exc_info=err)
             raise RuntimeError("Failed to load model", err) from err
 
         self.names = (
@@ -53,6 +58,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
                 [np.random.randint(0, 255) for _ in range(3)]
                 for _ in range(len(self.names))
             ]
+            logger.debug("Color is none, setting random colors.")
         else:
             self.colors = colors
         self.imgsz = check_imgsz(img_size, stride=self.model.stride.max())
@@ -97,48 +103,6 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             raise RuntimeError("Not supported type")
 
         return self.prepare_image(img_to_send)
-
-    @staticmethod
-    def pad_batch_of_images(
-        img_list: List[Any], return_np: bool = True
-    ) -> np.ndarray[Any, Any] | List[Any]:
-        """Pad a batch of images to the same size.
-
-        Args:
-            img_list: The list of images to pad.
-            return_np: Whether to return a numpy array or a list of images.
-
-        Returns:
-            The padded images as a numpy array or a list of images.
-        """
-        max_height = 0
-        max_width = 0
-        padded_img_list = []
-        for img in img_list:
-            _, height, width = img.shape
-            max_height = max(max_height, height)
-            max_width = max(max_width, width)
-
-        for img in img_list:
-            padded_img = np.full(
-                (max_height, max_width, 3), (114, 114, 114), dtype=np.uint8
-            )
-            padded_img = padded_img.transpose(2, 0, 1)
-
-            _, height, width = img.shape
-            offset_width = (max_width - width) // 2
-            offset_height = (max_height - height) // 2
-
-            padded_img[
-                :,
-                offset_height : offset_height + height,
-                offset_width : offset_width + width,
-            ] = img
-            padded_img_list.append(padded_img)
-
-        if return_np:
-            return np.array(padded_img_list)
-        return padded_img_list
 
     def __str__(self) -> str:
         out = [
@@ -237,6 +201,48 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         _img = _img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
         new_img: np.ndarray[Any, Any] = np.ascontiguousarray(_img)  # uint8 to float32
         return new_img
+
+    @staticmethod
+    def pad_batch_of_images(
+        img_list: List[Any], return_np: bool = True
+    ) -> np.ndarray[Any, Any] | List[Any]:
+        """Pad a batch of images to the same size.
+
+        Args:
+            img_list: The list of images to pad.
+            return_np: Whether to return a numpy array or a list of images.
+
+        Returns:
+            The padded images as a numpy array or a list of images.
+        """
+        max_height = 0
+        max_width = 0
+        padded_img_list = []
+        for img in img_list:
+            _, height, width = img.shape
+            max_height = max(max_height, height)
+            max_width = max(max_width, width)
+
+        for img in img_list:
+            padded_img = np.full(
+                (max_height, max_width, 3), (114, 114, 114), dtype=np.uint8
+            )
+            padded_img = padded_img.transpose(2, 0, 1)
+
+            _, height, width = img.shape
+            offset_width = (max_width - width) // 2
+            offset_height = (max_height - height) // 2
+
+            padded_img[
+                :,
+                offset_height : offset_height + height,
+                offset_width : offset_width + width,
+            ] = img
+            padded_img_list.append(padded_img)
+
+        if return_np:
+            return np.array(padded_img_list)
+        return padded_img_list
 
     def min_max_list(self, det: Any) -> Optional[List[Any]]:
         """Create a list of bounding boxes from the detection.
