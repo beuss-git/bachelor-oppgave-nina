@@ -3,6 +3,7 @@
 # Only needed for access to command line arguments
 import sys
 import os
+from pathlib import Path
 import qdarktheme
 
 from PyQt6.QtWidgets import (
@@ -120,7 +121,9 @@ class MainWindow(QMainWindow):
         # Disable run button while processing
         self.run_btn.setEnabled(False)
 
-        dlg = DetectionWindow(input_folder_path, output_folder_path, parent=self)
+        dlg = DetectionWindow(
+            Path(input_folder_path), Path(output_folder_path), parent=self
+        )
         dlg.exec()
 
         # Re-enable button now that processing is done

@@ -23,8 +23,8 @@ from app.video_processor import video_processor
 class DetectionWorker(QThread):
     """Detection worker thread."""
 
-    progress_changed = pyqtSignal(int)
-    add_text = pyqtSignal(str)
+    update_progress = pyqtSignal(int)
+    add_log = pyqtSignal(str)
     input_folder_path: Path | None = None
     output_folder_path: Path | None = None
     model: BatchYolov8 | None = None
@@ -50,7 +50,7 @@ class DetectionWorker(QThread):
 
     def log(self, text: str) -> None:
         """Log text to the console."""
-        self.add_text.emit(text)
+        self.add_log.emit(text)
 
     def process_folder(self) -> None:
         """Process a folder of videos."""
@@ -81,17 +81,17 @@ class DetectionWorker(QThread):
             batch_size=64,
             max_batches_to_queue=4,
             output_path=None,
-            notify_progress=lambda progress: self.progress_changed.emit(int(progress)),
+            notify_progress=lambda progress: self.update_progress.emit(int(progress)),
         )
 
         print(f"Found {len(frames_with_fish)} frames with fish")
 
-        self.add_text.emit(f"Found {len(frames_with_fish)} frames with fish")
+        self.add_log.emit(f"Found {len(frames_with_fish)} frames with fish")
 
         # Convert the detected frames to frame ranges to cut the video
         frame_ranges = self.__detected_frames_to_range(frames_with_fish, frame_buffer=3)
         print(f"Found {len(frame_ranges)} frame ranges with fish")
-        self.add_text.emit(f"Found {len(frame_ranges)} frame ranges with fish")
+        self.add_log.emit(f"Found {len(frame_ranges)} frame ranges with fish")
 
         if len(frame_ranges) == 0:
             print("No fish detected, skipping video")
@@ -104,7 +104,7 @@ class DetectionWorker(QThread):
         video_processor.cut_video(video_path, out_path, frame_ranges)
         self.log(f"Saved processed video to {out_path}")
 
-        self.progress_changed.emit(100)
+        self.update_progress.emit(100)
 
     def __detected_frames_to_range(
         self, frames: List[int], frame_buffer: int
@@ -147,8 +147,8 @@ class DetectionWindow(QDialog):
 
     def __init__(
         self,
-        input_folder_path: str,
-        output_folder_path: str,
+        input_folder_path: Path,
+        output_folder_path: Path,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -174,9 +174,9 @@ class DetectionWindow(QDialog):
 
         self.setLayout(self.dialog_layout)
 
-        self.worker = DetectionWorker(Path(input_folder_path), Path(output_folder_path))
-        self.worker.progress_changed.connect(self.progress_bar.setValue)
-        self.worker.add_text.connect(self.output.appendPlainText)
+        self.worker = DetectionWorker(input_folder_path, output_folder_path)
+        self.worker.update_progress.connect(self.progress_bar.setValue)
+        self.worker.add_log.connect(self.output.appendPlainText)
         self.worker.finished.connect(self.worker_finished)
         self.worker.start()
 
@@ -195,5 +195,5 @@ class DetectionWindow(QDialog):
 
     def worker_finished(self) -> None:
         """Called when the worker has finished."""
-        # Add button to close window
+        # Show button to close window now that the worker has finished
         self.close_button.show()
