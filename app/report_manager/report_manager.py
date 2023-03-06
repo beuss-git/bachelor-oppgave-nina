@@ -1,6 +1,8 @@
 """Writes a detection report into chosen path"""
-from xml.dom import minidom
+import typing
 import csv
+
+from xml.dom import minidom
 from fpdf import FPDF
 from app.data_manager.data_manager import DataManager
 
@@ -25,13 +27,17 @@ class ReportManager:
         self.input_path = input_path
         self.datamanager = data
 
-    def write_xml_file(self) -> None:
-        """Writes a report in the format of an xml file"""
+    def write_xml_file(self, videos: typing.List[str]) -> None:
+        """Writes a report in the format of an xml file
+
+        Args:
+            videos (List[str]): List of videos that should be included in the report
+        """
 
         root: minidom.Document = minidom.Document()
 
         # gets data from teh database
-        item_list = self.datamanager.get_data(["tihi"])
+        item_list = self.datamanager.get_data(videos)
 
         # Sets up the root element of the file
         xml = root.createElement("Fish Detections")
@@ -57,15 +63,19 @@ class ReportManager:
         with open(save_path_file, "w", encoding="ascii", errors="ignore") as out:
             out.write(xml_str)
 
-    def write_csv_file(self) -> None:
-        """Writes a report in the format of a csv file"""
+    def write_csv_file(self, videos: typing.List[str]) -> None:
+        """Writes a report in the format of a csv file
+
+        Args:
+           videos (List[str]): List of videos that should be included in the report
+        """
 
         save_path_file = self.output_path + "/meh.csv"
 
         # Gets data from database and appends it to column titles
         row_list = [
             ("Video", "detectionID", "Start", "End")
-        ] + self.datamanager.get_data(["oof"])
+        ] + self.datamanager.get_data(videos)
 
         # opens the output pathway and saves the file
         with open(
@@ -74,13 +84,17 @@ class ReportManager:
             writer = csv.writer(file)
             writer.writerows(row_list)
 
-    def write_pdf_file(self) -> None:
-        """Writes a report in teh format of a pdf file"""
+    def write_pdf_file(self, videos: typing.List[str]) -> None:
+        """Writes a report in teh format of a pdf file
+
+        Args:
+            videos (List[str]): List of videos that should be included in the report
+        """
 
         save_path_file = self.output_path + "/meh.pdf"
 
         # Gets data from the data base
-        item_list = self.datamanager.get_data(["tihi", "awe"])
+        item_list = self.datamanager.get_data(videos)
 
         # sets up the pdf
         pdf = FPDF()

@@ -25,9 +25,9 @@ def main() -> int:
     report = ReportManager(
         "C:/Users/lilli/Documents/hello", "C:/Users/lilli/Documents/hello", datamanager
     )
-    report.write_csv_file()
-    report.write_xml_file()
-    report.write_pdf_file()
+    report.write_csv_file(["awe", "oof"])
+    report.write_xml_file(["tihi"])
+    report.write_pdf_file(["tihi", "oof"])
     # report2 = ReportManager("csv", "C:/Users/lilli/Documents/hello")
     # report3 = ReportManager("PDF", "C:/Users/lilli/Documents/hello")
     datamanager.close_connection()

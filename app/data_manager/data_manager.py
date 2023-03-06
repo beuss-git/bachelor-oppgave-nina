@@ -140,7 +140,7 @@ class DataManager:
             sqlite_select_query = """SELECT video.title, detection.id,
                                     detection.starttime, detection.endtime
                                     FROM detection
-                                    INNER JOIN video ON video.id = detection.videoid
+                                    RIGHT JOIN video ON video.id = detection.videoid
                                     WHERE video.id"""
 
             # sets up the last part of the query based on the searches wanted
