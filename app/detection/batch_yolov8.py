@@ -2,6 +2,7 @@
 import os
 from typing import List, Optional, Any, Dict
 import copy
+from pathlib import Path
 from torch import Tensor
 import torch
 import numpy as np
@@ -19,7 +20,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        weights_path: str,
+        weights_path: Path,
         device: str = "",
         img_size: int = 640,
         conf_thres: float = 0.4,

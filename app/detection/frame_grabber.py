@@ -5,6 +5,7 @@ from queue import Queue
 from typing import List, Any, Tuple
 import math
 import threading
+from pathlib import Path
 import cv2
 from torch import Tensor
 
@@ -19,7 +20,7 @@ class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
         batch_size: int,
         max_batches_to_queue: int,
         model: BatchYolov8,
-        video_path: str,
+        video_path: Path,
     ):
         self.model = model
         self.batch_size = batch_size
