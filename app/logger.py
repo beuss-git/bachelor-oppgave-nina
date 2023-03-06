@@ -2,10 +2,10 @@
 import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
-from app.formats import Formats
 
 
 LOGGER_NAME = "log"
+LOG_PATH = "app/log"
 
 
 def __create_file_handler(
@@ -17,7 +17,7 @@ def __create_file_handler(
         _type_: _description_
     """
     handler = TimedRotatingFileHandler(
-        f"{Formats.log_path}/{filename}",
+        f"{LOG_PATH}/{filename}",
         when="midnight",
         backupCount=10,
     )
@@ -59,8 +59,8 @@ def create_logger(level: int = logging.DEBUG, filename: str = "logfile.log") -> 
     logger.setLevel(level)
 
     # create directory for logfiles
-    if not os.path.exists(Formats.log_path):
-        os.makedirs(Formats.log_path)
+    if not os.path.exists(LOG_PATH):
+        os.makedirs(LOG_PATH)
 
     # Sets midnight rotation for logger
     logger.addHandler(__create_file_handler(formatter, filename))
