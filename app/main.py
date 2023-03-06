@@ -2,8 +2,6 @@
 
 # Only needed for access to command line arguments
 import sys
-import logging
-from logging.handlers import TimedRotatingFileHandler
 
 import qdarktheme
 
@@ -20,6 +18,7 @@ from app.execute_process import ProgressWindow
 from app.widgets.options_widgets import (
     AdvancedOptions,
 )
+from app.logger import Logger
 from app.panels import WidgetPanel
 from app.formats import Formats
 from app.settings import Settings
@@ -112,44 +111,10 @@ class MainWindow(QMainWindow):
 
 def main() -> None:
     """Main"""
-
-    # log_location = "main"
-    logger = logging.getLogger("log")
-    logger.setLevel(logging.DEBUG)
-
     # Set up logging
-    # format the log entries
-    formatter = logging.Formatter(
-        "%(asctime)s %(name)s %(levelname)s %(message)s",
-        datefmt="%H:%M:%S",
-    )
-
-    # Set up logging to file to rotate every midnight
-    handler = TimedRotatingFileHandler(
-        "app/log/logfile.log",
-        when="midnight",
-        backupCount=10,
-    )
-
-    # Set up custom naming for log files
-    def namer(default_name: str) -> str:
-        base_filename, ext, filedate = default_name.split(".")
-        return f"{base_filename}.{filedate}.{ext}"
-
-    handler.suffix = "%d-%m-%Y"
-    handler.namer = namer
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
+    logger = Logger()
     # Set up logging to console
-    root_logger = logging.getLogger()
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    root_logger.addHandler(console_handler)
-
-    logger.info("Logger created")
-
+    logger.connect_console()
     # Pass in sys.argv to allow command line arguments for your app.
     # If you know you won't use command line arguments QApplication([]) works too.
     app = QApplication(sys.argv)
