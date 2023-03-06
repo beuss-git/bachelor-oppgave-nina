@@ -142,7 +142,7 @@ class DetectionWorker(QThread):
         return frame_ranges
 
 
-class DetectionWindow(QDialog):
+class DetectionWindow(QDialog):  # disable=too-few-public-methods
     """Detection window widget."""
 
     def __init__(
