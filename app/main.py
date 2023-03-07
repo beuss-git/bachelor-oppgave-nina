@@ -17,6 +17,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
 from app.logger import get_logger, create_logger
+from app.settings import Settings
 from .formats import Formats
 from .widgets.options_widgets import AdvancedOptions
 from .widgets.error_dialog import ErrorDialog
@@ -35,10 +36,18 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         super().__init__()
 
         # Set default window settings
-        self.window_width, self.window_height = 700, 400
+        self.window_width, self.window_height = (
+            Settings.get_window_width(),
+            Settings.get_window_height(),
+        )
         self.setWindowTitle("Fish detector 3000")
         self.setMinimumSize(self.window_width, self.window_height)
+        self.resize(self.window_width, self.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
+
+        # Initializes the main layout for the window
+        self.widget = QWidget()
+        self.parent_layout = QVBoxLayout()
 
         # Sets main layout for the window
         self.parent_layout = QVBoxLayout()
