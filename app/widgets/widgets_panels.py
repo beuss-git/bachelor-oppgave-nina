@@ -1,16 +1,11 @@
 """Widgets Panels for the application."""
 from dataclasses import dataclass
 
-from PyQt6.QtWidgets import (
-    QVBoxLayout,
-    QHBoxLayout,
-)
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout
+
 from app.common import Common
 from app.widgets.file_browser import FileBrowser
-from app.widgets.widgets_options import (
-    DropDownWidget,
-    Checkbox,
-)
+from app.widgets.widgets_options import Checkbox, DropDownWidget
 
 
 @dataclass

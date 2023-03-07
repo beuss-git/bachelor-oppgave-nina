@@ -1,22 +1,23 @@
 """Detection window widget."""
+import io
 import os
+from contextlib import redirect_stdout
+from pathlib import Path
 from typing import List, Tuple
 
-from pathlib import Path
-from contextlib import redirect_stdout
-import io
+from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (
+    QDialog,
     QPlainTextEdit,
     QProgressBar,
-    QDialog,
+    QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QSizePolicy,
-    QPushButton,
 )
-from PyQt6.QtCore import pyqtSignal, QThread
-from app.detection.batch_yolov8 import BatchYolov8
+
 from app.detection import detection
+from app.detection.batch_yolov8 import BatchYolov8
 from app.video_processor import video_processor
 
 

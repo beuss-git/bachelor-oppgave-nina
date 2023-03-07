@@ -3,6 +3,7 @@ import typing
 
 # from PyQt6 import QtGui
 from PyQt6.QtCore import QSettings
+
 from app.common import Common
 
 # from .globals import Globals
