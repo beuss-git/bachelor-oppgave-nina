@@ -50,6 +50,7 @@ class Settings:
     def set_path_values(path: str, browser_type: Formats.FileType) -> None:
         """Sets the path values"""
         match browser_type:
+            # TODO: fix save path
             case Formats.FileType.SAVE_FILE:
                 Settings.setting_variables.setValue("save_path", path)
             case _:

@@ -1,5 +1,5 @@
 """Creates a widget for browsing files depending on the mode"""
-import typing
+from typing import List
 import os
 from pathlib import Path
 
@@ -35,7 +35,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
     """
 
     # Creates empty list for filepaths
-    filepaths: typing.List[str] = []
+    filepaths: List[str] = []
 
     def __init__(
         self, title: str, mode: Formats.FileType = Formats.FileType.OPEN_FILE
@@ -46,6 +46,9 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
             title (Any): Label title
             mode (int, optional): What kind of file browsing widget. Defaults to OpenFile.
         """
+
+        # Creates empty list for filepaths
+        self.filepaths: List[str] = []
 
         QWidget.__init__(self)
         layout = QHBoxLayout()
@@ -74,9 +77,8 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         layout.addWidget(button)
         layout.addStretch()
 
-    def get_file(self, mode: Formats.FileType, filepaths: typing.List[str]) -> None:
+    def get_file(self, mode: Formats.FileType, filepaths: List[str]) -> None:
         """Opens file browser to gather one or more file(s) or save a file"""
-        filepaths = []
         get_dir = QDir.currentPath()
         match mode:
             # If open single file
@@ -141,3 +143,11 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
             path (str): The path to save
         """
         Settings.Settings.set_path_values(path, mode)
+
+    def get_paths(self) -> List[str]:
+        """Returns the file path
+
+        Returns:
+            str: File path
+        """
+        return self.filepaths

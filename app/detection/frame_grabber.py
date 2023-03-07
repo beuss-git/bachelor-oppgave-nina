@@ -6,13 +6,14 @@ from typing import List, Any, Tuple
 import math
 import threading
 from pathlib import Path
-import logging
 import cv2
 from torch import Tensor
 
 from app.detection.batch_yolov8 import BatchYolov8
 
-logger = logging.getLogger("log")
+from app.logger import get_logger
+
+logger = get_logger()
 
 
 class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
@@ -37,7 +38,7 @@ class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
             self.thread_pool.append(thread)
             thread.start()
 
-        self.capture = cv2.VideoCapture(video_path)
+        self.capture = cv2.VideoCapture(str(video_path))
         self.frame_count = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
         # Start the capture thread
