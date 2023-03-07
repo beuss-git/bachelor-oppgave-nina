@@ -1,5 +1,8 @@
 """This module contains the error dialog widget."""
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox, QLabel, QWidget
+from app.logger import get_logger
+
+logger = get_logger()
 
 
 class ErrorDialog(QDialog):  # pylint: disable=too-few-public-methods
@@ -28,3 +31,5 @@ class ErrorDialog(QDialog):  # pylint: disable=too-few-public-methods
         self.dialog_layout.addWidget(self.button_box)
 
         self.setLayout(self.dialog_layout)
+
+        logger.error(message)

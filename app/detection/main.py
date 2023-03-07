@@ -1,13 +1,14 @@
 """Main module for detection."""
 import argparse
 import sys
-import logging
 from pathlib import Path
 
+from app.logger import get_logger
 from .detection import process_video
 from .batch_yolov8 import BatchYolov8
 
-logger = logging.getLogger("log")
+
+logger = get_logger()
 
 
 def main() -> int:

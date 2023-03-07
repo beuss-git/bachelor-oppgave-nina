@@ -1,7 +1,6 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-import logging
 from typing import List, Tuple, Any, Callable
 import cv2
 from tqdm import tqdm
@@ -9,10 +8,12 @@ import torch
 
 from ultralytics.yolo.utils.plotting import Annotator
 
+from app.logger import get_logger
 from .batch_yolov8 import BatchYolov8
 from .frame_grabber import ThreadedFrameGrabber
 
-logger = logging.getLogger("log")
+
+logger = get_logger()
 
 
 def __create_video_writer(

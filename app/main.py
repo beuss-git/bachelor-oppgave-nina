@@ -16,13 +16,15 @@ from PyQt6.QtWidgets import (
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
+from app.logger import get_logger, create_logger
 from app.settings import Settings
 from .formats import Formats
 from .widgets.options_widgets import AdvancedOptions
 from .widgets.error_dialog import ErrorDialog
 from .widgets.detection_window import DetectionWindow
 from .panels import WidgetPanel
-from .logger import Logger
+
+logger = get_logger()
 
 
 class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
@@ -48,9 +50,9 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         self.parent_layout = QVBoxLayout()
 
         # Sets main layout for the window
-        self.widget.setLayout(self.parent_layout)
-        self.setCentralWidget(self.widget)
-        print("Main window created")
+        self.parent_layout = QVBoxLayout()
+        self.setLayout(self.parent_layout)
+        logger.info("Main window created")
 
         # Adds file browser panel
 
@@ -84,7 +86,7 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
 
     def run(self) -> None:
         """This will run core.process_folder with the selected folder"""
-        print("Paths: %s", self.open_dir.get_paths())
+        logger.info("Paths: %s", self.open_dir.get_paths())
         input_paths = self.open_dir.get_paths()
         if len(input_paths) == 0:
             ErrorDialog("No input folder selected", parent=self).exec()
@@ -120,8 +122,9 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
 
 def main() -> None:
     """Main"""
-    logger = Logger()
-    logger.connect_console()
+
+    # Create the logger
+    create_logger()
 
     # You need one (and only one) QApplication instance per application.
     # Pass in sys.argv to allow command line arguments for your app.
