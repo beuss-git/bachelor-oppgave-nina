@@ -15,10 +15,10 @@ from PyQt6.QtCore import QEventLoop, qCritical  # , Qt
 
 # import pytest
 from app.main import MainWindow
-from app.widgets.options_widgets import add_label
+from app.widgets.widgets_options import add_label
 
 # import app.widgets.options_widgets as options_widgets
-from app.widgets.options_widgets import (
+from app.widgets.widgets_options import (
     DropDownWidget,
     AdvancedOptions,
     Checkbox,
