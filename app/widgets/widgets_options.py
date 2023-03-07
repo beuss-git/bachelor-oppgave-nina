@@ -1,16 +1,23 @@
 """_summary_"""
-from PyQt6.QtWidgets import (
-    QComboBox,
-    QHBoxLayout,
-    QVBoxLayout,
-    QCheckBox,
-    QLabel,
-    QWidget,
-)
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
+
+from app import settings
 from app.common import Common
-from app.settings import Settings
+
+# from app.settings import Settings
+
+# TODO: Refactor and decouple from settings
+#       Either DropDownWidget should be named something more specific
+#       or it should be made more generic in terms of settings
 
 
 class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
@@ -44,13 +51,14 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         self.buffer_time.setFixedWidth(50)
         self.buffer_time.addItems(buffer)
 
+        # TODO: make this into an enum
         # Sets the current index to the stored buffer time
         if title == "Buffer After":
-            self.buffer_time.setCurrentIndex(Settings.get_buffer_after())
+            self.buffer_time.setCurrentIndex(settings.buffer_after)
         elif title == "Buffer Before":
-            self.buffer_time.setCurrentIndex(Settings.get_buffer_before())
+            self.buffer_time.setCurrentIndex(settings.buffer_before)
         else:
-            self.buffer_time.setCurrentText(Settings.get_report_format())
+            self.buffer_time.setCurrentText(settings.report_format)
         self.buffer_time.currentIndexChanged.connect(
             self.index_changed
         )  # connects interaction to the index changed function
@@ -69,11 +77,11 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
             index (int): the new number that the combobox contains
         """
         if self.label == "Buffer After":
-            Settings.set_buffer_after(index)
+            settings.buffer_after = index
         elif self.label == "Buffer Before":
-            Settings.set_buffer_before(index)
+            settings.buffer_before = index
         else:
-            Settings.set_report_format(self.buffer_time.currentText())
+            settings.report_format = self.buffer_time.currentText()
 
 
 class AdvancedOptions(QWidget):
@@ -175,28 +183,25 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
         self.checkbox.setCheckState(Qt.CheckState.Checked)
         self.checkbox.setFixedWidth(20)
         if msg == "Keep original video":
-            self.checkbox.setChecked(Settings.get_keep_original())
-            self.checkbox.stateChanged.connect(Settings.set_keep_original)
+            self.checkbox.setChecked(settings.keep_original)
+
+            def state_changed(state: Qt.CheckState) -> None:
+                settings.keep_original = state == Qt.CheckState.Checked
+
+            self.checkbox.stateChanged.connect(state_changed)
         else:
-            self.checkbox.setChecked(Settings.get_get_report())
-            self.checkbox.stateChanged.connect(Settings.set_get_report)
+
+            def state_changed(state: Qt.CheckState) -> None:
+                settings.get_report = state == Qt.CheckState.Checked
+
+            self.checkbox.setChecked(settings.get_report)
+            self.checkbox.stateChanged.connect(state_changed)
 
         # Adds widgets to layout
         layout.addWidget(self.checkbox)
         layout.addWidget(add_label(msg))
 
         self.setLayout(layout)
-
-    def set_checked(self, checked: bool, text: str) -> None:
-        """Saves the status of the checkbox
-
-        Args:
-            checked (bool): a bool for whether or not the checkbox is checked or not
-        """
-        if text == "Keep original video":
-            Settings.set_keep_original(checked)
-        else:
-            Settings.set_get_report(checked)
 
 
 def add_label(title: str) -> QLabel:
