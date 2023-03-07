@@ -2,8 +2,12 @@
 import os
 from typing import List, Optional, Any, Dict
 import copy
+import logging
+from pathlib import Path
+from torch import Tensor
 import torch
 import numpy as np
+
 
 from ultralytics.nn.tasks import attempt_load_one_weight
 from ultralytics.yolo.data.augment import LetterBox
@@ -11,13 +15,15 @@ from ultralytics.yolo.utils.ops import non_max_suppression, scale_boxes
 from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.yolo.utils.checks import check_imgsz
 
+logger = logging.getLogger("log")
+
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
     """Yolov8 class for running inference on video."""
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        weights_path: str,
+        weights_path: Path,
         device: str = "",
         img_size: int = 640,
         conf_thres: float = 0.4,
@@ -30,6 +36,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         try:
             self.device = select_device(device)
         except Exception as err:
+            logger.error("Failed to select device", exc_info=err)
             raise RuntimeError("Failed to select device", err) from err
 
         self.weights_name = os.path.split(weights_path)[-1]
@@ -38,6 +45,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             (self.model, _) = attempt_load_one_weight(weights_path, device=self.device)
             # self.model = attempt_load(weights_path, device=self.device) V5
         except Exception as err:
+            logger.error("Failed to load model", exc_info=err)
             raise RuntimeError("Failed to load model", err) from err
 
         self.names = (
@@ -50,6 +58,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
                 [np.random.randint(0, 255) for _ in range(3)]
                 for _ in range(len(self.names))
             ]
+            logger.debug("Color is none, setting random colors.")
         else:
             self.colors = colors
         self.imgsz = check_imgsz(img_size, stride=self.model.stride.max())
@@ -64,6 +73,36 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             self.model.half()
         if self.device.type != "cpu":
             self.burn()
+
+    def prepare_images(
+        self, img_s: List[np.ndarray[Any, Any]] | np.ndarray[Any, Any]
+    ) -> Tensor:
+        """Prepare a batch of images for inference by normalizing and reshaping them.
+
+        Args:
+            img_s: The images to prepare.
+
+        Raises:
+            RuntimeError: If the type of the images is not supported.
+
+        Returns:
+            The prepared images as a torch tensor.
+        """
+        if isinstance(img_s, list):
+
+            img_list = []
+
+            for img in img_s:
+                img_list += [self.reshape_copy_img(img)]
+
+            img_to_send = self.pad_batch_of_images(img_list)
+        elif isinstance(img_s, np.ndarray):
+            img_to_send = self.reshape_copy_img((np.ndarray(img_s)))
+        else:
+            print(type(img_s), " is not supported")
+            raise RuntimeError("Not supported type")
+
+        return self.prepare_image(img_to_send)
 
     def __str__(self) -> str:
         out = [
@@ -90,7 +129,8 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
 
     def predict_batch(
         self,
-        img0s: List[Any] | np.ndarray[Any, Any],
+        img0s: List[Any],
+        imgs: torch.Tensor,
         max_objects: Optional[Dict[Any, Any]] = None,
     ) -> List[Any]:
         """Predict on a batch of images.
@@ -103,7 +143,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             A list of predictions.
         """
 
-        imgs = self.prepare_images(img0s)
+        # imgs = self.prepare_images(img0s)
 
         with torch.no_grad():
             # Run model
@@ -130,9 +170,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
 
         return batch_output
 
-    def prepare_image(
-        self, original_img: np.ndarray[Any, Any] | List[Any]
-    ) -> torch.Tensor:
+    def prepare_image(self, original_img: np.ndarray[Any, Any] | List[Any]) -> Tensor:
         """Prepare image for inference by normalizing and reshaping.
 
         Args:
@@ -163,33 +201,6 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         _img = _img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
         new_img: np.ndarray[Any, Any] = np.ascontiguousarray(_img)  # uint8 to float32
         return new_img
-
-    def prepare_images(
-        self, img_s: List[np.ndarray[Any, Any]] | np.ndarray[Any, Any]
-    ) -> torch.Tensor:
-        """Prepare a batch of images for inference by normalizing and reshaping them.
-
-        Args:
-            img_s: The images to prepare.
-
-        Raises:
-            RuntimeError: If the type of the images is not supported.
-
-        Returns:
-            The prepared images as a torch tensor.
-        """
-        if isinstance(img_s, list):
-            img_list = []
-            for img in img_s:
-                img_list.append(self.reshape_copy_img(img))
-            img_to_send = self.pad_batch_of_images(img_list)
-        elif isinstance(img_s, np.ndarray):
-            img_to_send = self.reshape_copy_img((np.ndarray(img_s)))
-        else:
-            print(type(img_s), " is not supported")
-            raise RuntimeError("Not supported type")
-
-        return self.prepare_image(img_to_send)
 
     @staticmethod
     def pad_batch_of_images(

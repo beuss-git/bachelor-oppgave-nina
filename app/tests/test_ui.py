@@ -71,7 +71,7 @@ class TestUI(unittest.TestCase):
         self.assertEqual(self.drop_down.label, "Test")
         self.assertEqual(self.file_browser.label, "Test")
         self.assertEqual(self.advanced.text, "<a href='#'>Advanced Options</a>")
-        self.assertEqual(self.checkbox.keep_original.isChecked(), True)
+        self.assertEqual(self.checkbox.checkbox.isChecked(), True)
         all_buffer_times = [
             self.drop_down.buffer_time.itemText(i)
             for i in range(self.drop_down.buffer_time.count())

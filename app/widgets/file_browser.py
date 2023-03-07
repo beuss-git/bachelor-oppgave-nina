@@ -1,5 +1,7 @@
 """Creates a widget for browsing files depending on the mode"""
 import typing
+import os
+from pathlib import Path
 
 from PyQt6.QtWidgets import (
     QWidget,
@@ -8,10 +10,21 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QPushButton,
 )
-from PyQt6.QtCore import QDir
+from PyQt6.QtCore import QDir, QSettings
+import app.settings as Settings
 from .options_widgets import (
     add_label,
 )
+from ..formats import Formats
+
+settings = QSettings("\bachelor-oppgave-nina")
+config_dat_dir = Path(os.path.dirname("bachelor-oppgave-nina"))
+
+
+if settings.contains("dirpath"):
+    dirpath = settings.value("dirpath")
+else:
+    settings.setValue("dirpath", "dirpath")
 
 
 class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
@@ -21,13 +34,12 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         QWidget (QWidget): Inherits QWidget
     """
 
-    # File browser modes
-    OpenFile = 0
-    OpenFiles = 1
-    OpenDirectory = 2
-    SaveFile = 3
+    # Creates empty list for filepaths
+    filepaths: typing.List[str] = []
 
-    def __init__(self, title: str, mode: int = OpenFile) -> None:
+    def __init__(
+        self, title: str, mode: Formats.FileType = Formats.FileType.OPEN_FILE
+    ) -> None:
         """Initiates the widget with LineEdit, Label and Button to browse files
 
         Args:
@@ -35,15 +47,10 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
             mode (int, optional): What kind of file browsing widget. Defaults to OpenFile.
         """
 
-        # Creates empty list for filepaths
-        self.filepaths: typing.List[str] = []
-
         QWidget.__init__(self)
         layout = QHBoxLayout()
         self.setLayout(layout)
-        self.browser_mode = mode
         self.filter_name = "All files (*.*)"
-        self.dirpath = QDir.currentPath()
 
         # Adds the label
         self.label = title
@@ -51,67 +58,86 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
         # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
+        if mode == Formats.FileType.SAVE_FILE:
+            self.line_edit.setText(Settings.Settings.get_save_path())
+        else:
+            self.line_edit.setText(Settings.Settings.get_open_path())
         layout.addWidget(self.line_edit)
 
         # Creates a button to open the file browser
-        self.button = QPushButton("Browse Files")
-        self.button.clicked.connect(self.get_file)
-        layout.addWidget(self.button)
+        button = QPushButton("Browse Files")
+
+        def use_get_file() -> None:
+            self.get_file(mode, self.filepaths)
+
+        button.clicked.connect(use_get_file)
+        layout.addWidget(button)
         layout.addStretch()
 
-    def get_file(self) -> None:
+    def get_file(self, mode: Formats.FileType, filepaths: typing.List[str]) -> None:
         """Opens file browser to gather one or more file(s) or save a file"""
-        self.filepaths = []
-
-        # If open single file
-        if self.browser_mode == FileBrowser.OpenFile:
-            self.filepaths.append(
-                QFileDialog.getOpenFileName(
-                    self,
-                    caption="Choose File",
-                    directory=self.dirpath,
-                    filter=self.filter_name,
-                )[0]
-            )
-
-        # Else open multiple files
-        elif self.browser_mode == FileBrowser.OpenFiles:
-            self.filepaths.extend(
-                QFileDialog.getOpenFileNames(
-                    self,
-                    caption="Choose Files",
-                    directory=self.dirpath,
-                    filter=self.filter_name,
-                )[0]
-            )
-
-        # Else open directory
-        elif self.browser_mode == FileBrowser.OpenDirectory:
-            self.filepaths.append(
-                QFileDialog.getExistingDirectory(
-                    self, caption="Choose Directory", directory=self.dirpath
+        filepaths = []
+        get_dir = QDir.currentPath()
+        match mode:
+            # If open single file
+            case Formats.FileType.OPEN_FILE:
+                filepaths.append(
+                    QFileDialog.getOpenFileName(
+                        self,
+                        caption="Choose File",
+                        directory=get_dir,
+                        filter=self.filter_name,
+                    )[0]
                 )
-            )
 
-        # Else save file
-        else:
-            self.filepaths.append(
-                QFileDialog.getSaveFileName(
-                    self,
-                    caption="Save/Save As",
-                    directory=self.dirpath,
-                    filter=self.filter_name,
-                )[0]
-            )
+            # Else open multiple files
+            case Formats.FileType.OPEN_FILES:
+                filepaths.extend(
+                    QFileDialog.getOpenFileNames(
+                        self,
+                        caption="Choose Files",
+                        directory=get_dir,
+                        filter=self.filter_name,
+                    )[0]
+                )
+
+            # Else open directory
+            case Formats.FileType.OPEN_DIR:
+                filepaths.append(
+                    QFileDialog.getExistingDirectory(
+                        self, caption="Choose Directory", directory=get_dir
+                    )
+                )
+
+            # Else save file
+            case _:
+                filepaths.append(
+                    QFileDialog.getSaveFileName(
+                        self,
+                        caption="Save/Save As",
+                        directory=get_dir,
+                        filter=self.filter_name,
+                    )[0]
+                )
 
         # If the user cancels the file browser, the filepaths list will be empty
-        if len(self.filepaths) == 0:
+        if len(filepaths) == 0:
             return
 
         # If the user selects only one file, the filepaths list will have only one element
-        if len(self.filepaths) == 1:
-            self.line_edit.setText(self.filepaths[0])
+        if len(filepaths) == 1:
+            self.line_edit.setText(filepaths[0])
+            self.path_changed(filepaths[0], mode)
 
         # If the user selects more than one file, the filepaths list will have more than one element
         else:
-            self.line_edit.setText(",".join(self.filepaths))
+            self.line_edit.setText(",".join(filepaths))
+            self.path_changed(",".join(filepaths), mode)
+
+    def path_changed(self, path: str, mode: Formats.FileType) -> None:
+        """Saves the changed path to the global variables
+
+        Args:
+            path (str): The path to save
+        """
+        Settings.Settings.set_path_values(path, mode)

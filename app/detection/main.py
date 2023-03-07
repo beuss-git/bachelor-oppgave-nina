@@ -1,9 +1,13 @@
 """Main module for detection."""
 import argparse
 import sys
+import logging
+from pathlib import Path
 
 from .detection import process_video
 from .batch_yolov8 import BatchYolov8
+
+logger = logging.getLogger("log")
 
 
 def main() -> int:
@@ -63,20 +67,22 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        model = BatchYolov8(args.weights_path, args.device)
+        model = BatchYolov8(Path(args.weights_path), args.device)
     except RuntimeError as err:
-        print("Failed to initialize detector", err)
+        logger.error("Failed to initialize model", exc_info=err)
+        # print("Failed to initialize detector", err)
         return 1
 
     frames_with_fish = process_video(
         model,
-        args.video_path,
+        Path(args.video_path),
         args.batch_size,
         args.max_batches_to_queue,
-        args.output_path,
+        Path(args.output_path) if args.output_path is not None else None,
     )
 
-    print(f"Found {len(frames_with_fish)} frames with fish")
+    # print(f"Found {len(frames_with_fish)} frames with fish")
+    logger.info("Found {%s} frames with fish", len(frames_with_fish))
 
     return 0
 

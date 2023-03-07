@@ -9,7 +9,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
-from ..globals import Globals
+from app.formats import Formats
+from app.settings import Settings
 
 
 class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
@@ -42,6 +43,14 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         self.buffer_time = QComboBox()
         self.buffer_time.setFixedWidth(50)
         self.buffer_time.addItems(buffer)
+
+        # Sets the current index to the stored buffer time
+        if title == "Buffer After":
+            self.buffer_time.setCurrentIndex(Settings.get_buffer_after())
+        elif title == "Buffer Before":
+            self.buffer_time.setCurrentIndex(Settings.get_buffer_before())
+        else:
+            self.buffer_time.setCurrentText(Settings.get_report_format())
         self.buffer_time.currentIndexChanged.connect(
             self.index_changed
         )  # connects interaction to the index changed function
@@ -59,13 +68,12 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         Args:
             index (int): the new number that the combobox contains
         """
-
         if self.label == "Buffer After":
-            Globals.buffer_after = index
+            Settings.set_buffer_after(index)
         elif self.label == "Buffer Before":
-            Globals.buffer_before = index
-
-        print(self.label + ": " + str(index))
+            Settings.set_buffer_before(index)
+        else:
+            Settings.set_report_format(self.buffer_time.currentText())
 
 
 class AdvancedOptions(QWidget):
@@ -127,7 +135,7 @@ class AdvancedOptions(QWidget):
     def advanced_options(self) -> None:
         """Sets up the advanced options"""
         self.advanced_layout.addWidget(Checkbox("Get report"))
-        self.advanced_layout.addWidget(DropDownWidget("Report format", Globals.formats))
+        self.advanced_layout.addWidget(DropDownWidget("Report format", Formats.formats))
 
     def clear_layout(self, layout: QVBoxLayout) -> None:
         """Removes all of the advanced options
@@ -163,26 +171,32 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
         layout = QHBoxLayout()
 
         # Sets up the checkbox
-        self.keep_original = QCheckBox()
-        self.keep_original.setCheckState(Qt.CheckState.Checked)
-        self.keep_original.setFixedWidth(20)
-        self.keep_original.stateChanged.connect(self.set_checked)
+        self.checkbox = QCheckBox()
+        self.checkbox.setCheckState(Qt.CheckState.Checked)
+        self.checkbox.setFixedWidth(20)
+        if msg == "Keep original video":
+            self.checkbox.setChecked(Settings.get_keep_original())
+            self.checkbox.stateChanged.connect(Settings.set_keep_original)
+        else:
+            self.checkbox.setChecked(Settings.get_get_report())
+            self.checkbox.stateChanged.connect(Settings.set_get_report)
 
         # Adds widgets to layout
-        layout.addWidget(self.keep_original)
+        layout.addWidget(self.checkbox)
         layout.addWidget(add_label(msg))
 
         self.setLayout(layout)
 
-    def set_checked(self, checked: bool) -> None:
+    def set_checked(self, checked: bool, text: str) -> None:
         """Saves the status of the checkbox
 
         Args:
             checked (bool): a bool for whether or not the checkbox is checked or not
         """
-        Globals.check = checked
-        print("Keep original: " + str(checked))
-        print("Global " + str(Globals.check))
+        if text == "Keep original video":
+            Settings.set_keep_original(checked)
+        else:
+            Settings.set_get_report(checked)
 
 
 def add_label(title: str) -> QLabel:

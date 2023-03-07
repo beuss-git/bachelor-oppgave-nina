@@ -2,6 +2,7 @@
 from typing import List, Tuple
 import os
 import subprocess
+from pathlib import Path
 import ffmpeg
 
 
@@ -26,7 +27,7 @@ def __run_ffmpeg(
 
 
 def cut_video(
-    input_path: str, output_path: str, frame_ranges: List[Tuple[int, int]]
+    input_path: Path, output_path: Path, frame_ranges: List[Tuple[int, int]]
 ) -> None:
     """Cuts the video to the given frame ranges.
 
@@ -36,7 +37,7 @@ def cut_video(
         frame_ranges: The frame ranges to keep.
     """
 
-    input_file = ffmpeg.input(input_path)
+    input_file = ffmpeg.input(str(input_path))
     # Save the concat filter to a file and run filter_complex_script on that
     command = (
         ffmpeg.concat(
@@ -48,7 +49,7 @@ def cut_video(
                 for [start_frame, end_frame] in frame_ranges
             ]
         )
-        .output(output_path)
+        .output(str(output_path))
         .overwrite_output()
     )
 
