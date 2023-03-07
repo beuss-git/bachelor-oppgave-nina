@@ -111,6 +111,26 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         # Re-enable button now that processing is done
         self.run_btn.setEnabled(True)
 
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
+        """Saves settings when window is closed. Overrides the closeEvent method"""
+        Settings.set_window_size(
+            self.central_widget.frameGeometry().width(),
+            self.central_widget.frameGeometry().height(),
+        )
+        Settings.set_path_values(Settings.get_save_path(), Common.FileType.SAVE_FILE)
+        Settings.set_path_values(Settings.get_open_path(), Common.FileType.OPEN_DIR)
+        Settings.set_buffer_values(
+            Settings.get_buffer_before(), Settings.get_buffer_after()
+        )
+        Settings.set_keep_original(Settings.get_keep_original())
+        Settings.set_get_report(Settings.get_get_report())
+        Settings.set_report_format(Settings.get_report_format())
+
+        logger.info("Saving settings")
+
+        # Settings.close_event
+        super().closeEvent(event)
+
 
 def main() -> None:
     """Main"""
