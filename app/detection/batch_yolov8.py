@@ -1,8 +1,7 @@
-"""Yolov5 class for running inference on video. """
+"""Yolov8 class for running inference on video. """
 import os
 from typing import List, Optional, Any, Dict
 import copy
-import logging
 from pathlib import Path
 from torch import Tensor
 import torch
@@ -15,7 +14,9 @@ from ultralytics.yolo.utils.ops import non_max_suppression, scale_boxes
 from ultralytics.yolo.utils.torch_utils import select_device
 from ultralytics.yolo.utils.checks import check_imgsz
 
-logger = logging.getLogger("log")
+from app.logger import get_logger
+
+logger = get_logger()
 
 
 class BatchYolov8:  # pylint: disable=too-many-instance-attributes
@@ -42,7 +43,9 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         self.weights_name = os.path.split(weights_path)[-1]
 
         try:
-            (self.model, _) = attempt_load_one_weight(weights_path, device=self.device)
+            (self.model, _) = attempt_load_one_weight(
+                str(weights_path), device=self.device
+            )
             # self.model = attempt_load(weights_path, device=self.device) V5
         except Exception as err:
             logger.error("Failed to load model", exc_info=err)

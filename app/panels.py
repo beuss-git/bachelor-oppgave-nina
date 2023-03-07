@@ -20,18 +20,20 @@ class WidgetPanel:
     def __init__(self) -> None:
         pass
 
-    def file_browser_panel(self, parent_layout: QVBoxLayout) -> None:
+    @staticmethod
+    def add_file_browser_panel(
+        parent_layout: QVBoxLayout, open_dir: FileBrowser, save_file: FileBrowser
+    ) -> None:
         """Sets up panel with open dir and save files"""
         vlayout = QVBoxLayout()
-        open_dir = FileBrowser("Open Dir", Formats.FileType.OPEN_DIR)
-        save_file = FileBrowser("Save File", Formats.FileType.SAVE_FILE)
         vlayout.addWidget(open_dir)
         vlayout.addWidget(save_file)
 
         vlayout.addStretch()
         parent_layout.addLayout(vlayout)
 
-    def options_panel(self, parent_layout: QVBoxLayout) -> None:
+    @staticmethod
+    def add_options_panel(parent_layout: QVBoxLayout) -> None:
         """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()

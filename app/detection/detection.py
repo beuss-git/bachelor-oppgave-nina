@@ -1,19 +1,19 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-from typing import List, Any, Tuple
-import logging
-
+from typing import List, Tuple, Any, Callable
 import cv2
 from tqdm import tqdm
 import torch
 
 from ultralytics.yolo.utils.plotting import Annotator
 
+from app.logger import get_logger
 from .batch_yolov8 import BatchYolov8
 from .frame_grabber import ThreadedFrameGrabber
 
-logger = logging.getLogger("log")
+
+logger = get_logger()
 
 
 def __create_video_writer(
@@ -75,7 +75,7 @@ def __process_batch(
 
     Args:
         batch: Batch of frames
-        model: The Yolov5 model
+        model: The Yolov8 model
 
     Returns:
         The time it took to process the batch.
@@ -96,6 +96,7 @@ def process_video(
     batch_size: int,
     max_batches_to_queue: int,
     output_path: Path | None,
+    notify_progress: Callable[[int], None] | None = None,
 ) -> List[int]:
     """Runs inference on a video. And returns a list of frames containing fish.
 
@@ -178,10 +179,12 @@ def process_video(
                         frames_with_fish.append(frame_count + i)
 
                 # Update the frame count
-                frame_count += len(processed_batch)
-
-        # print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
-        logger.info("Average FPS: %s", fps_count / frame_grabber.total_batch_count())
+                frame_count += len(original_batch)
+                if notify_progress is not None:
+                    notify_progress((pbar.n / pbar.total) * 100)
+        if notify_progress is not None:
+            notify_progress(100)
+        print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
     except RuntimeError as err:
         logger.error("Failed to process video", exc_info=err)
         # print(err)
