@@ -1,20 +1,20 @@
-"""Widget Panels for the application."""
+"""Widgets Panels for the application."""
 from dataclasses import dataclass
 
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
 )
-from app.formats import Formats
+from app.common import Common
 from app.widgets.file_browser import FileBrowser
-from .widgets.options_widgets import (
+from app.widgets.widgets_options import (
     DropDownWidget,
     Checkbox,
 )
 
 
 @dataclass
-class WidgetPanel:
+class WidgetsPanel:
     """_summary_"""
 
     def __init__(self) -> None:
@@ -37,8 +37,8 @@ class WidgetPanel:
         """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(DropDownWidget("Buffer Before", Formats.buffer_options))
-        buffer_layout.addWidget(DropDownWidget("Buffer After", Formats.buffer_options))
+        buffer_layout.addWidget(DropDownWidget("Buffer Before", Common.buffer_options))
+        buffer_layout.addWidget(DropDownWidget("Buffer After", Common.buffer_options))
 
         parent_layout.addLayout(buffer_layout)
         parent_layout.addWidget(Checkbox("Keep original video"))

@@ -18,11 +18,11 @@ from PyQt6.QtCore import Qt
 from app.widgets.file_browser import FileBrowser
 from app.logger import get_logger, create_logger
 from app.settings import Settings
-from .formats import Formats
-from .widgets.options_widgets import AdvancedOptions
-from .widgets.error_dialog import ErrorDialog
-from .widgets.detection_window import DetectionWindow
-from .panels import WidgetPanel
+from app.common import Common
+from app.widgets.widgets_options import AdvancedOptions
+from app.widgets.error_dialog import ErrorDialog
+from app.widgets.detection_window import DetectionWindow
+from app.widgets.widgets_panels import WidgetsPanel
 
 logger = get_logger()
 
@@ -41,30 +41,27 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
             Settings.get_window_height(),
         )
         self.setWindowTitle("Fish detector 3000")
-        self.setMinimumSize(self.window_width, self.window_height)
+        self.setMinimumSize(Common.default_window_width, Common.default_window_height)
         self.resize(self.window_width, self.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
 
-        # Initializes the main layout for the window
-        self.widget = QWidget()
+        # Initializes the main layout for the central widget
+        self.central_widget = QWidget()
         self.parent_layout = QVBoxLayout()
-
-        # Sets main layout for the window
-        self.parent_layout = QVBoxLayout()
-        self.setLayout(self.parent_layout)
+        self.central_widget.setLayout(self.parent_layout)
+        self.setCentralWidget(self.central_widget)
         logger.info("Main window created")
 
         # Adds file browser panel
-
-        self.open_dir = FileBrowser("Open Dir", Formats.FileType.OPEN_DIR)
-        self.save_dir = FileBrowser("Save Dir", Formats.FileType.OPEN_DIR)
-        WidgetPanel.add_file_browser_panel(
+        self.open_dir = FileBrowser("Open Dir", Common.FileType.OPEN_DIR)
+        self.save_dir = FileBrowser("Save Dir", Common.FileType.OPEN_DIR)
+        WidgetsPanel.add_file_browser_panel(
             self.parent_layout, self.open_dir, self.save_dir
         )
         self.parent_layout.addStretch()
 
         # Adds options panel
-        WidgetPanel.add_options_panel(self.parent_layout)
+        WidgetsPanel.add_options_panel(self.parent_layout)
         self.parent_layout.addStretch()
 
         # Adds advanced options panel
@@ -78,11 +75,6 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         self.run_btn.setStyleSheet("background-color: green")
         self.parent_layout.addWidget(self.run_btn)
         self.parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
-
-        # Sets the layout
-        widget = QWidget()
-        widget.setLayout(self.parent_layout)
-        self.setCentralWidget(widget)
 
     def run(self) -> None:
         """This will run core.process_folder with the selected folder"""
@@ -118,6 +110,26 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
 
         # Re-enable button now that processing is done
         self.run_btn.setEnabled(True)
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
+        """Saves settings when window is closed. Overrides the closeEvent method"""
+        Settings.set_window_size(
+            self.central_widget.frameGeometry().width(),
+            self.central_widget.frameGeometry().height(),
+        )
+        Settings.set_path_values(Settings.get_save_path(), Common.FileType.SAVE_FILE)
+        Settings.set_path_values(Settings.get_open_path(), Common.FileType.OPEN_DIR)
+        Settings.set_buffer_values(
+            Settings.get_buffer_before(), Settings.get_buffer_after()
+        )
+        Settings.set_keep_original(Settings.get_keep_original())
+        Settings.set_get_report(Settings.get_get_report())
+        Settings.set_report_format(Settings.get_report_format())
+
+        logger.info("Saving settings")
+
+        # Settings.close_event
+        super().closeEvent(event)
 
 
 def main() -> None:

@@ -12,10 +12,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QDir, QSettings
 import app.settings as Settings
-from .options_widgets import (
+from app.widgets.widgets_options import (
     add_label,
 )
-from ..formats import Formats
+from app.common import Common
 
 settings = QSettings("\bachelor-oppgave-nina")
 config_dat_dir = Path(os.path.dirname("bachelor-oppgave-nina"))
@@ -38,7 +38,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
     filepaths: List[str] = []
 
     def __init__(
-        self, title: str, mode: Formats.FileType = Formats.FileType.OPEN_FILE
+        self, title: str, mode: Common.FileType = Common.FileType.OPEN_FILE
     ) -> None:
         """Initiates the widget with LineEdit, Label and Button to browse files
 
@@ -61,7 +61,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
         # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
-        if mode == Formats.FileType.SAVE_FILE:
+        if mode == Common.FileType.SAVE_FILE:
             self.line_edit.setText(Settings.Settings.get_save_path())
         else:
             self.line_edit.setText(Settings.Settings.get_open_path())
@@ -77,12 +77,12 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         layout.addWidget(button)
         layout.addStretch()
 
-    def get_file(self, mode: Formats.FileType, filepaths: List[str]) -> None:
+    def get_file(self, mode: Common.FileType, filepaths: List[str]) -> None:
         """Opens file browser to gather one or more file(s) or save a file"""
         get_dir = QDir.currentPath()
         match mode:
             # If open single file
-            case Formats.FileType.OPEN_FILE:
+            case Common.FileType.OPEN_FILE:
                 filepaths.append(
                     QFileDialog.getOpenFileName(
                         self,
@@ -93,7 +93,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
                 )
 
             # Else open multiple files
-            case Formats.FileType.OPEN_FILES:
+            case Common.FileType.OPEN_FILES:
                 filepaths.extend(
                     QFileDialog.getOpenFileNames(
                         self,
@@ -104,7 +104,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
                 )
 
             # Else open directory
-            case Formats.FileType.OPEN_DIR:
+            case Common.FileType.OPEN_DIR:
                 filepaths.append(
                     QFileDialog.getExistingDirectory(
                         self, caption="Choose Directory", directory=get_dir
@@ -136,7 +136,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
             self.line_edit.setText(",".join(filepaths))
             self.path_changed(",".join(filepaths), mode)
 
-    def path_changed(self, path: str, mode: Formats.FileType) -> None:
+    def path_changed(self, path: str, mode: Common.FileType) -> None:
         """Saves the changed path to the global variables
 
         Args:

@@ -3,7 +3,7 @@ import typing
 
 # from PyQt6 import QtGui
 from PyQt6.QtCore import QSettings
-from .formats import Formats
+from app.common import Common
 
 # from .globals import Globals
 
@@ -47,11 +47,11 @@ class Settings:
         Settings.setting_window.setValue("window_height", height)
 
     @staticmethod
-    def set_path_values(path: str, browser_type: Formats.FileType) -> None:
+    def set_path_values(path: str, browser_type: Common.FileType) -> None:
         """Sets the path values"""
         match browser_type:
             # TODO: fix save path
-            case Formats.FileType.SAVE_FILE:
+            case Common.FileType.SAVE_FILE:
                 Settings.setting_variables.setValue("save_path", path)
             case _:
                 Settings.setting_variables.setValue("open_path", path)

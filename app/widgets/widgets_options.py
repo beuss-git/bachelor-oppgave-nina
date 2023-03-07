@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
-from app.formats import Formats
+from app.common import Common
 from app.settings import Settings
 
 
@@ -135,7 +135,7 @@ class AdvancedOptions(QWidget):
     def advanced_options(self) -> None:
         """Sets up the advanced options"""
         self.advanced_layout.addWidget(Checkbox("Get report"))
-        self.advanced_layout.addWidget(DropDownWidget("Report format", Formats.formats))
+        self.advanced_layout.addWidget(DropDownWidget("Report format", Common.formats))
 
     def clear_layout(self, layout: QVBoxLayout) -> None:
         """Removes all of the advanced options
