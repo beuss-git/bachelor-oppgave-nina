@@ -1,8 +1,7 @@
 """Main file for our application"""
-import os
 import logging
+import os
 from logging.handlers import TimedRotatingFileHandler
-
 
 LOGGER_NAME = "log"
 LOG_PATH = "app/log"

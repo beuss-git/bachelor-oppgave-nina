@@ -1,16 +1,16 @@
 """This module contains the ThreadedFrameGrabber class. """
 
 
-from queue import Queue
-from typing import List, Any, Tuple
 import math
 import threading
 from pathlib import Path
+from queue import Queue
+from typing import Any, List, Tuple
+
 import cv2
 from torch import Tensor
 
 from app.detection.batch_yolov8 import BatchYolov8
-
 from app.logger import get_logger
 
 logger = get_logger()

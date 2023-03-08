@@ -1,14 +1,15 @@
 """_summary_"""
-from PyQt6.QtWidgets import (
-    QComboBox,
-    QHBoxLayout,
-    QVBoxLayout,
-    QCheckBox,
-    QLabel,
-    QWidget,
-)
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
+
 from app.common import Common
 from app.settings import Settings
 

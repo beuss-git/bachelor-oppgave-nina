@@ -1,21 +1,14 @@
 """Creates a widget for browsing files depending on the mode"""
-from typing import List
 import os
 from pathlib import Path
+from typing import List
 
-from PyQt6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QLineEdit,
-    QFileDialog,
-    QPushButton,
-)
 from PyQt6.QtCore import QDir, QSettings
+from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, QWidget
+
 import app.settings as Settings
-from app.widgets.widgets_options import (
-    add_label,
-)
 from app.common import Common
+from app.widgets.widgets_options import add_label
 
 settings = QSettings("\bachelor-oppgave-nina")
 config_dat_dir = Path(os.path.dirname("bachelor-oppgave-nina"))
