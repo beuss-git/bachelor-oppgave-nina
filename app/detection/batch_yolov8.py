@@ -1,18 +1,17 @@
 """Yolov8 class for running inference on video. """
-import os
-from typing import List, Optional, Any, Dict
 import copy
+import os
 from pathlib import Path
-from torch import Tensor
-import torch
+from typing import Any, Dict, List, Optional
+
 import numpy as np
-
-
+import torch
+from torch import Tensor
 from ultralytics.nn.tasks import attempt_load_one_weight
 from ultralytics.yolo.data.augment import LetterBox
+from ultralytics.yolo.utils.checks import check_imgsz
 from ultralytics.yolo.utils.ops import non_max_suppression, scale_boxes
 from ultralytics.yolo.utils.torch_utils import select_device
-from ultralytics.yolo.utils.checks import check_imgsz
 
 from app.logger import get_logger
 

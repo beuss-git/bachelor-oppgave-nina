@@ -1,16 +1,11 @@
 """Progress bar when loading AI models."""
-import typing
 import re
+import typing
 
-from PyQt6.QtWidgets import (
-    QPlainTextEdit,
-    QProgressBar,
-    QDialog,
-    QVBoxLayout,
-)
 from PyQt6.QtCore import QProcess
-from .formats import Formats
+from PyQt6.QtWidgets import QDialog, QPlainTextEdit, QProgressBar, QVBoxLayout
 
+from .common import Common
 
 # A regular expression, to extract the % complete.
 progress_re = re.compile(r"Total complete: (\d+)%")
@@ -54,23 +49,23 @@ class ProgressWindow(QDialog):
         """Start the process."""
 
         # Start the process if it is not already running.
-        if Formats.process is None:
+        if Common.process is None:
             self.message("Starting process...")
-            Formats.process = QProcess()
+            Common.process = QProcess()
 
             # Connect the process signals to the appropriate slots.
-            Formats.process.readyReadStandardOutput.connect(self.handle_stdout)
-            Formats.process.readyReadStandardError.connect(self.handle_stderr)
-            Formats.process.stateChanged.connect(self.handle_state)
-            Formats.process.finished.connect(self.process_finished)
+            Common.process.readyReadStandardOutput.connect(self.handle_stdout)
+            Common.process.readyReadStandardError.connect(self.handle_stderr)
+            Common.process.stateChanged.connect(self.handle_state)
+            Common.process.finished.connect(self.process_finished)
 
             # Start the process.
-            Formats.process.start("python", [Formats.process_path])
+            Common.process.start("python", [Common.process_path])
 
     def handle_stderr(self) -> None:
         """Gets the errors and progress from the process and prints them to the text box."""
-        if Formats.process is not None:
-            data = Formats.process.readAllStandardError()
+        if Common.process is not None:
+            data = Common.process.readAllStandardError()
             stderr = data.data().decode("utf8")
             # Extract progress if it is in the data.
             progress = simple_percent_parser(stderr)
@@ -82,8 +77,8 @@ class ProgressWindow(QDialog):
 
     def handle_stdout(self) -> None:
         """Prints out the standard output from the process to the text box."""
-        if Formats.process is not None:
-            data = Formats.process.readAllStandardOutput()
+        if Common.process is not None:
+            data = Common.process.readAllStandardOutput()
             stdout = data.data().decode("utf8")
             self.message(stdout)
 
@@ -104,7 +99,7 @@ class ProgressWindow(QDialog):
     def process_finished(self) -> None:
         """Print out finsihed message and reset the process."""
         self.message("Process finished.")
-        Formats.process = None
+        Common.process = None
 
 
 def simple_percent_parser(output: typing.Any) -> int | None:

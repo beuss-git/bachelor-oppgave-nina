@@ -4,26 +4,26 @@
 import sys
 import unittest
 
+from PyQt6.QtCore import QEventLoop, qCritical  # , Qt
 
 # from ..globals import Globals
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import QEventLoop, qCritical  # , Qt
+
+# import pytest
+from app.main import MainWindow
+from app.widgets.file_browser import FileBrowser
+
+# import app.widgets.options_widgets as options_widgets
+from app.widgets.widgets_options import (
+    AdvancedOptions,
+    Checkbox,
+    DropDownWidget,
+    add_label,
+)
 
 # from pytestqt.qtbot import QtBot
 
 # from PyQt6.QtTest import QTest
-
-# import pytest
-from app.main import MainWindow
-from app.widgets.options_widgets import add_label
-
-# import app.widgets.options_widgets as options_widgets
-from app.widgets.options_widgets import (
-    DropDownWidget,
-    AdvancedOptions,
-    Checkbox,
-)
-from app.widgets.file_browser import FileBrowser
 
 
 # class TestUI(MainWindow):

@@ -1,27 +1,27 @@
 """Main file for our application"""
 
 # Only needed for access to command line arguments
-import sys
 import os
+import sys
 from pathlib import Path
-import qdarktheme
 
-from PyQt6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QVBoxLayout,
-    QPushButton,
-    QWidget,
-)
+import qdarktheme
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
+
+from app import settings
+
+# import app.settings as settings
+from app.common import Common
+from app.logger import create_logger, get_logger
+
+# from app.settings import Settings
+from app.widgets.detection_window import DetectionWindow
+from app.widgets.error_dialog import ErrorDialog
 from app.widgets.file_browser import FileBrowser
-from app.logger import get_logger, create_logger
-from .formats import Formats
-from .widgets.options_widgets import AdvancedOptions
-from .widgets.error_dialog import ErrorDialog
-from .widgets.detection_window import DetectionWindow
-from .panels import WidgetPanel
+from app.widgets.widgets_options import AdvancedOptions
+from app.widgets.widgets_panels import WidgetsPanel
 
 logger = get_logger()
 
@@ -35,27 +35,32 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         super().__init__()
 
         # Set default window settings
-        self.window_width, self.window_height = 700, 400
         self.setWindowTitle("Fish detector 3000")
-        self.setMinimumSize(self.window_width, self.window_height)
+        self.setMinimumSize(Common.default_window_width, Common.default_window_height)
+        self.resize(settings.window_width, settings.window_height)
         self.setWindowIcon(QtGui.QIcon("app/images/app_logo.png"))
 
-        # Sets main layout for the window
+        # Initializes the main layout for the central widget
+        self.central_widget = QWidget()
         self.parent_layout = QVBoxLayout()
-        self.setLayout(self.parent_layout)
+        self.central_widget.setLayout(self.parent_layout)
+        self.setCentralWidget(self.central_widget)
         logger.info("Main window created")
 
         # Adds file browser panel
-
-        self.open_dir = FileBrowser("Open Dir", Formats.FileType.OPEN_DIR)
-        self.save_dir = FileBrowser("Save Dir", Formats.FileType.OPEN_DIR)
-        WidgetPanel.add_file_browser_panel(
+        self.open_dir = FileBrowser(
+            "Open Dir", Common.FileType.OPEN_DIR, [settings.open_path]
+        )
+        self.save_dir = FileBrowser(
+            "Save Dir", Common.FileType.OPEN_DIR, [settings.save_path]
+        )
+        WidgetsPanel.add_file_browser_panel(
             self.parent_layout, self.open_dir, self.save_dir
         )
         self.parent_layout.addStretch()
 
         # Adds options panel
-        WidgetPanel.add_options_panel(self.parent_layout)
+        WidgetsPanel.add_options_panel(self.parent_layout)
         self.parent_layout.addStretch()
 
         # Adds advanced options panel
@@ -69,11 +74,6 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         self.run_btn.setStyleSheet("background-color: green")
         self.parent_layout.addWidget(self.run_btn)
         self.parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
-
-        # Sets the layout
-        widget = QWidget()
-        widget.setLayout(self.parent_layout)
-        self.setCentralWidget(widget)
 
     def run(self) -> None:
         """This will run core.process_folder with the selected folder"""
@@ -110,12 +110,36 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         # Re-enable button now that processing is done
         self.run_btn.setEnabled(True)
 
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
+        """Saves settings when window is closed. Overrides the closeEvent method"""
+        logger.info("Saving settings")
 
-def main() -> None:
+        # Update window size
+        frame_geometry = self.central_widget.frameGeometry()
+        settings.window_width = frame_geometry.width()
+        settings.window_height = frame_geometry.height()
+
+        # Update input/output paths
+        # NOTE: we assume that the user only selects one folder
+        open_path = self.open_dir.get_path()
+        settings.open_path = open_path if open_path else ""
+
+        save_path = self.save_dir.get_path()
+        settings.save_path = save_path if save_path else ""
+
+        settings.save()
+
+        # Settings.close_event
+        super().closeEvent(event)
+
+
+def main() -> int:
     """Main"""
 
     # Create the logger
     create_logger()
+
+    settings.setup()
 
     # You need one (and only one) QApplication instance per application.
     # Pass in sys.argv to allow command line arguments for your app.
@@ -131,3 +155,5 @@ def main() -> None:
 
     # Start the event loop.
     app.exec()
+
+    return 0

@@ -1,17 +1,17 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-from typing import List, Tuple, Any, Callable
-import cv2
-from tqdm import tqdm
-import torch
+from typing import Any, Callable, List, Tuple
 
+import cv2
+import torch
+from tqdm import tqdm
 from ultralytics.yolo.utils.plotting import Annotator
 
 from app.logger import get_logger
+
 from .batch_yolov8 import BatchYolov8
 from .frame_grabber import ThreadedFrameGrabber
-
 
 logger = get_logger()
 

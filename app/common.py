@@ -2,11 +2,12 @@
 import typing
 from dataclasses import dataclass
 from enum import Enum
+
 from PyQt6.QtCore import QProcess
 
 
 @dataclass
-class Formats:
+class Common:
     """Data class with global data"""
 
     class FileType(Enum):  # File browser modes
@@ -23,9 +24,6 @@ class Formats:
 
     process: typing.Optional[QProcess] = None  # The process to be executed
     process_path = r"app\dummy_script.py"  # The path to script executed
-
-    # logging path
-    log_path = "app/log"
 
     # default window size
     default_window_width: int = 700
