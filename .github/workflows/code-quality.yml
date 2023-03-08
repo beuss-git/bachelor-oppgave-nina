@@ -51,6 +51,6 @@ jobs:
           restore-keys: |
             ${{ steps.cache_key_prefix.outputs.result }}-
       - run: poetry run pre-commit run --all-files --show-diff-on-failure --color=always
-      
+
       - name: Test
         run: poetry run pytest tests
