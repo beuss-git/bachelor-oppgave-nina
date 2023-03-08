@@ -124,7 +124,9 @@ def __getattr__(name: str) -> Any:
 def setup() -> None:
     """Sets up the settings module."""
 
-    # logger.info("Settings stored at %s", reg_entries.fileName())
+    # NOTE: On windows this will be in the registry and will
+    #       be specific to the user that the application runs as
+    __logger.debug("Settings stored at %s", __settings.fileName())
 
     __setup_entries()
     __populate_entries_from_registry()
