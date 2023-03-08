@@ -1,8 +1,9 @@
 """Video processor module. Contains functions for processing videos."""
-from typing import List, Tuple
 import os
 import subprocess
 from pathlib import Path
+from typing import List, Tuple
+
 import ffmpeg
 
 

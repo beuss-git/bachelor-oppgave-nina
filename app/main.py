@@ -1,27 +1,22 @@
 """Main file for our application"""
 
 # Only needed for access to command line arguments
-import sys
 import os
+import sys
 from pathlib import Path
-import qdarktheme
 
-from PyQt6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QVBoxLayout,
-    QPushButton,
-    QWidget,
-)
+import qdarktheme
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
-from app.widgets.file_browser import FileBrowser
-from app.logger import get_logger, create_logger
-from app.settings import Settings
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
+
 from app.common import Common
-from app.widgets.widgets_options import AdvancedOptions
-from app.widgets.error_dialog import ErrorDialog
+from app.logger import create_logger, get_logger
+from app.settings import Settings
 from app.widgets.detection_window import DetectionWindow
+from app.widgets.error_dialog import ErrorDialog
+from app.widgets.file_browser import FileBrowser
+from app.widgets.widgets_options import AdvancedOptions
 from app.widgets.widgets_panels import WidgetsPanel
 
 logger = get_logger()

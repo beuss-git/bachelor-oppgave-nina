@@ -1,5 +1,6 @@
 """This module contains the error dialog widget."""
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox, QLabel, QWidget
+from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QWidget
+
 from app.logger import get_logger
 
 logger = get_logger()

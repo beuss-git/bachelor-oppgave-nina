@@ -1,16 +1,11 @@
 """Progress bar when loading AI models."""
-import typing
 import re
+import typing
 
-from PyQt6.QtWidgets import (
-    QPlainTextEdit,
-    QProgressBar,
-    QDialog,
-    QVBoxLayout,
-)
 from PyQt6.QtCore import QProcess
-from .common import Common
+from PyQt6.QtWidgets import QDialog, QPlainTextEdit, QProgressBar, QVBoxLayout
 
+from .common import Common
 
 # A regular expression, to extract the % complete.
 progress_re = re.compile(r"Total complete: (\d+)%")

@@ -1,5 +1,6 @@
 """video_processor"""
 from pathlib import Path
+
 from .video_processor import cut_video
 
 
