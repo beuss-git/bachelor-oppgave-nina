@@ -1,23 +1,11 @@
 """Creates a widget for browsing files depending on the mode"""
-import os
-from pathlib import Path
 from typing import List
 
-from PyQt6.QtCore import QDir, QSettings
+from PyQt6.QtCore import QDir
 from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, QWidget
 
-import app.settings as Settings
 from app.common import Common
 from app.widgets.widgets_options import add_label
-
-settings = QSettings("\bachelor-oppgave-nina")
-config_dat_dir = Path(os.path.dirname("bachelor-oppgave-nina"))
-
-
-if settings.contains("dirpath"):
-    dirpath = settings.value("dirpath")
-else:
-    settings.setValue("dirpath", "dirpath")
 
 
 class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
@@ -31,7 +19,10 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
     filepaths: List[str] = []
 
     def __init__(
-        self, title: str, mode: Common.FileType = Common.FileType.OPEN_FILE
+        self,
+        title: str,
+        mode: Common.FileType = Common.FileType.OPEN_FILE,
+        default_paths: List[str] | None = None,
     ) -> None:
         """Initiates the widget with LineEdit, Label and Button to browse files
 
@@ -54,25 +45,33 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
         # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
-        if mode == Common.FileType.SAVE_FILE:
-            self.line_edit.setText(Settings.Settings.get_save_path())
-        else:
-            self.line_edit.setText(Settings.Settings.get_open_path())
         layout.addWidget(self.line_edit)
 
         # Creates a button to open the file browser
         button = QPushButton("Browse Files")
 
         def use_get_file() -> None:
-            self.get_file(mode, self.filepaths)
+            self.get_file(mode)
 
         button.clicked.connect(use_get_file)
         layout.addWidget(button)
         layout.addStretch()
 
-    def get_file(self, mode: Common.FileType, filepaths: List[str]) -> None:
+        # Sets the default path(s)
+        if default_paths is not None:
+            self.update_paths(default_paths)
+
+    def update_paths(self, paths: List[str]) -> None:
+        """Sets the path in the line edit"""
+        self.line_edit.setText(",".join(paths))
+        self.filepaths = paths
+
+    def get_file(self, mode: Common.FileType) -> None:
         """Opens file browser to gather one or more file(s) or save a file"""
-        get_dir = QDir.currentPath()
+        stored_path = self.get_path()
+        start_dir = stored_path if stored_path else QDir.currentPath()
+
+        filepaths: List[str] = []
         match mode:
             # If open single file
             case Common.FileType.OPEN_FILE:
@@ -80,7 +79,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
                     QFileDialog.getOpenFileName(
                         self,
                         caption="Choose File",
-                        directory=get_dir,
+                        directory=start_dir,
                         filter=self.filter_name,
                     )[0]
                 )
@@ -91,7 +90,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
                     QFileDialog.getOpenFileNames(
                         self,
                         caption="Choose Files",
-                        directory=get_dir,
+                        directory=start_dir,
                         filter=self.filter_name,
                     )[0]
                 )
@@ -100,7 +99,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
             case Common.FileType.OPEN_DIR:
                 filepaths.append(
                     QFileDialog.getExistingDirectory(
-                        self, caption="Choose Directory", directory=get_dir
+                        self, caption="Choose Directory", directory=start_dir
                     )
                 )
 
@@ -110,7 +109,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
                     QFileDialog.getSaveFileName(
                         self,
                         caption="Save/Save As",
-                        directory=get_dir,
+                        directory=start_dir,
                         filter=self.filter_name,
                     )[0]
                 )
@@ -119,23 +118,12 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         if len(filepaths) == 0:
             return
 
-        # If the user selects only one file, the filepaths list will have only one element
-        if len(filepaths) == 1:
-            self.line_edit.setText(filepaths[0])
-            self.path_changed(filepaths[0], mode)
+        # The above statement seems to be wrong, as it returns an empty string if the user cancels-
+        # but keeping both for now.
+        if len(filepaths) == 1 and filepaths[0] == "":
+            return
 
-        # If the user selects more than one file, the filepaths list will have more than one element
-        else:
-            self.line_edit.setText(",".join(filepaths))
-            self.path_changed(",".join(filepaths), mode)
-
-    def path_changed(self, path: str, mode: Common.FileType) -> None:
-        """Saves the changed path to the global variables
-
-        Args:
-            path (str): The path to save
-        """
-        Settings.Settings.set_path_values(path, mode)
+        self.update_paths(filepaths)
 
     def get_paths(self) -> List[str]:
         """Returns the file path
@@ -144,3 +132,13 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
             str: File path
         """
         return self.filepaths
+
+    def get_path(self) -> str | None:
+        """Returns the file path
+
+        Returns:
+            str: File path
+        """
+        if len(self.filepaths) > 0:
+            return self.filepaths[0]
+        return None

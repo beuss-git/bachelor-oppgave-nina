@@ -1,158 +1,152 @@
-"""Settings for the application."""
-import typing
+"""Settings class for the application."""
 
-# from PyQt6 import QtGui
+import sys
+from types import ModuleType
+from typing import Any, Dict, Tuple
+
 from PyQt6.QtCore import QSettings
 
-from app.common import Common
+from app.logger import get_logger
 
-# from .globals import Globals
+# region Settings
+
+# Window settings
+window_width: int = 700
+window_height: int = 400
+
+# File settings
+open_path: str = ""  # Path to open file
+save_path: str = ""  # Path to save file
+buffer_before: int = 0
+buffer_after: int = 0
+keep_original: bool = False
+
+# Advanced settings
+get_report: bool = False
+
+report_format: str = "CSV"
+# endregion
+
+# ----------------------------------------------------------------------------- #
+
+# key: name, value: ((default) value, type)
+__entries: Dict[str, Tuple[Any, type]] = {}
+
+__settings = QSettings("NINA", "FishDetector")
+__logger = get_logger()
 
 
-class Settings:
-    """Settings saved in the registry"""
+# This is a hack to get the above module variables
+module_vars = locals()
 
-    # Window settings
-    setting_window = QSettings("MainWindow", "WindowSize")
-    setting_variables = QSettings("MainWindow", "Variables")
-    window_width: int = 700
-    window_height: int = 400
 
-    # File settings
-    open_path: str = ""  # Path to open file
-    save_path: str = ""  # Path to save file
-    buffer_before: int = 0
-    buffer_after: int = 0
-    keep_original: bool = False
+def __setup_entries() -> None:
+    """Adds all the entries to the settings entries."""
+    # use the above variables and access them through the module
 
-    # Advanced settings
-    get_report: bool = False
-    report_format: str = "CSV"
+    to_delete = []
+    for name, value in module_vars.items():
+        if name.startswith("__"):
+            continue
 
-    def __init__(self) -> None:
-        pass
+        # Check if the value is a variable of the supported types
+        if not isinstance(value, (int, float, str, bool)):
+            continue
 
-    # def set_all_values(self) -> None:
-    #    # setting_values = get_setting_values()
+        __logger.debug("Adding entry %s with default value %s", name, value)
+        __add_entry(name, value, type(value))
+        to_delete += [name]
 
-    #    setting_variables.value("open_path", "", type=str)
-    #    setting_variables.value("save_path", "", type=str)
-    #    setting_variables.value("buffer_before", 0, type=int)
-    #    setting_variables.value("buffer_after", 0, type=int)
-    #    setting_variables.value("keep_original", False, type=bool)
+    # Delete the attributes so it doesn't get exported, and we force everything through __getattr__
+    for name in to_delete:
+        del module_vars[name]
 
-    @staticmethod
-    def set_window_size(width: int, height: int) -> None:
-        """Sets the window size"""
-        Settings.setting_window.setValue("window_width", width)
-        Settings.setting_window.setValue("window_height", height)
 
-    @staticmethod
-    def set_path_values(path: str, browser_type: Common.FileType) -> None:
-        """Sets the path values"""
-        match browser_type:
-            # TODO: fix save path
-            case Common.FileType.SAVE_FILE:
-                Settings.setting_variables.setValue("save_path", path)
-            case _:
-                Settings.setting_variables.setValue("open_path", path)
+def __add_entry(name: str, default_value: Any, value_type: type) -> None:
+    """Adds a new entry to the settings entries.
 
-    @staticmethod
-    def set_buffer_values(before: int, after: int) -> None:
-        """Sets the buffer values"""
-        Settings.setting_variables.setValue("buffer_before", before)
-        Settings.setting_variables.setValue("buffer_after", after)
+    Args:
+        name: The name of the entry as it will be exported by the module and in the registry.
+        default_value: The default value
+        value_type: The type of the value
 
-    @staticmethod
-    def set_buffer_before(before: int) -> None:
-        """Sets the buffer before value"""
-        Settings.setting_variables.setValue("buffer_before", before)
+    Raises:
+        ValueError: If the entry already exists
+        ValueError: If the default value is not of specified type
+    """
+    if name in __entries:
+        raise ValueError(f"Entry {name} already exists")
 
-    @staticmethod
-    def set_buffer_after(after: int) -> None:
-        """Sets the buffer after value"""
-        Settings.setting_variables.setValue("buffer_after", after)
+    # We could infer the type, but better to be explicit and raise an error if it's wrong
+    if not isinstance(default_value, value_type):
+        raise ValueError(f"Default value {default_value} is not of type {value_type}")
 
-    @staticmethod
-    def set_keep_original(toggle: bool) -> None:
-        """Sets the keep original value"""
-        Settings.setting_variables.setValue("keep_original", toggle)
+    __entries[name] = (default_value, value_type)
 
-    @staticmethod
-    def set_get_report(toggle: bool) -> None:
-        """Sets the get report value"""
-        Settings.setting_variables.setValue("get_report", toggle)
 
-    @staticmethod
-    def set_report_format(format_report: str) -> None:
-        """Sets the report format value"""
-        Settings.setting_variables.setValue("report_format", format_report)
+def __populate_entries_from_registry() -> None:
+    """Reads the values from the registry and sets the values in the module."""
 
-    # @staticmethod
-    # def get_setting_values() -> None:
-    #    """Gets the settings values"""
-    #    setting_window = QSettings("MainWindow", "WindowSize")
-    #    setting_variables = QSettings("MainWindow", "Variables")
+    for name, (default_value, value_type) in __entries.items():
+        value = __settings.value(name, default_value, value_type)
 
-    @staticmethod
-    def get_window_width() -> typing.Any:
-        """Gets the window width"""
-        return Settings.setting_window.value(
-            "window_width", Settings.window_width, type=int
-        )
+        # If the value is not of the correct type, use the default value
+        if not isinstance(value, value_type):
+            value = default_value
+            __logger.warning(
+                "Value for %s is not of type %s, using default value", name, value_type
+            )
 
-    @staticmethod
-    def get_window_height() -> typing.Any:
-        """Gets the window height"""
-        return Settings.setting_window.value(
-            "window_height", Settings.window_height, type=int
-        )
+        __logger.debug("Setting %s to %s", name, value)
+        __entries[name] = (value, value_type)
 
-    @staticmethod
-    def get_open_path() -> str:
-        """Gets the open path"""
-        return str(Settings.setting_variables.value("open_path", "", type=str))
 
-    @staticmethod
-    def get_save_path() -> str:
-        """Gets the save path"""
-        return str(Settings.setting_variables.value("save_path", "", type=str))
+class SettingsModule(ModuleType):  # pylint: disable=too-few-public-methods
+    """A subclass of the settings module that overrides __setattr__"""
 
-    @staticmethod
-    def get_buffer_before() -> int:
-        """Gets the buffer before"""
-        return int(Settings.setting_variables.value("buffer_before", 0, type=int))
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Access the entries through the module dict
+        entries = sys.modules[__name__].__dict__["__entries"]
 
-    @staticmethod
-    def get_buffer_after() -> int:
-        """Gets the buffer after"""
-        return int(Settings.setting_variables.value("buffer_after", 0, type=int))
+        if name in entries:
+            entries[name] = (value, entries[name][1])
+        else:
+            super().__setattr__(name, value)
 
-    @staticmethod
-    def get_keep_original() -> bool:
-        """Gets the keep original value"""
-        return bool(Settings.setting_variables.value("keep_original", False, type=bool))
 
-    @staticmethod
-    def get_get_report() -> bool:
-        """Gets the get report value"""
-        return bool(Settings.setting_variables.value("get_report", False, type=bool))
+# Override the __getattr__ method of the settings module
+def __getattr__(name: str) -> Any:
+    if name in __entries:
+        return __entries[name][0]
+    raise AttributeError(f"Module {__name__} has no attribute {name}")
 
-    @staticmethod
-    def get_report_format() -> str:
-        """Gets the report format value"""
-        return str(Settings.setting_variables.value("report_format", "CSV", type=str))
 
-    @staticmethod
-    def close_event() -> None:
-        """Saves settings when window is closed. Overrides the closeEvent method"""
-        # Basic window settings
-        # setting_window.setValue("window_width", window_width)
-        # setting_window.setValue("window_height", window_height)
+def setup() -> None:
+    """Sets up the settings module."""
 
-        # Variables
-        Settings.setting_variables.setValue("open_path", Settings.open_path)
-        Settings.setting_variables.setValue("save_path", Settings.save_path)
-        Settings.setting_variables.setValue("buffer_before", Settings.buffer_before)
-        Settings.setting_variables.setValue("buffer_after", Settings.buffer_after)
-        Settings.setting_variables.setValue("keep_original", Settings.keep_original)
+    # NOTE: On windows this will be in the registry and will
+    #       be specific to the user that the application runs as
+    __logger.debug("Settings stored at %s", __settings.fileName())
+
+    __setup_entries()
+    __populate_entries_from_registry()
+
+    # Replace the settings module with a subclass that overrides __setattr__
+    sys.modules[__name__].__class__ = SettingsModule
+
+
+def save() -> None:
+    """Saves the entries to the registry.
+
+    Raises:
+        ValueError: If a value does not match the specified type
+    """
+    for name, (value, value_type) in __entries.items():
+        if not isinstance(value, value_type):
+            # This can happen if the value was changed during runtime and is not of the correct type
+            raise ValueError(f"[{name}] Value {value} is not of type {value_type}")
+
+        __settings.setValue(name, value)
+
+    # Write to registry
+    __settings.sync()
