@@ -1,11 +1,12 @@
 """Stores data about video and detections in local database"""
-import sqlite3
-import traceback
-import sys
 import os
+import sqlite3
+import sys
+import traceback
 import typing
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
 import ffmpeg
 
 from app.logger import get_logger
@@ -157,10 +158,10 @@ class DataManager:
                           VALUES (?, ?, ?, ?);"""
 
             # Setting up list of detections with video id and detection id
-            detections_list: typing.List[typing.Tuple[str, str, int, int]] = []
-            for num, detection in enumerate(detections):
-                ids = (str(video_id) + str(num), str(video_id))
-                detections_list.append(ids + detection)
+            detections_list: typing.List[typing.Tuple[str, str, str, str]] = []
+            for num in enumerate(detections):
+                ids = (str(video_id) + "-" + str(num), str(video_id))
+                detections_list.append(ids + ("12:00:00", "13:00:00"))
 
             # execute query to add data to table
             cursor.executemany(sqlite_insert_query, detections_list)

@@ -16,10 +16,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from app.data_manager.data_manager import DataManager
 from app.detection import detection
 from app.detection.batch_yolov8 import BatchYolov8
 from app.video_processor import video_processor
-from app.data_manager.data_manager import DataManager
 
 
 class DetectionWorker(QThread):
@@ -113,7 +113,7 @@ class DetectionWorker(QThread):
         self.log(f"Saved processed video to {out_path}")
 
         self.update_progress.emit(100)
-        # self.data_manager.add_detection_data(video_path, frame_ranges)
+        self.data_manager.add_detection_data(video_path, frame_ranges)
 
     def __detected_frames_to_range(
         self, frames: List[int], frame_buffer: int
