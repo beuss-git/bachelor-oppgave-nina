@@ -31,3 +31,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poe.tasks]
 # Thanks to https://github.com/Interpause/nicepipe/blob/937fb4b81bb6ef6d4c7bfbeaf3fe1998e63110ea/pyproject.toml#L9
 torch-cuda = "pip install torch torchvision torchaudio --force-reinstall --no-deps --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu117"
+
+[tool.isort]
+profile = "black"

@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 
 from app.logger import get_logger
-from .detection import process_video
-from .batch_yolov8 import BatchYolov8
 
+from .batch_yolov8 import BatchYolov8
+from .detection import process_video
 
 logger = get_logger()
 
