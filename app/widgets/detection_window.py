@@ -18,6 +18,7 @@ from PyQt6.QtCore import pyqtSignal, QThread
 from app.detection.batch_yolov8 import BatchYolov8
 from app.detection import detection
 from app.video_processor import video_processor
+from app.data_manager.data_manager import DataManager
 
 
 class DetectionWorker(QThread):
@@ -34,19 +35,24 @@ class DetectionWorker(QThread):
 
         self.input_folder_path = folder_path
         self.output_folder_path = output_folder_path
+        self.data_manager: DataManager
 
     def run(self) -> None:
         """Run the detection."""
+        self.data_manager = DataManager()
+
         if self.model is None:
             self.log("Initializing the model...")
             self.model = BatchYolov8(
-                Path(r"G:\repos\bachelor-oppgave-nina\model_research\yolov8s.pt"),
+                Path(r"C:\Users\lilli\Downloads\yolov8n.pt"),
                 "cuda:0",
             )
         stream_target = io.StringIO()
         with redirect_stdout(stream_target):
             self.process_folder()
         # self.log(stream_target.getvalue())
+
+        self.data_manager.close_connection()
 
     def log(self, text: str) -> None:
         """Log text to the console."""
@@ -64,6 +70,7 @@ class DetectionWorker(QThread):
 
         for i, video in enumerate(videos):
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
+            self.data_manager.add_video_data(self.input_folder_path / video, video)
             self.process_video(self.input_folder_path / video)
 
     def process_video(self, video_path: Path) -> None:
@@ -78,7 +85,7 @@ class DetectionWorker(QThread):
         frames_with_fish = detection.process_video(
             model=self.model,
             video_path=video_path,
-            batch_size=64,
+            batch_size=16,
             max_batches_to_queue=4,
             output_path=None,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
@@ -105,6 +112,7 @@ class DetectionWorker(QThread):
         self.log(f"Saved processed video to {out_path}")
 
         self.update_progress.emit(100)
+        # self.data_manager.add_detection_data(video_path, frame_ranges)
 
     def __detected_frames_to_range(
         self, frames: List[int], frame_buffer: int

@@ -2,7 +2,15 @@
 import sqlite3
 import traceback
 import sys
+import os
 import typing
+from pathlib import Path
+from datetime import datetime
+import ffmpeg
+
+from app.logger import get_logger
+
+logger = get_logger()
 
 
 class DataManager:
@@ -16,9 +24,43 @@ class DataManager:
             self.sqlite_connection = sqlite3.connect("SQLite_Python.db")
             print("Successfully Connected to SQLite")
 
+            table_exists = self.tables_check()
+
+            if table_exists:
+                self.create_tables()
+
         except sqlite3.Error as error:
             # If error occurs log the error
             print("Error while connecting to sqlite", error)
+
+    def tables_check(self) -> bool:
+        """Checking if tables aleady exist in the database
+
+        Returns:
+            bool: Returns true if there is no tables in the database
+        """
+        try:
+            # creates a cursor
+            cursor = self.sqlite_connection.cursor()
+
+            # checks if there are tables in the database
+            list_of_tables = cursor.execute(
+                """SELECT name FROM sqlite_master WHERE type='table'
+            AND name IN ('video', 'detection'); """
+            ).fetchall()
+
+            # returns true if there isnt any tables found in the database
+            if list_of_tables == []:
+                print("Tables not found!")
+                return True
+
+            print("Tables found!")
+            return False
+
+        except sqlite3.Error as error:
+            # Log error if anything fails in the process
+            print("Error while checking for sqlite table", error)
+            return False
 
     def create_tables(self) -> None:
         """creates tables in the database based on the sqlite_tables file"""
@@ -45,7 +87,7 @@ class DataManager:
             # Log error if anything fails in the process
             print("Error while creating a sqlite table", error)
 
-    def add_video_data(self, video_id: str, title: str, date: str, time: str) -> None:
+    def add_video_data(self, video_id: Path, title: str) -> None:
         """Adds a video into the video table
 
         Args:
@@ -59,28 +101,43 @@ class DataManager:
             # creates cursor
             cursor = self.sqlite_connection.cursor()
 
+            # gets videolength from metadata
+            metadata = self.get_metadata(video_id)
+            duration = "00:00:00"
+            if metadata is not None:
+                duration = datetime.fromtimestamp(float(metadata["duration"])).strftime(
+                    "%H:%M:%S"
+                )
+
             # sets up query and data that will be in the query
             sqlite_insert_query = """INSERT INTO video
                           (id, title, date, videolength)  VALUES  (?, ?, ?, ?)"""
-            data = (video_id, title, date, time)
-
+            data = (
+                str(video_id),
+                title,
+                datetime.fromtimestamp(os.path.getctime(video_id)).strftime("%Y-%m-%d"),
+                duration,
+            )
+            #
             # executes query to add the data into the table
             cursor.execute(sqlite_insert_query, data)
             self.sqlite_connection.commit()
-            print("Record inserted successfully into table at ", cursor.rowcount)
+            logger.info(
+                "Record inserted successfully into table at %s", cursor.rowcount
+            )
             cursor.close()
 
         except sqlite3.Error as error:
             # If error occurs log the error
-            print("Failed to insert data into sqlite table")
-            print("Exception class is: ", error.__class__)
-            print("Exception is", error.args)
-            print("Printing detailed SQLite exception traceback: ")
+            logger.error("Failed to insert data into sqlite table")
+            logger.error("Exception class is: %s", error.__class__)
+            logger.error("Exception is %s", error.args)
+            logger.error("Printing detailed SQLite exception traceback: ")
             exc_type, exc_value, exc_tb = sys.exc_info()
-            print(traceback.format_exception(exc_type, exc_value, exc_tb))
+            logger.error(traceback.format_exception(exc_type, exc_value, exc_tb))
 
     def add_detection_data(
-        self, video_id: str, detections: typing.List[typing.Tuple[str, str]]
+        self, video_id: Path, detections: typing.List[typing.Tuple[int, int]]
     ) -> None:
         """Adds data about detections for one video
 
@@ -100,9 +157,9 @@ class DataManager:
                           VALUES (?, ?, ?, ?);"""
 
             # Setting up list of detections with video id and detection id
-            detections_list: typing.List[typing.Tuple[str, str, str, str]] = []
+            detections_list: typing.List[typing.Tuple[str, str, int, int]] = []
             for num, detection in enumerate(detections):
-                ids = (video_id + str(num), video_id)
+                ids = (str(video_id) + str(num), str(video_id))
                 detections_list.append(ids + detection)
 
             # execute query to add data to table
@@ -162,6 +219,40 @@ class DataManager:
             # If error occurs the error is logged and it returns an empty list
             print("Failed to read data from sqlite table", error)
             return []
+
+    def get_metadata(self, path: Path) -> typing.Any:
+        """_summary_
+
+        Args:
+            path (str): _description_
+            filename (str): _description_
+            metadata (typing.List[str]): _description_
+
+        Returns:
+            typing.Any: _description_
+        """
+        try:
+            file_metadata = ffmpeg.probe(str(path))
+
+            return file_metadata["format"]
+
+        except ffmpeg.Error as error:
+            logger.error("Error occured: %s", error.stderr.decode("utf8"))
+            return None
+
+    # def get_timestamps(
+    #    self, ranges: typing.List[typing.Tuple[int, int]]
+    # ) -> typing.List[typing.Tuple[str, str]]:
+
+    #    """_summary_
+
+    #    Args:
+    #        ranges (typing.List[typing.Tuple[int, int]]): _description_
+
+    #    Returns:
+    #        typing.List[typing.Tuple[str, str]]: _description_
+    #    """
+    #    return []
 
     def close_connection(self) -> None:
         """Closes the connection with sqlite"""

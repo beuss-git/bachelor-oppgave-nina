@@ -3,6 +3,7 @@ import typing
 import csv
 
 from xml.dom import minidom
+from pathlib import Path
 from fpdf import FPDF
 from app.data_manager.data_manager import DataManager
 
@@ -11,10 +12,7 @@ class ReportManager:
     """A class for managing writing the report"""
 
     def __init__(
-        self,
-        input_path: str,
-        output_path: str,
-        data: DataManager,
+        self, input_path: Path, output_path: Path, data: DataManager, report_format: str
     ) -> None:
         """Initiates by saving necessary values to be available across the class
 
@@ -26,6 +24,18 @@ class ReportManager:
         self.output_path = output_path
         self.input_path = input_path
         self.datamanager = data
+        self.file_format = report_format
+
+    def write_report(self, videos: typing.List[str]) -> None:
+        """writes a report based on the list of videos entered"""
+
+        match self.file_format:
+            case "CSV":
+                self.write_csv_file(videos)
+            case "PDF":
+                self.write_pdf_file(videos)
+            case "XML":
+                self.write_xml_file(videos)
 
     def write_xml_file(self, videos: typing.List[str]) -> None:
         """Writes a report in the format of an xml file
@@ -57,7 +67,7 @@ class ReportManager:
 
         xml_str = root.toprettyxml(indent="\t")
 
-        save_path_file = self.output_path + "/me.xml"
+        save_path_file = str(self.output_path) + "/me.xml"
 
         # open the output pathway and saves the file
         with open(save_path_file, "w", encoding="ascii", errors="ignore") as out:
@@ -70,7 +80,7 @@ class ReportManager:
            videos (List[str]): List of videos that should be included in the report
         """
 
-        save_path_file = self.output_path + "/meh.csv"
+        save_path_file = str(self.output_path) + "/meh.csv"
 
         # Gets data from database and appends it to column titles
         row_list = [
@@ -91,7 +101,7 @@ class ReportManager:
             videos (List[str]): List of videos that should be included in the report
         """
 
-        save_path_file = self.output_path + "/meh.pdf"
+        save_path_file = str(self.output_path) + "/meh.pdf"
 
         # Gets data from the data base
         item_list = self.datamanager.get_data(videos)
