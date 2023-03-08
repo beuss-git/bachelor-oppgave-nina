@@ -186,13 +186,13 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
             self.checkbox.setChecked(settings.keep_original)
 
             def state_changed(state: Qt.CheckState) -> None:
-                settings.keep_original = state == Qt.CheckState.Checked
+                settings.keep_original = Qt.CheckState(state) == Qt.CheckState.Checked
 
             self.checkbox.stateChanged.connect(state_changed)
         else:
 
             def state_changed(state: Qt.CheckState) -> None:
-                settings.get_report = state == Qt.CheckState.Checked
+                settings.get_report = Qt.CheckState(state) == Qt.CheckState.Checked
 
             self.checkbox.setChecked(settings.get_report)
             self.checkbox.stateChanged.connect(state_changed)
