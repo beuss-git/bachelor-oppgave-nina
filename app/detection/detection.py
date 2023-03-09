@@ -120,7 +120,6 @@ def process_video(
         )
     except RuntimeError as err:
         logger.error("Failed to initialize frame grabber", exc_info=err)
-        # print("Failed to initialize frame grabber", err)
         return []
 
     # Wait for the first batch to be ready
@@ -150,7 +149,6 @@ def process_video(
                     # This will happen if the batch size is too large or if the disk is too slow
                     # The grabber can't keep up with the inference speed
                     logger.warning("No batch available, waiting...")
-                    # print("No batch available, waiting...")
                     # Wait for more batches to be available
                     time.sleep(0.1)
                     continue
@@ -184,10 +182,45 @@ def process_video(
                     notify_progress((pbar.n / pbar.total) * 100)
         if notify_progress is not None:
             notify_progress(100)
-        print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
+        logger.info("Average FPS: %s", {fps_count / frame_grabber.total_batch_count()})
     except RuntimeError as err:
-        logger.error("Failed to process video", exc_info=err)
-        # print(err)
-        return []
+        # logger.error("Failed to process video", exc_info=err)
+        raise err
 
     return frames_with_fish
+
+
+def detected_frames_to_range(
+    frames: List[int], frame_buffer: int
+) -> List[Tuple[int, int]]:
+    """Convert a list of detected frames to a list of ranges.
+        Due to detection inaccuracies we need to allow for some dead frames
+        without detections within a valid range.
+
+    Args:
+        frames: A list of detected frames.
+        frame_buffer: The number of frames we allow to be without detection
+                        before we consider it a new range.
+    """
+
+    if len(frames) == 0:
+        return []
+
+    frame_ranges: List[Tuple[int, int]] = []
+    start_frame = frames[0]
+    end_frame = frames[0]
+
+    for frame in frames[1:]:
+        if frame <= end_frame + frame_buffer:
+            # Extend the range
+            end_frame = frame
+        else:
+            # Start a new range
+            frame_ranges.append((start_frame, end_frame))
+            start_frame = frame
+            end_frame = frame
+
+    # Add the last range
+    frame_ranges.append((start_frame, end_frame))
+
+    return frame_ranges
