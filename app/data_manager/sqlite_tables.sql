@@ -6,7 +6,7 @@ CREATE TABLE video (
 );
 
 CREATE TABLE detection (
- id TEXT PRIMARY KEY,
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
  videoid TEXT NOT NULL,
  starttime TIME NOT NULL,
  endtime TIME NOT NULL,

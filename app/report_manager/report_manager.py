@@ -1,10 +1,11 @@
 """Writes a detection report into chosen path"""
-import typing
 import csv
-
-from xml.dom import minidom
+import typing
 from pathlib import Path
+from xml.dom import minidom
+
 from fpdf import FPDF
+
 from app.data_manager.data_manager import DataManager
 
 
@@ -61,8 +62,8 @@ class ReportManager:
                 previous_video = str(item[0])
                 xml.appendChild(video)  # type: ignore
             child = root.createElement("Detection" + str(item[1]))
-            child.setAttribute("starttime", str(item[2]))
-            child.setAttribute("endtime", str(item[3]))
+            child.setAttribute("starttime", str(round(item[2])))
+            child.setAttribute("endtime", str(round(item[3])))
             video.appendChild(child)  # type: ignore
 
         xml_str = root.toprettyxml(indent="\t")

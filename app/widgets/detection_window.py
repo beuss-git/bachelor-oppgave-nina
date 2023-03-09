@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 from app.data_manager.data_manager import DataManager
 from app.detection import detection
 from app.detection.batch_yolov8 import BatchYolov8
+from app.report_manager.report_manager import ReportManager
 from app.video_processor import video_processor
 
 
@@ -37,6 +38,7 @@ class DetectionWorker(QThread):
         self.input_folder_path = folder_path
         self.output_folder_path = output_folder_path
         self.data_manager: DataManager
+        self.report_manager: ReportManager
 
     def run(self) -> None:
         """Run the detection."""

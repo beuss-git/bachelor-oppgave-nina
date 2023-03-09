@@ -1,10 +1,10 @@
 """Stores data about video and detections in local database"""
+import datetime
 import os
 import sqlite3
 import sys
 import traceback
 import typing
-from datetime import datetime
 from pathlib import Path
 
 import ffmpeg
@@ -106,9 +106,8 @@ class DataManager:
             metadata = self.get_metadata(video_id)
             duration = "00:00:00"
             if metadata is not None:
-                duration = datetime.fromtimestamp(float(metadata["duration"])).strftime(
-                    "%H:%M:%S"
-                )
+                duration = str(datetime.timedelta(seconds=float(metadata["duration"])))
+                # .strftime("%H:%M:%S")
 
             # sets up query and data that will be in the query
             sqlite_insert_query = """INSERT INTO video
@@ -116,7 +115,9 @@ class DataManager:
             data = (
                 str(video_id),
                 title,
-                datetime.fromtimestamp(os.path.getctime(video_id)).strftime("%Y-%m-%d"),
+                datetime.datetime.fromtimestamp(os.path.getctime(video_id)).strftime(
+                    "%Y-%m-%d"
+                ),
                 duration,
             )
             #
@@ -154,14 +155,15 @@ class DataManager:
 
             # sets up query
             sqlite_insert_query = """INSERT INTO detection
-                          (id, videoid, starttime, endtime)
-                          VALUES (?, ?, ?, ?);"""
+                          (videoid, starttime, endtime)
+                          VALUES (?, ?, ?);"""
+
+            timestamped_detections = self.get_timestamps(video_id, detections)
 
             # Setting up list of detections with video id and detection id
-            detections_list: typing.List[typing.Tuple[str, str, str, str]] = []
-            for num in enumerate(detections):
-                ids = (str(video_id) + "-" + str(num), str(video_id))
-                detections_list.append(ids + ("12:00:00", "13:00:00"))
+            detections_list: typing.List[typing.Tuple[str, str, str]] = []
+            for detection in timestamped_detections:
+                detections_list.append((str(video_id),) + detection)
 
             # execute query to add data to table
             cursor.executemany(sqlite_insert_query, detections_list)
@@ -241,19 +243,49 @@ class DataManager:
             logger.error("Error occured: %s", error.stderr.decode("utf8"))
             return None
 
-    # def get_timestamps(
-    #    self, ranges: typing.List[typing.Tuple[int, int]]
-    # ) -> typing.List[typing.Tuple[str, str]]:
+    def get_timestamps(
+        self, path: Path, ranges: typing.List[typing.Tuple[int, int]]
+    ) -> typing.List[typing.Tuple[str, str]]:
+        """_summary_
 
-    #    """_summary_
+        Args:
+            path (Path): path to the video
+            ranges (typing.List[typing.Tuple[int, int]]): list of frame ranges found with
+                                                          fish detected where the frames are
+                                                          represented as ints
 
-    #    Args:
-    #        ranges (typing.List[typing.Tuple[int, int]]): _description_
+        Returns:
+            typing.List[typing.Tuple[str, str]]: list of frame ranges with fish converted into
+                                                 timestamps
+        """
+        try:
+            # probes for frame rate in video metadata
+            file_metadata = ffmpeg.probe(str(path), select_streams="v")
+            frame_rate: str = file_metadata["streams"][0]["r_frame_rate"]
 
-    #    Returns:
-    #        typing.List[typing.Tuple[str, str]]: _description_
-    #    """
-    #    return []
+            # parcing metadata from str to float
+            temp = frame_rate.split("/")
+            first = int(temp[0])
+            second = int(temp[1])
+            framerate = first / second
+
+            # iterated through the frame ranges to convert into timestamps
+            timestamps: typing.List[typing.Tuple[str, str]] = []
+            for start, end in ranges:
+                start_stamp = start / framerate
+                end_stamp = end / framerate
+                timestamps.append(
+                    (
+                        str(datetime.timedelta(seconds=start_stamp)),
+                        str(datetime.timedelta(seconds=end_stamp)),
+                    )
+                )
+
+            return timestamps
+
+        except ffmpeg.Error as error:
+            logger.error("Error occured: %s", error.stderr.decode("utf8"))
+            return []
 
     def close_connection(self) -> None:
         """Closes the connection with sqlite"""
