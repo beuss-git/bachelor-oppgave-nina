@@ -30,5 +30,24 @@ https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/c
 ## Run using Docker
 
 ```
-docker compose up --build"
+docker compose up --build
 ```
+
+
+## VDI Testing
+Download the zip file from [here](https://nextcloud.beuss.me/s/2DsJsF56mPBx579) and extract it to `app/vdi_perf_test`
+Now simply run `python -m app.vdi_perf_test`.
+
+After that everything we need should be in the log file located at `app/log`
+
+
+**NB!**
+There is an issue where some threads might crash due to out of memory exceptions happening in them and we haven't really added a way to handle them yet.
+I made a quick and dirty patch to the frame grabber to somewhat handle it, but that is in no way reliable.
+
+The main working loop of the test should handle it somewhat well and just skip the model.
+
+There is however an issue with with freeing up VRAM because it never seems to totally free up all the memory, so the latter models will have less VRAM to work with so we can't test larger batch sizes on those.
+
+If it always crashes before getting to the larger models, please uncomment line 58 in `app/vdi_perf_test/__main__.py` so we get data for those too.
+You could also try to limit the max batch sizes.
