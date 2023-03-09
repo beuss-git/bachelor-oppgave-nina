@@ -7,13 +7,21 @@ from xml.dom import minidom
 from fpdf import FPDF
 
 from app.data_manager.data_manager import DataManager
+from app.logger import get_logger
+
+from ..settings import report_format
+
+logger = get_logger()
 
 
 class ReportManager:
     """A class for managing writing the report"""
 
     def __init__(
-        self, input_path: Path, output_path: Path, data: DataManager, report_format: str
+        self,
+        input_path: Path | None,
+        output_path: Path | None,
+        data: DataManager,
     ) -> None:
         """Initiates by saving necessary values to be available across the class
 
@@ -62,8 +70,8 @@ class ReportManager:
                 previous_video = str(item[0])
                 xml.appendChild(video)  # type: ignore
             child = root.createElement("Detection" + str(item[1]))
-            child.setAttribute("starttime", str(round(item[2])))
-            child.setAttribute("endtime", str(round(item[3])))
+            child.setAttribute("starttime", str(item[2]))
+            child.setAttribute("endtime", str(item[3]))
             video.appendChild(child)  # type: ignore
 
         xml_str = root.toprettyxml(indent="\t")
@@ -87,6 +95,7 @@ class ReportManager:
         row_list = [
             ("Video", "detectionID", "Start", "End")
         ] + self.datamanager.get_data(videos)
+        logger.info(row_list)
 
         # opens the output pathway and saves the file
         with open(

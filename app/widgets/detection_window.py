@@ -43,6 +43,11 @@ class DetectionWorker(QThread):
     def run(self) -> None:
         """Run the detection."""
         self.data_manager = DataManager()
+        self.report_manager = ReportManager(
+            self.input_folder_path,
+            self.output_folder_path,
+            self.data_manager,
+        )
 
         if self.model is None:
             self.log("Initializing the model...")
@@ -75,6 +80,8 @@ class DetectionWorker(QThread):
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
             self.data_manager.add_video_data(self.input_folder_path / video, video)
             self.process_video(self.input_folder_path / video)
+
+        self.report_manager.write_report(videos)
 
     def process_video(self, video_path: Path) -> None:
         """

@@ -201,7 +201,7 @@ class DataManager:
                                     detection.starttime, detection.endtime
                                     FROM detection
                                     RIGHT JOIN video ON video.id = detection.videoid
-                                    WHERE video.id"""
+                                    WHERE video.title"""
 
             # sets up the last part of the query based on the searches wanted
             addition_query = """ """
