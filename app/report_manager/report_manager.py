@@ -6,10 +6,9 @@ from xml.dom import minidom
 
 from fpdf import FPDF
 
+from app import settings
 from app.data_manager.data_manager import DataManager
 from app.logger import get_logger
-
-from ..settings import report_format
 
 logger = get_logger()
 
@@ -33,7 +32,7 @@ class ReportManager:
         self.output_path = output_path
         self.input_path = input_path
         self.datamanager = data
-        self.file_format = report_format
+        self.file_format = settings.report_format
 
     def write_report(self, videos: typing.List[str]) -> None:
         """writes a report based on the list of videos entered"""

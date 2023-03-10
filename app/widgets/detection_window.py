@@ -106,7 +106,9 @@ class DetectionWorker(QThread):
         self.add_log.emit(f"Found {len(frames_with_fish)} frames with fish")
 
         # Convert the detected frames to frame ranges to cut the video
-        frame_ranges = self.__detected_frames_to_range(frames_with_fish, frame_buffer=3)
+        frame_ranges = self.__detected_frames_to_range(
+            frames_with_fish, frame_buffer=31
+        )
         print(f"Found {len(frame_ranges)} frame ranges with fish")
         self.add_log.emit(f"Found {len(frame_ranges)} frame ranges with fish")
 
