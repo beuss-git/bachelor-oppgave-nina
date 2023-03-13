@@ -70,7 +70,8 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         self.augment = augment
         self.agnostic_nms = agnostic_nms
         self.classes = classes
-        self.half = self.device.type != "cpu"
+        # self.half = self.device.type != "cpu"
+        self.half = False
         if self.half:
             self.model.half()
         if self.device.type != "cpu":
@@ -91,7 +92,6 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             The prepared images as a torch tensor.
         """
         if isinstance(img_s, list):
-
             img_list = []
 
             for img in img_s:

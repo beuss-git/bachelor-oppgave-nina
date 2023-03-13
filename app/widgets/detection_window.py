@@ -16,8 +16,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from app.data_manager.data_manager import DataManager
 from app.detection import detection
 from app.detection.batch_yolov8 import BatchYolov8
+from app.report_manager.report_manager import ReportManager
 from app.video_processor import video_processor
 
 
@@ -35,19 +37,30 @@ class DetectionWorker(QThread):
 
         self.input_folder_path = folder_path
         self.output_folder_path = output_folder_path
+        self.data_manager: DataManager
+        self.report_manager: ReportManager
 
     def run(self) -> None:
         """Run the detection."""
+        self.data_manager = DataManager()
+        self.report_manager = ReportManager(
+            self.input_folder_path,
+            self.output_folder_path,
+            self.data_manager,
+        )
+
         if self.model is None:
             self.log("Initializing the model...")
             self.model = BatchYolov8(
-                Path(r"G:\repos\bachelor-oppgave-nina\model_research\yolov8s.pt"),
+                Path(r"C:\Users\lilli\Downloads\yolov8n.pt"),
                 "cuda:0",
             )
         stream_target = io.StringIO()
         with redirect_stdout(stream_target):
             self.process_folder()
         # self.log(stream_target.getvalue())
+
+        self.data_manager.close_connection()
 
     def log(self, text: str) -> None:
         """Log text to the console."""
@@ -65,7 +78,10 @@ class DetectionWorker(QThread):
 
         for i, video in enumerate(videos):
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
+            self.data_manager.add_video_data(self.input_folder_path / video, video)
             self.process_video(self.input_folder_path / video)
+
+        self.report_manager.write_report(videos)
 
     def process_video(self, video_path: Path) -> None:
         """
@@ -79,7 +95,7 @@ class DetectionWorker(QThread):
         frames_with_fish = detection.process_video(
             model=self.model,
             video_path=video_path,
-            batch_size=64,
+            batch_size=16,
             max_batches_to_queue=4,
             output_path=None,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
@@ -90,7 +106,9 @@ class DetectionWorker(QThread):
         self.add_log.emit(f"Found {len(frames_with_fish)} frames with fish")
 
         # Convert the detected frames to frame ranges to cut the video
-        frame_ranges = self.__detected_frames_to_range(frames_with_fish, frame_buffer=3)
+        frame_ranges = self.__detected_frames_to_range(
+            frames_with_fish, frame_buffer=31
+        )
         print(f"Found {len(frame_ranges)} frame ranges with fish")
         self.add_log.emit(f"Found {len(frame_ranges)} frame ranges with fish")
 
@@ -106,6 +124,7 @@ class DetectionWorker(QThread):
         self.log(f"Saved processed video to {out_path}")
 
         self.update_progress.emit(100)
+        self.data_manager.add_detection_data(video_path, frame_ranges)
 
     def __detected_frames_to_range(
         self, frames: List[int], frame_buffer: int
