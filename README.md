@@ -17,7 +17,7 @@ Add `%APPDATA%\Python\Scripts` on windows.
 
 `poetry install` to install project dependencies
 
-`poetry run poe torch-cuda` to install torch with cuda.
+`poetry run poe torch-cuda` to install torch with cuda (only needed on windows).
 
 `pre-commit install` to install pre-commit hooks.
 
@@ -36,7 +36,7 @@ docker compose up --build
 
 ## VDI Testing
 Download the zip file from [here](https://nextcloud.beuss.me/s/2DsJsF56mPBx579) and extract it to `app/vdi_perf_test`
-Now simply run `python -m app.vdi_perf_test`.
+Now simply run `poetry run python -m app.vdi_perf_test`.
 
 After that everything we need should be in the log file located at `app/log`
 
