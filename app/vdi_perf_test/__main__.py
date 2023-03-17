@@ -85,12 +85,6 @@ def main() -> int:
             except Exception as err:
                 log.error("Failed to process video: %s", err)
                 break  # might be due to OOM
-
-        # free memory
-        del model
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
-        torch.cuda.reset_max_memory_cached()
     return 0
 
 

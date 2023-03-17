@@ -2,9 +2,8 @@
 
 
 import math
-import threading
+import multiprocessing as mp
 from pathlib import Path
-from queue import Empty, Queue
 from typing import Any, List, Tuple
 
 import cv2
@@ -29,118 +28,52 @@ class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
     ):
         self.model = model
         self.batch_size = batch_size
-        self.batch_queue: Queue[List[Any]] = Queue(max_batches_to_queue)
-        self.original_batch_queue: Queue[List[Any]] = Queue(max_batches_to_queue)
-        self.processed_batch_queue: Queue[Tensor] = Queue(max_batches_to_queue)
-
-        self.stop_threads = False
-        self.lock = threading.Lock()  # Add a lock to protect access to stop_threads
-
-        self.thread_pool = []
-        for _ in range(4):  # create 4 threads to process batches
-            thread = threading.Thread(target=self.__prepare_images_thread)
-            thread.daemon = True
-            self.thread_pool.append(thread)
-            thread.start()
 
         self.capture = cv2.VideoCapture(str(video_path))
         self.frame_count = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        # Start the capture thread
-        self.capture_thread = threading.Thread(target=self.__capture_images_thread)
-        self.capture_thread.daemon = True
-        self.capture_thread.start()
+        self.pool = mp.pool.ThreadPool()
+        self.queue = self.pool.map_async(self.prepare, self.load())
 
-    def __del__(self) -> None:
-        with self.lock:  # Acquire lock to modify stop_threads flag
-            self.stop_threads = True  # Set stop_threads flag to True
-
-        # Stop the capture thread
-        self.capture_thread.join()
-
-        self.capture.release()
-
-        # Stop the prepare images threads
-        for thread in self.thread_pool:
-            thread.join()
-
-        # Release any occupied memory
-        del self.batch_queue
-        del self.original_batch_queue
-        del self.processed_batch_queue
-        torch.cuda.empty_cache()
-
-    def __prepare_images_thread(self) -> None:
-        """Thread to prepare images for the model and put them in the processed queue."""
+    def load(self):
         while True:
-            with self.lock:  # Acquire lock to read stop_threads flag
-                if self.stop_threads:
-                    break  # Exit thread if stop_threads flag is True
-
-            # Don't block if there are no batches in the queue
-            # we need to check the stop_threads flag
-            try:
-                batch = self.batch_queue.get(block=False)
-            except Empty:
-                continue
-
-            self.original_batch_queue.put(batch)
-            try:
-                processed_batch = self.model.prepare_images(batch)
-            except RuntimeError as err:
-                if "CUDA out of memory" in str(err):
-                    logger.error("CUDA out of memory.")
-                    with self.lock:  # Acquire lock to read stop_threads flag
-                        self.stop_threads = True
-                        break
-
-            self.processed_batch_queue.put(processed_batch)
-            self.batch_queue.task_done()  # Mark the batch as done
-
-    def __capture_images_thread(self) -> None:
-        """Thread to capture frames from the video and put them in the queue."""
-        while True:
-            with self.lock:  # Acquire lock to read stop_threads flag
-                if self.stop_threads:
-                    break  # Exit thread if stop_threads flag is True
-            frames = []
+            batch = []
             for _ in range(self.batch_size):
                 ret, frame = self.capture.read()
-                if not ret:
+                if ret:
+                    batch.append(frame)
+                else:
                     break
-                frames.append(frame)
-            if not frames:
+            if not batch:
                 break
-            self.batch_queue.put(frames)
-        self.batch_queue.join()
+            yield batch
 
-    def get_batch(self) -> Tuple[Tensor, List[Any]]:
-        """Gets the processed batch and the original batch images.
+    def prepare(self, batch):
+        return self.model.prepare_images(batch), batch
 
-        Returns:
+    def close(self) -> None:
+        self.pool.close()
+        # Release any occupied memory
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def get_batches(self, timeout=10) -> Tuple[Tensor, List[Any]]:
+        """Gets the processed batches and the original batches images.
+
+        Yield:
            The processed batch and the original batch images.
         """
-        return self.processed_batch_queue.get(), self.original_batch_queue.get()
-
-    def has_more_processed_batches(self) -> bool:
-        """Check if there are more processed batches.
-
-        Returns:
-           True if there are more processed batches, False otherwise.
-        """
-        return not self.processed_batch_queue.empty()
-
-    def is_done(self) -> bool:
-        """Check if we have processed all frames.
-
-        Returns:
-           True if we have processed all frames, False otherwise.
-        """
-        return (
-            not self.capture_thread.is_alive()
-            and self.batch_queue.empty()
-            or self.stop_threads
-        )
+        try:
+            for processed, original in self.queue.get(timeout):
+                yield processed, original
+        except mp.TimeoutError:
+            yield None
 
     def total_batch_count(self) -> int:
         """Get the total number of batches that will be processed.
@@ -149,11 +82,3 @@ class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
             The total number of batches.
         """
         return int(math.ceil(self.frame_count / self.batch_size))
-
-    def batches_in_queue(self) -> int:
-        """Get the number of batches in the queue.
-
-        Returns:
-           The number of batches in the queue.
-        """
-        return self.processed_batch_queue.qsize()

@@ -111,47 +111,35 @@ def process_video(
         A list of frames containing fish.
     """
 
-    try:
-        frame_grabber = ThreadedFrameGrabber(
-            model=model,
-            video_path=video_path,
-            batch_size=batch_size,
-            max_batches_to_queue=max_batches_to_queue,
-        )
-    except RuntimeError as err:
-        logger.error("Failed to initialize frame grabber", exc_info=err)
-        return []
+    with ThreadedFrameGrabber(
+        model=model,
+        video_path=video_path,
+        batch_size=batch_size,
+        max_batches_to_queue=max_batches_to_queue,
+    ) as frame_grabber:
+        if output_path is not None:
+            vid_cap = frame_grabber.capture
+            video_writer = __create_video_writer(
+                save_path=output_path,
+                fps=vid_cap.get(cv2.CAP_PROP_FPS),
+                width=int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                height=int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            )
 
-    # Wait for the first batch to be ready
-    while frame_grabber.batches_in_queue() == 0:
-        time.sleep(0.1)
-
-    if output_path is not None:
-        vid_cap = frame_grabber.capture
-        video_writer = __create_video_writer(
-            save_path=output_path,
-            fps=vid_cap.get(cv2.CAP_PROP_FPS),
-            width=int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-            height=int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-        )
-
-    frames_with_fish = []
-    try:
+        frames_with_fish = []
         fps_count = 0.0
         frame_count = 0
 
         with tqdm(
             total=frame_grabber.total_batch_count(), desc="Processing batches"
         ) as pbar:
-            while not frame_grabber.is_done() or not frame_grabber.batch_queue.empty():
-                [processed_batch, original_batch] = frame_grabber.get_batch()
-                if processed_batch is None:
+            for batch in frame_grabber.get_batches():
+                if batch is None:
                     # This will happen if the batch size is too large or if the disk is too slow
                     # The grabber can't keep up with the inference speed
-                    logger.warning("No batch available, waiting...")
-                    # Wait for more batches to be available
-                    time.sleep(0.1)
+                    logger.debug("No batch available, waiting...")
                     continue
+                processed_batch, original_batch = batch
 
                 (predictions, delta) = __process_batch(
                     original_batch, processed_batch, model
@@ -183,10 +171,6 @@ def process_video(
         if notify_progress is not None:
             notify_progress(100)
         logger.info("Average FPS: %s", {fps_count / frame_grabber.total_batch_count()})
-    except RuntimeError as err:
-        # logger.error("Failed to process video", exc_info=err)
-        raise err
-
     return frames_with_fish
 
 
