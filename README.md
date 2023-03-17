@@ -30,15 +30,24 @@ https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/c
 ## Run using Docker
 
 ```
-docker compose up --build
+docker compose --profile prod build
+docker compose --profile prod run --rm app
 ```
 
 
 ## VDI Testing
-Download the zip file from [here](https://nextcloud.beuss.me/s/2DsJsF56mPBx579) and extract it to `app/vdi_perf_test`
-Now simply run `poetry run python -m app.vdi_perf_test`.
 
-After that everything we need should be in the log file located at `app/log`
+```bash
+mkdir -p data/
+cd data/
+wget https://nextcloud.beuss.me/s/2DsJsF56mPBx579/download/vdi-test.rar
+bsdtar xf vdi-test.rar
+cd -
+docker compose --profile test build
+docker compose --profile test run --rm test
+```
+
+After that everything we need should be in the log file located at `logs`.
 
 
 **NB!**

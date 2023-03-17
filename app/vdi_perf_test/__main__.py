@@ -15,7 +15,7 @@ from app.logger import create_logger, get_logger
 from app.timer import Timer
 from app.video_processor import video_processor
 
-MODELS_DIR = "app/vdi_perf_test/models"
+MODELS_DIR = "data/models"
 
 MODEL_NAMES = [
     "yolov8n.pt",
@@ -29,8 +29,8 @@ BATCH_SIZES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
 DEVICE = "cuda:0"
 
-VIDEO_INPUT = Path("app/vdi_perf_test/input.mp4")
-VIDEO_OUTPUT = Path("app/vdi_perf_test/output.mp4")
+VIDEO_INPUT = Path("data/input.mp4")
+VIDEO_OUTPUT = Path("data/output.mp4")
 
 log = get_logger()
 
