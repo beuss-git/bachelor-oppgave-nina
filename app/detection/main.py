@@ -78,7 +78,6 @@ def main() -> int:
         model,
         Path(args.video_path),
         args.batch_size,
-        args.max_batches_to_queue,
         Path(args.output_path) if args.output_path is not None else None,
     )
 

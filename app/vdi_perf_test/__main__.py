@@ -43,7 +43,6 @@ def perform_test(
             model=model,
             video_path=VIDEO_INPUT,
             batch_size=batch_size,
-            max_batches_to_queue=max_batches_to_queue,
             output_path=None,
         )
 

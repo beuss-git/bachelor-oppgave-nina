@@ -79,7 +79,6 @@ class DetectionWorker(QThread):
             model=self.model,
             video_path=video_path,
             batch_size=64,
-            max_batches_to_queue=4,
             output_path=None,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
         )

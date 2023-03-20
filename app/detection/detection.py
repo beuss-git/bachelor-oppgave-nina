@@ -94,7 +94,6 @@ def process_video(
     model: BatchYolov8,
     video_path: Path,
     batch_size: int,
-    max_batches_to_queue: int,
     output_path: Path | None,
     notify_progress: Callable[[int], None] | None = None,
 ) -> List[int]:
@@ -115,7 +114,6 @@ def process_video(
         model=model,
         video_path=video_path,
         batch_size=batch_size,
-        max_batches_to_queue=max_batches_to_queue,
     ) as frame_grabber:
         if output_path is not None:
             vid_cap = frame_grabber.capture
