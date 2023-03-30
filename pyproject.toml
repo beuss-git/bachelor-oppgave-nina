@@ -12,13 +12,29 @@ python = ">=3.10,<3.12"
 PyQt6 = "^6.4.2"
 pyqtdarktheme = "^2.1.0"
 ultralytics = "^8.0.38"
+tqdm = "^4.64.1"
+ffmpeg-python = "^0.2.0"
+aspose-cells = "^23.2.0"
+aspose-cells-python = "^23.2.0"
+fpdf = "^1.7.2"
+torch = "^1.13.1"
+torchvision = "^0.14.1"
+poethepoet = "^0.18.1"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.0.0"
 pylint = "^2.16.2"
 black = "^23.1.0"
 pre-commit = "^3.0.4"
+pytest = "^7.2.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poe.tasks]
+# Thanks to https://github.com/Interpause/nicepipe/blob/937fb4b81bb6ef6d4c7bfbeaf3fe1998e63110ea/pyproject.toml#L9
+torch-cuda = "pip install torch torchvision torchaudio --force-reinstall --no-deps --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu117"
+
+[tool.isort]
+profile = "black"

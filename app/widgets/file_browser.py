@@ -1,169 +1,144 @@
-"""Open the file browser and return the selected file path."""
-import typing
+"""Creates a widget for browsing files depending on the mode"""
+from typing import List
 
-from PyQt6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QLineEdit,
-    QFileDialog,
-    QPushButton,
-)
 from PyQt6.QtCore import QDir
-from .options_widgets import (
-    add_label,
-)
+from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, QWidget
+
+from app.common import Common
+from app.widgets.widgets_options import add_label
 
 
-class FileBrowser(QWidget):
-    """_summary_
+class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
+    """Class for browsing files widget
 
     Args:
-        QWidget (_type_): _description_
-
-    Returns:
-        _type_: _description_
+        QWidget (QWidget): Inherits QWidget
     """
 
-    OpenFile = 0
-    OpenFiles = 1
-    OpenDirectory = 2
-    SaveFile = 3
+    # Creates empty list for filepaths
+    filepaths: List[str] = []
 
-    def __init__(self, title: str, mode: int = OpenFile) -> None:
-        """_summary_
+    def __init__(
+        self,
+        title: str,
+        mode: Common.FileType = Common.FileType.OPEN_FILE,
+        default_paths: List[str] | None = None,
+    ) -> None:
+        """Initiates the widget with LineEdit, Label and Button to browse files
 
         Args:
-            title (Any): _description_
-            mode (int, optional): _description_. Defaults to OpenFile.
+            title (Any): Label title
+            mode (int, optional): What kind of file browsing widget. Defaults to OpenFile.
         """
 
-        self.filepaths: typing.List[str] = []
-        # self.mode: int = mode
+        # Creates empty list for filepaths
+        self.filepaths: List[str] = []
 
         QWidget.__init__(self)
         layout = QHBoxLayout()
         self.setLayout(layout)
-        self.browser_mode = mode
         self.filter_name = "All files (*.*)"
-        self.dirpath = QDir.currentPath()
 
-        self.label = add_label(title)
-        layout.addWidget(self.label)
+        # Adds the label
+        self.label = title
+        layout.addWidget(add_label(title))
 
+        # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
-        self.line_edit.setFixedWidth(180)
-
         layout.addWidget(self.line_edit)
 
-        self.button = QPushButton("Browse Files")
-        self.button.clicked.connect(self.get_file)
-        layout.addWidget(self.button)
+        # Creates a button to open the file browser
+        button = QPushButton("Browse Files")
+
+        def use_get_file() -> None:
+            self.get_file(mode)
+
+        button.clicked.connect(use_get_file)
+        layout.addWidget(button)
         layout.addStretch()
 
-        # --------------------------------------------------------------------
+        # Sets the default path(s)
+        if default_paths is not None:
+            self.update_paths(default_paths)
 
-    # For example,
-    #    setMode(FileBrowser.OpenFile)
-    #    setMode(FileBrowser.OpenFiles)
-    #    setMode(FileBrowser.OpenDirectory)
-    #    setMode(FileBrowser.SaveFile)
-    # def set_mode(self, mode: int) -> None:
-    #    """_summary_"""
-    #    self.mode = mode
+    def update_paths(self, paths: List[str]) -> None:
+        """Sets the path in the line edit"""
+        self.line_edit.setText(",".join(paths))
+        self.filepaths = paths
 
-    # --------------------------------------------------------------------
-    # For example,
-    #    setFileFilter('Images (*.png *.xpm *.jpg)')
-    def set_file_filter(self, text: str) -> None:
-        """_summary_
+    def get_file(self, mode: Common.FileType) -> None:
+        """Opens file browser to gather one or more file(s) or save a file"""
+        stored_path = self.get_path()
+        start_dir = stored_path if stored_path else QDir.currentPath()
 
-        Args:
-            text (str): _description_
-        """
-        self.filter_name = text
-
-    # --------------------------------------------------------------------
-    def set_default_dir(self, path: str) -> None:
-        """_summary_
-
-        Args:
-            path (str): _description_
-        """
-        self.dirpath = path
-
-    # --------------------------------------------------------------------
-    def get_file(self) -> None:
-        """_summary_"""
-        self.filepaths = []
-
-        if self.browser_mode == FileBrowser.OpenFile:
-            self.filepaths.append(
-                QFileDialog.getOpenFileName(
-                    self,
-                    caption="Choose File",
-                    directory=self.dirpath,
-                    filter=self.filter_name,
-                )[0]
-            )
-        elif self.browser_mode == FileBrowser.OpenFiles:
-            self.filepaths.extend(
-                QFileDialog.getOpenFileNames(
-                    self,
-                    caption="Choose Files",
-                    directory=self.dirpath,
-                    filter=self.filter_name,
-                )[0]
-            )
-        elif self.browser_mode == FileBrowser.OpenDirectory:
-            self.filepaths.append(
-                QFileDialog.getExistingDirectory(
-                    self, caption="Choose Directory", directory=self.dirpath
+        filepaths: List[str] = []
+        match mode:
+            # If open single file
+            case Common.FileType.OPEN_FILE:
+                filepaths.append(
+                    QFileDialog.getOpenFileName(
+                        self,
+                        caption="Choose File",
+                        directory=start_dir,
+                        filter=self.filter_name,
+                    )[0]
                 )
-            )
 
-        else:
-            self.filepaths.append(
-                QFileDialog.getSaveFileName(
-                    self,
-                    caption="Save/Save As",
-                    directory=self.dirpath,
-                    filter=self.filter_name,
-                )[0]
-            )
+            # Else open multiple files
+            case Common.FileType.OPEN_FILES:
+                filepaths.extend(
+                    QFileDialog.getOpenFileNames(
+                        self,
+                        caption="Choose Files",
+                        directory=start_dir,
+                        filter=self.filter_name,
+                    )[0]
+                )
 
-        if len(self.filepaths) == 0:
+            # Else open directory
+            case Common.FileType.OPEN_DIR:
+                filepaths.append(
+                    QFileDialog.getExistingDirectory(
+                        self, caption="Choose Directory", directory=start_dir
+                    )
+                )
+
+            # Else save file
+            case _:
+                filepaths.append(
+                    QFileDialog.getSaveFileName(
+                        self,
+                        caption="Save/Save As",
+                        directory=start_dir,
+                        filter=self.filter_name,
+                    )[0]
+                )
+
+        # If the user cancels the file browser, the filepaths list will be empty
+        if len(filepaths) == 0:
             return
-        if len(self.filepaths) == 1:
-            self.line_edit.setText(self.filepaths[0])
-        else:
-            self.line_edit.setText(",".join(self.filepaths))
 
-    # --------------------------------------------------------------------
-    def set_label_width(self, width: int) -> None:
-        """_summary_
+        # The above statement seems to be wrong, as it returns an empty string if the user cancels-
+        # but keeping both for now.
+        if len(filepaths) == 1 and filepaths[0] == "":
+            return
 
-        Args:
-            width (int): _description_
-        """
-        self.label.setFixedWidth(width)
+        self.update_paths(filepaths)
 
-    # --------------------------------------------------------------------
-    def set_line_edit_width(self, width: int) -> None:
-        """_summary_
-
-        Args:
-            width (int): _description_
-        """
-        self.line_edit.setFixedWidth(width)
-
-    # --------------------------------------------------------------------
-    def get_paths(self) -> typing.List[str]:
-        """_summary_
+    def get_paths(self) -> List[str]:
+        """Returns the file path
 
         Returns:
-            typing.List[str]: _description_
+            str: File path
         """
         return self.filepaths
 
+    def get_path(self) -> str | None:
+        """Returns the file path
 
-# -------------------------------------------------------------------
+        Returns:
+            str: File path
+        """
+        if len(self.filepaths) > 0:
+            return self.filepaths[0]
+        return None
