@@ -1,0 +1,22 @@
+path: D:\dataset_temp\spliced
+#path: D:\dataset_temp\generated_test
+
+# These are relative to the path above
+train: train.txt
+val: val.txt
+test:
+nc: 11
+names:
+  [
+    "Gjedde",
+    "Gullbust",
+    "Rumpetroll",
+    "Stingsild",
+    "Ørekyt",
+    "Abbor",
+    "Brasme",
+    "Mort",
+    "Vederbuk",
+    "Frosk",
+    "Annen fisk",
+  ]
