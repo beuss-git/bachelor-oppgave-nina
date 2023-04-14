@@ -184,7 +184,7 @@ def process_video(
                 # break
                 if notify_progress is not None:
                     notify_progress(
-                        int(processed_frames / frame_grabber.frame_count) * 100
+                        int((processed_frames / frame_grabber.frame_count) * 100)
                     )
         if notify_progress is not None:
             notify_progress(100)
