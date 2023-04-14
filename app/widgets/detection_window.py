@@ -51,7 +51,7 @@ class DetectionWorker(QThread):
         if self.model is None:
             self.log("Initializing the model...")
             self.model = BatchYolov8(
-                Path(r"C:\Users\lilli\Downloads\yolov8n.pt"),
+                Path(r"yolov8n.pt"),
                 "cuda:0",
             )
         stream_target = io.StringIO()
