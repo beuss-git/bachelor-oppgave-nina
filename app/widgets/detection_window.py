@@ -3,7 +3,6 @@ import io
 import os
 from contextlib import redirect_stdout
 from pathlib import Path
-from typing import List, Tuple
 
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -99,14 +98,14 @@ class DetectionWorker(QThread):
             max_batches_to_queue=4,
             output_path=None,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
-        )
+        )[0]
 
         print(f"Found {len(frames_with_fish)} frames with fish")
 
         self.add_log.emit(f"Found {len(frames_with_fish)} frames with fish")
 
         # Convert the detected frames to frame ranges to cut the video
-        frame_ranges = self.__detected_frames_to_range(
+        frame_ranges = detection.detected_frames_to_ranges(
             frames_with_fish, frame_buffer=31
         )
         print(f"Found {len(frame_ranges)} frame ranges with fish")
@@ -125,41 +124,6 @@ class DetectionWorker(QThread):
 
         self.update_progress.emit(100)
         self.data_manager.add_detection_data(video_path, frame_ranges)
-
-    def __detected_frames_to_range(
-        self, frames: List[int], frame_buffer: int
-    ) -> List[Tuple[int, int]]:
-        """Convert a list of detected frames to a list of ranges.
-            Due to detection inaccuracies we need to allow for some dead frames
-            without detections within a valid range.
-
-        Args:
-            frames: A list of detected frames.
-            frame_buffer: The number of frames we allow to be without detection
-                          before we consider it a new range.
-        """
-
-        if len(frames) == 0:
-            return []
-
-        frame_ranges: List[Tuple[int, int]] = []
-        start_frame = frames[0]
-        end_frame = frames[0]
-
-        for frame in frames[1:]:
-            if frame <= end_frame + frame_buffer:
-                # Extend the range
-                end_frame = frame
-            else:
-                # Start a new range
-                frame_ranges.append((start_frame, end_frame))
-                start_frame = frame
-                end_frame = frame
-
-        # Add the last range
-        frame_ranges.append((start_frame, end_frame))
-
-        return frame_ranges
 
 
 class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
