@@ -28,7 +28,7 @@ report_format: str = "CSV"
 
 batch_size: int = 8
 
-prediction_threshold: int = 95
+prediction_threshold: int = 50
 
 box_around_fish: bool = False
 # endregion
