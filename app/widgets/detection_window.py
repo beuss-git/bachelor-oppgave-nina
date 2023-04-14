@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from app import settings
 from app.data_manager.data_manager import DataManager
 from app.detection import detection
 from app.detection.batch_yolov8 import BatchYolov8
@@ -91,10 +92,13 @@ class DetectionWorker(QThread):
 
         # self.add_text.emit(f"Processing {video_path}")
 
+        # Update threshold
+        self.model.conf_thres = settings.prediction_threshold / 100
+
         frames_with_fish = detection.process_video(
             model=self.model,
             video_path=video_path,
-            batch_size=16,
+            batch_size=settings.batch_size,
             max_batches_to_queue=4,
             output_path=None,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
