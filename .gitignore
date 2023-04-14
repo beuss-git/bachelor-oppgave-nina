@@ -225,3 +225,9 @@ valid.txt
 
 .idea/
 node_modules/
+
+# Fish distribution artifacts
+predictions/
+
+# Training artifacts
+runs/
