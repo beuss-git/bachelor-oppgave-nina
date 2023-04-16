@@ -59,6 +59,8 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
             self.buffer_time.setCurrentIndex(settings.buffer_after)
         elif title == "Buffer Before":
             self.buffer_time.setCurrentIndex(settings.buffer_before)
+        elif title == "Batch size":
+            self.buffer_time.setCurrentIndex(settings.batch_size)
         else:
             self.buffer_time.setCurrentText(settings.report_format)
         self.buffer_time.currentIndexChanged.connect(
