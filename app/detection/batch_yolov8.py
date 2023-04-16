@@ -2,7 +2,7 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -31,7 +31,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         augment: bool = False,
         agnostic_nms: bool = False,
         classes: Optional[List[str]] = None,
-        colors: Optional[List[List[int]]] = None,
+        colors: Optional[List[Tuple[int, int, int]]] = None,
     ) -> None:
         try:
             self.device = select_device(device)
@@ -56,8 +56,12 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
             else self.model.names
         )
         if colors is None:
-            self.colors = [
-                [np.random.randint(0, 255) for _ in range(3)]
+            self.colors: List[Tuple[int, int, int]] = [
+                (
+                    np.random.randint(0, 255),
+                    np.random.randint(0, 255),
+                    np.random.randint(0, 255),
+                )
                 for _ in range(len(self.names))
             ]
             logger.debug("Color is none, setting random colors.")

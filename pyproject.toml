@@ -27,6 +27,8 @@ pylint = "^2.16.2"
 black = "^23.1.0"
 pre-commit = "^3.0.4"
 pytest = "^7.2.2"
+ipykernel = "^6.22.0"
+sympy = "^1.11.1"
 
 [build-system]
 requires = ["poetry-core"]
