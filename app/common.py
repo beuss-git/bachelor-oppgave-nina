@@ -34,3 +34,5 @@ class Common:
 
     # Report variables
     formats = ["PDF", "CSV", "XML"]
+
+    batch_size = ["8", "16", "32", "64", "128", "256"]

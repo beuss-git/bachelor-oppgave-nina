@@ -1,6 +1,7 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
+from queue import Empty
 from typing import Any, Callable, List, Tuple
 
 import cv2
@@ -11,7 +12,7 @@ from ultralytics.yolo.utils.plotting import Annotator
 from app.logger import get_logger
 
 from .batch_yolov8 import BatchYolov8
-from .frame_grabber import ThreadedFrameGrabber
+from .frame_grabber import threaded_frame_grabber
 
 logger = get_logger()
 
@@ -46,6 +47,7 @@ def __annotate_batch(
     results: List[torch.Tensor],
     img0s: List[Any],
     names: List[str],
+    colors: List[Tuple[int, int, int]],
 ) -> None:
     """Annotates a batch of images and writes them to a video."""
 
@@ -59,7 +61,7 @@ def __annotate_batch(
             bndbox = pred["bndbox"]
 
             xyxy = (bndbox["xmin"], bndbox["ymin"], bndbox["xmax"], bndbox["ymax"])
-            annotator.box_label(xyxy, text, color=(255, 0, 255))
+            annotator.box_label(xyxy, text, color=colors[pred["class_id"]])
         im0 = annotator.result()
 
         # Write to the video
@@ -94,11 +96,12 @@ def process_video(
     model: BatchYolov8,
     video_path: Path,
     batch_size: int,
-    max_batches_to_queue: int,
+    max_batches_to_queue: int,  # pylint: disable=unused-argument
     output_path: Path | None,
     notify_progress: Callable[[int], None] | None = None,
-) -> List[int]:
-    """Runs inference on a video. And returns a list of frames containing fish.
+) -> Tuple[List[int], List[torch.Tensor]]:
+    """Runs inference on a video.
+    And returns a list of frames containing fish and a list of predictions for each frame.
 
     Args:
         model: The Yolov8 batcher model.
@@ -108,52 +111,45 @@ def process_video(
         output_path: The path to save the output video to.
 
     Returns:
-        A list of frames containing fish.
+        A tuple containing:
+        1. A list of frames containing fish.
+        2. A list of predictions for each frame.
     """
 
-    try:
-        frame_grabber = ThreadedFrameGrabber(
-            model=model,
-            video_path=video_path,
-            batch_size=batch_size,
-            max_batches_to_queue=max_batches_to_queue,
-        )
-    except RuntimeError as err:
-        logger.error("Failed to initialize frame grabber", exc_info=err)
-        # print("Failed to initialize frame grabber", err)
-        return []
+    with threaded_frame_grabber(
+        model=model,
+        video_path=video_path,
+        batch_size=batch_size,
+    ) as frame_grabber:
+        if output_path is not None:
+            vid_cap = frame_grabber.capture
+            video_writer = __create_video_writer(
+                save_path=output_path,
+                fps=vid_cap.get(cv2.CAP_PROP_FPS),
+                width=int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                height=int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            )
 
-    # Wait for the first batch to be ready
-    while frame_grabber.batches_in_queue() == 0:
-        time.sleep(0.1)
-
-    if output_path is not None:
-        vid_cap = frame_grabber.capture
-        video_writer = __create_video_writer(
-            save_path=output_path,
-            fps=vid_cap.get(cv2.CAP_PROP_FPS),
-            width=int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-            height=int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-        )
-
-    frames_with_fish = []
-    try:
+        frames_with_fish = []
         fps_count = 0.0
         frame_count = 0
+        processed_frames = 0
+
+        predictions_per_frame: List[torch.Tensor] = []
 
         with tqdm(
-            total=frame_grabber.total_batch_count(), desc="Processing batches"
+            total=frame_grabber.frame_count, desc="Processing frames", leave=False
         ) as pbar:
-            while not frame_grabber.is_done() or not frame_grabber.batch_queue.empty():
-                [processed_batch, original_batch] = frame_grabber.get_batch()
-                if processed_batch is None:
-                    # This will happen if the batch size is too large or if the disk is too slow
-                    # The grabber can't keep up with the inference speed
-                    logger.warning("No batch available, waiting...")
-                    # print("No batch available, waiting...")
-                    # Wait for more batches to be available
-                    time.sleep(0.1)
+            for _ in range(frame_grabber.total_batch_count()):
+                try:
+                    batch_wrapper = frame_grabber.processed_batch_queue.get(timeout=5)
+                except Empty:
                     continue
+
+                if batch_wrapper is None:
+                    continue
+
+                processed_batch, original_batch = batch_wrapper.data
 
                 (predictions, delta) = __process_batch(
                     original_batch, processed_batch, model
@@ -161,8 +157,9 @@ def process_video(
 
                 batch_fps = len(processed_batch) / delta
                 fps_count += batch_fps
-                pbar.update(1)
-                pbar.set_description(f"Processing batches (FPS: {batch_fps:.2f})")
+                processed_frames += len(processed_batch)
+                pbar.update(len(processed_batch))
+                pbar.set_description(f"Processing frames (FPS: {batch_fps:.2f})")
 
                 # Annotate the batch
                 if output_path is not None:
@@ -171,23 +168,77 @@ def process_video(
                         results=predictions,
                         img0s=original_batch,
                         names=model.names,
+                        colors=model.colors,
                     )
 
                 # Check if any of the frames in the batch contain fish
                 for i, pred in enumerate(predictions):
                     if len(pred) > 0:
                         frames_with_fish.append(frame_count + i)
+                    predictions_per_frame.append(pred)
 
                 # Update the frame count
                 frame_count += len(original_batch)
+
+                # if frame_count > 2000:
+                # break
                 if notify_progress is not None:
-                    notify_progress((pbar.n / pbar.total) * 100)
+                    notify_progress(
+                        int((processed_frames / frame_grabber.frame_count) * 100)
+                    )
         if notify_progress is not None:
             notify_progress(100)
-        print(f"Average FPS: {fps_count / frame_grabber.total_batch_count()}")
-    except RuntimeError as err:
-        logger.error("Failed to process video", exc_info=err)
-        # print(err)
+
+        # Close and release the video writer
+        if output_path is not None and video_writer is not None:
+            video_writer.release()
+            logger.debug("Video writer released")
+
+        if processed_frames != frame_grabber.frame_count:
+            logger.warning(
+                "Processed frames (%s) does not match total frames (%s)",
+                processed_frames,
+                frame_grabber.frame_count,
+            )
+        logger.info(
+            "Average FPS: %s",
+            {fps_count / (processed_frames / frame_grabber.batch_size)},
+        )
+
+    return frames_with_fish, predictions_per_frame
+
+
+def detected_frames_to_ranges(
+    frames: List[int], frame_buffer: int
+) -> List[Tuple[int, int]]:
+    """Convert a list of detected frames to a list of ranges.
+        Due to detection inaccuracies we need to allow for some dead frames
+        without detections within a valid range.
+
+    Args:
+        frames: A list of detected frames.
+        frame_buffer: The number of frames we allow to be without detection
+                        before we consider it a new range.
+    """
+
+    if len(frames) == 0:
         return []
 
-    return frames_with_fish
+    frame_ranges: List[Tuple[int, int]] = []
+    start_frame = frames[0]
+    end_frame = frames[0]
+
+    for frame in frames[1:]:
+        if frame <= end_frame + frame_buffer:
+            # Extend the range
+            end_frame = frame
+        else:
+            # Start a new range
+            frame_ranges.append((start_frame, end_frame))
+            start_frame = frame
+            end_frame = frame
+
+    # Add the last range
+    frame_ranges.append((start_frame, end_frame))
+
+    return frame_ranges

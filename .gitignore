@@ -212,7 +212,22 @@ pip-selfcheck.json
 .history
 .ionide
 
+.idea/
+*.pt
+
+# Dataset generation artifacts
+imagelist.txt
+test.txt
+train.txt
+valid.txt
+
 # End of https://www.toptal.com/developers/gitignore/api/python,virtualenv,jupyternotebooks,visualstudiocode
 
 .idea/
 node_modules/
+
+# Fish distribution artifacts
+predictions/
+
+# Training artifacts
+runs/

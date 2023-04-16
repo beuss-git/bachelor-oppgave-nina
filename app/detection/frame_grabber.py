@@ -1,13 +1,18 @@
+# TODO: Add docstrings
+# pylint: disable=missing-class-docstring, missing-function-docstring
 """This module contains the ThreadedFrameGrabber class. """
 
-
 import math
-import threading
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
-from queue import Queue
-from typing import Any, List, Tuple
+from queue import Empty, PriorityQueue
+from threading import Event, Thread
+from typing import Any, Generator, List, Optional, Tuple
 
 import cv2
+import numpy as np
 from torch import Tensor
 
 from app.detection.batch_yolov8 import BatchYolov8
@@ -16,95 +21,125 @@ from app.logger import get_logger
 logger = get_logger()
 
 
-class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
-    """A class to grab frames from a video in a separate thread."""
+@dataclass
+class BatchWrapper:
+    index: int
+    data: Tuple[Tensor, List[np.ndarray[Any, Any]]]
 
+    def __lt__(self, other: "BatchWrapper") -> bool:
+        return self.index < other.index
+
+
+@contextmanager
+def threaded_frame_grabber(
+    batch_size: int, model: BatchYolov8, video_path: Path, num_workers: int = 4
+) -> Generator["ThreadedFrameGrabber", None, None]:
+    grabber = ThreadedFrameGrabber(batch_size, model, video_path, num_workers)
+    try:
+        yield grabber
+    finally:
+        grabber.close()
+
+
+class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         batch_size: int,
-        max_batches_to_queue: int,
         model: BatchYolov8,
         video_path: Path,
+        num_workers: int = 4,
     ):
         self.model = model
         self.batch_size = batch_size
-        self.batch_queue: Queue[List[Any]] = Queue(max_batches_to_queue)
-        self.original_batch_queue: Queue[List[Any]] = Queue(max_batches_to_queue)
-        self.processed_batch_queue: Queue[Tensor] = Queue(max_batches_to_queue)
-        self.thread_pool = []
-        for _ in range(4):  # create 4 threads to process batches
-            thread = threading.Thread(target=self.__prepare_images_thread)
-            thread.daemon = True
-            self.thread_pool.append(thread)
-            thread.start()
-
         self.capture = cv2.VideoCapture(str(video_path))
+        if not self.capture.isOpened():
+            raise RuntimeError(f"Could not open video file {video_path}")
+
         self.frame_count = int(self.capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        # Start the capture thread
-        self.capture_thread = threading.Thread(target=self.__capture_images_thread)
-        self.capture_thread.daemon = True
-        self.capture_thread.start()
+        self.unprocessed_batch_queue: PriorityQueue[
+            Tuple[int, List[np.ndarray[Any, Any]]]
+        ] = PriorityQueue(maxsize=num_workers * 2)
+        self.processed_batch_queue: PriorityQueue[
+            Optional[BatchWrapper]
+        ] = PriorityQueue(maxsize=num_workers * 2)
 
-    def __prepare_images_thread(self) -> None:
-        """Thread to prepare images for the model and put them in the processed queue."""
-        while True:
-            batch = self.batch_queue.get()
-            self.original_batch_queue.put(batch)
-            processed_batch = self.model.prepare_images(batch)
-            self.processed_batch_queue.put(processed_batch)
-            self.batch_queue.task_done()  # Mark the batch as done
+        self.shutdown_flag = Event()
 
-    def __capture_images_thread(self) -> None:
-        """Thread to capture frames from the video and put them in the queue."""
-        while True:
-            frames = []
-            for _ in range(self.batch_size):
-                ret, frame = self.capture.read()
-                if not ret:
-                    break
-                frames.append(frame)
-            if not frames:
+        self.batch_loader_thread = Thread(target=self.batch_loader)
+        self.batch_loader_thread.start()
+
+        self.executor = ThreadPoolExecutor(max_workers=num_workers)
+        self.workers = []
+
+        self.frames_read = 0
+        self.skipped_frames = 0
+
+        for _ in range(num_workers):
+            future = self.executor.submit(self.worker)
+            self.workers.append(future)
+
+    def read_next_frame(self) -> np.ndarray[Any, Any] | None:
+        ret: bool
+        frame: Optional[np.ndarray[Any, Any]]
+        ret, frame = self.capture.read()
+        while (
+            not ret
+            and not self.shutdown_flag.is_set()
+            and self.frames_read + self.skipped_frames < self.frame_count
+        ):
+            self.skipped_frames += 1
+            ret, frame = self.capture.read()
+        if ret and frame is not None:
+            self.frames_read += 1
+            return frame
+        return None
+
+    def batch_loader(self) -> None:
+        batch: List[np.ndarray[Any, Any]] = []
+        batch_index = 0
+        while not self.shutdown_flag.is_set():
+            frame: np.ndarray[Any, Any] | None = self.read_next_frame()
+            ret = frame is not None
+
+            if ret and frame is not None:
+                batch.append(frame)
+                if len(batch) == self.batch_size:
+                    self.unprocessed_batch_queue.put((batch_index, batch))
+                    batch_index += 1
+                    batch = []
+            else:
+                if len(batch) > 0:
+                    self.unprocessed_batch_queue.put((batch_index, batch))
                 break
-            self.batch_queue.put(frames)
-        self.batch_queue.join()
+        print("Finished loading batches")
 
-    def get_batch(self) -> Tuple[Tensor, List[Any]]:
-        """Gets the processed batch and the original batch images.
+    def worker(self) -> None:
+        while not self.shutdown_flag.is_set():
+            try:
+                batch_index, batch = self.unprocessed_batch_queue.get(timeout=1)
+            except Empty:
+                if not self.batch_loader_thread.is_alive():
+                    break
+                continue
 
-        Returns:
-           The processed batch and the original batch images.
-        """
-        return self.processed_batch_queue.get(), self.original_batch_queue.get()
+            prepared_batch = self.prepare(batch)
+            self.processed_batch_queue.put(BatchWrapper(batch_index, prepared_batch))
 
-    def has_more_processed_batches(self) -> bool:
-        """Check if there are more processed batches.
+    def prepare(
+        self, batch: List[np.ndarray[Any, Any]]
+    ) -> Tuple[Tensor, List[np.ndarray[Any, Any]]]:
+        return self.model.prepare_images(batch), batch
 
-        Returns:
-           True if there are more processed batches, False otherwise.
-        """
-        return not self.processed_batch_queue.empty()
-
-    def is_done(self) -> bool:
-        """Check if we have processed all frames.
-
-        Returns:
-           True if we have processed all frames, False otherwise.
-        """
-        return not self.capture_thread.is_alive() and self.batch_queue.empty()
+    def close(self) -> None:
+        self.shutdown_flag.set()
+        print("Set shutdown flag")
+        self.batch_loader_thread.join()
+        print("Joined batch loader thread")
+        self.executor.shutdown(wait=False)
+        print("Shutdown executor")
 
     def total_batch_count(self) -> int:
-        """Get the total number of batches that will be processed.
-
-        Returns:
-            The total number of batches.
-        """
-        return int(math.ceil(self.frame_count / self.batch_size))
-
-    def batches_in_queue(self) -> int:
-        """Get the number of batches in the queue.
-
-        Returns:
-           The number of batches in the queue.
-        """
-        return self.processed_batch_queue.qsize()
+        return int(
+            math.ceil((self.frame_count - self.skipped_frames) / self.batch_size)
+        )

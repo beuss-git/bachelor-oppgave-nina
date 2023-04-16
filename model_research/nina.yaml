@@ -1,0 +1,20 @@
+path: C:\Users\benja\Documents\datasets\nina_yolo
+
+
+# These are relative to the path above
+train: obj_train_data
+val: obj_train_data
+test:
+
+nc: 9
+names: [
+  "Gjedde",
+  "Gullbust",
+  "Rumpetroll",
+  "Stingsild",
+  "Ørekyt",
+  "Abbor",
+  "Brasme",
+  "Mort",
+  "Vederbuk"
+]

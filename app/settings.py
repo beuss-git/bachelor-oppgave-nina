@@ -25,6 +25,12 @@ keep_original: bool = False
 get_report: bool = False
 
 report_format: str = "CSV"
+
+batch_size: int = 8
+
+prediction_threshold: int = 50
+
+box_around_fish: bool = False
 # endregion
 
 # ----------------------------------------------------------------------------- #
