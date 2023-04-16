@@ -88,7 +88,9 @@ class DataManager:
             # Log error if anything fails in the process
             print("Error while creating a sqlite table", error)
 
-    def add_video_data(self, video_id: Path, title: str) -> None:
+    def add_video_data(
+        self, video_id: Path | None, title: str, output_video: Path | None
+    ) -> None:
         """Adds a video into the video table
 
         Args:
@@ -102,12 +104,17 @@ class DataManager:
             # creates cursor
             cursor = self.sqlite_connection.cursor()
 
-            # gets videolength from metadata
-            metadata = self.get_metadata(video_id)
-            duration = "00:00:00"
-            if metadata is not None:
-                duration = str(datetime.timedelta(seconds=float(metadata["duration"])))
-                # .strftime("%H:%M:%S")
+            if video_id is None:
+                return
+
+            if output_video is None:
+                return
+
+            duration = self.get_video_duration(video_id)
+
+            output_duration = self.get_video_duration(
+                output_video / f"{video_id.stem}_processed.mp4"
+            )
 
             # sets up query and data that will be in the query
             sqlite_insert_query = """INSERT INTO video
@@ -121,7 +128,7 @@ class DataManager:
                 ),
                 0,
                 duration,
-                0,
+                output_duration,
             )
             #
             # executes query to add the data into the table
@@ -140,6 +147,25 @@ class DataManager:
             logger.error("Printing detailed SQLite exception traceback: ")
             exc_type, exc_value, exc_tb = sys.exc_info()
             logger.error(traceback.format_exception(exc_type, exc_value, exc_tb))
+
+    def get_video_duration(self, path: Path | None) -> str:
+        """_summary_
+
+        Args:
+            path (Path | None): _description_
+
+        Returns:
+            str: _description_
+        """
+
+        duration = "00:00:00"
+        if path is not None:
+            # gets videolength from metadata
+            metadata = self.get_metadata(path)
+            if metadata is not None:
+                duration = str(datetime.timedelta(seconds=float(metadata["duration"])))
+                # .strftime("%H:%M:%S")
+        return duration
 
     def add_detection_data(
         self, video_id: Path, detections: typing.List[typing.Tuple[int, int]]
