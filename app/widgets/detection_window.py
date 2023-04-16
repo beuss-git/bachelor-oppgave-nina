@@ -83,7 +83,8 @@ class DetectionWorker(QThread):
             self.data_manager.add_video_data(self.input_folder_path / video, video)
             self.process_video(self.input_folder_path / video)
 
-        self.report_manager.write_report(videos)
+        if settings.get_report:
+            self.report_manager.write_report(videos)
 
     def tensors_to_predictions(
         self, tensors: List[torch.Tensor]
