@@ -20,6 +20,7 @@ fpdf = "^1.7.2"
 torch = "^1.13.1"
 torchvision = "^0.14.1"
 poethepoet = "^0.18.1"
+xlsxwriter = "^3.1.0"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.0.0"
