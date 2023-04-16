@@ -168,7 +168,9 @@ class DetectionWorker(QThread):
         vid_path = Path(video_path)
         out_path = self.output_folder_path / f"{vid_path.stem}_processed.mp4"
 
-        dets = self.tensors_to_predictions(tensors)
+        dets = None
+        if settings.box_around_fish:
+            dets = self.tensors_to_predictions(tensors)
 
         # Cut the video to the detected frames
         video_processor.cut_video(video_path, out_path, frame_ranges, dets)
