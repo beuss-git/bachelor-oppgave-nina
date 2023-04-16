@@ -1,8 +1,8 @@
 """Creates empty YOLO detection files for frames with no detections in it"""
 import argparse
 import os
-import typing
 import pathlib
+import typing
 
 
 def create_image_list(parsed_args: dict[str, typing.Any]) -> None:

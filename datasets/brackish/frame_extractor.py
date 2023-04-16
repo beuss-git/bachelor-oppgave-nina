@@ -1,9 +1,9 @@
 """Takes a set of videos and extracts the frames into separate folders"""
-import os
-import subprocess
 import argparse
-import typing
+import os
 import pathlib
+import subprocess
+import typing
 
 image_types = [".png", ".jpg", ".jpeg"]
 video_types = [".avi", ".mp4"]
