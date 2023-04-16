@@ -56,6 +56,7 @@ class DataManager:
                 return True
 
             print("Tables found!")
+            cursor.close()
             return False
 
         except sqlite3.Error as error:
@@ -110,33 +111,31 @@ class DataManager:
             if output_video is None:
                 return
 
-            duration = self.get_video_duration(video_id)
-
-            output_duration = self.get_video_duration(
-                output_video / f"{video_id.stem}_processed.mp4"
-            )
-
-            # sets up query and data that will be in the query
-            sqlite_insert_query = """INSERT INTO video
-                          (id, title, date, totaldetections, videolength, outputvideolength)
-                          VALUES  (?, ?, ?, ?, ?, ?)"""
-            data = (
-                str(video_id),
-                title,
-                datetime.datetime.fromtimestamp(os.path.getctime(video_id)).strftime(
-                    "%Y-%m-%d"
-                ),
-                0,
-                duration,
-                output_duration,
-            )
-            #
-            # executes query to add the data into the table
-            cursor.execute(sqlite_insert_query, data)
-            self.sqlite_connection.commit()
-            logger.info(
-                "Record inserted successfully into table at %s", cursor.rowcount
-            )
+            video_exist = self.video_check(str(video_id))
+            if video_exist:
+                # sets up query and data that will be in the query
+                sqlite_insert_query = """INSERT INTO video
+                            (id, title, date, totaldetections, videolength, outputvideolength)
+                            VALUES  (?, ?, ?, ?, ?, ?)"""
+                data = (
+                    str(video_id),
+                    title,
+                    datetime.datetime.fromtimestamp(
+                        os.path.getctime(video_id)
+                    ).strftime("%Y-%m-%d"),
+                    0,
+                    self.get_video_duration(video_id),
+                    self.get_video_duration(
+                        output_video / f"{video_id.stem}_processed.mp4"
+                    ),
+                )
+                #
+                # executes query to add the data into the table
+                cursor.execute(sqlite_insert_query, data)
+                self.sqlite_connection.commit()
+                logger.info(
+                    "Record inserted successfully into table at %s", cursor.rowcount
+                )
             cursor.close()
 
         except sqlite3.Error as error:
@@ -148,14 +147,39 @@ class DataManager:
             exc_type, exc_value, exc_tb = sys.exc_info()
             logger.error(traceback.format_exception(exc_type, exc_value, exc_tb))
 
+    def video_check(self, video_id: str) -> bool:
+        """_summary_"""
+        try:
+            # creates a cursor
+            cursor = self.sqlite_connection.cursor()
+
+            # checks if there are tables in the database
+            video = cursor.execute(
+                """SELECT title FROM video WHERE id='""" + video_id + """'; """
+            ).fetchall()
+
+            # returns true if there isnt any tables found in the database
+            if video == []:
+                print("Video not found!")
+                return True
+
+            print("Video already exists in database!")
+            cursor.close()
+            return False
+
+        except sqlite3.Error as error:
+            # Log error if anything fails in the process
+            print("Error while checking for sqlite table", error)
+            return False
+
     def get_video_duration(self, path: Path | None) -> str:
-        """_summary_
+        """Returns the duration of a video based on metadata
 
         Args:
-            path (Path | None): _description_
+            path (Path | None): path to the video
 
         Returns:
-            str: _description_
+            str: string with duration in the format HH:MM:SS
         """
 
         duration = "00:00:00"
