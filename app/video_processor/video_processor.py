@@ -59,16 +59,20 @@ def draw_detections(
                     y=y_pos,
                     width=width,
                     height=height,
-                    color=color_to_hex((255, 105, 180)),
+                    color=color_to_hex((255, 0, 0)),
                     thickness=2,
                     enable=f"eq(n,{adjusted_frame_number})",
                 ).drawtext(
+                    # TODO: package the font ourselves to make it work on all platforms
+                    fontfile=r"C:\Windows\Fonts\consola.ttf",
                     text=f"{detection.label}: {detection.confidence:.2f}",
-                    x=detection.xmin + 2,
+                    x=detection.xmin + 4,
                     y=detection.ymin + 10,
-                    fontsize=12,
+                    fontsize=16,
                     fontcolor="white",
                     enable=f"eq(n,{adjusted_frame_number})",
+                    box=1,
+                    boxcolor=color_to_hex((0, 0, 0)) + "80",
                 )
     return video_stream
 
