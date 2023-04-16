@@ -237,3 +237,6 @@ yolov8x.pt
 
 # Training artifacts
 runs/
+
+# Database
+*.db
