@@ -3,7 +3,9 @@ import io
 import os
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import Dict, List
 
+import torch
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
@@ -20,7 +22,7 @@ from app.data_manager.data_manager import DataManager
 from app.detection import detection
 from app.detection.batch_yolov8 import BatchYolov8
 from app.report_manager.report_manager import ReportManager
-from app.video_processor import video_processor
+from app.video_processor import Detection, video_processor
 
 
 class DetectionWorker(QThread):
@@ -83,6 +85,28 @@ class DetectionWorker(QThread):
 
         self.report_manager.write_report(videos)
 
+    def tensors_to_predictions(
+        self, tensors: List[torch.Tensor]
+    ) -> Dict[int, List[Detection]]:
+        """Convert the tensors to a dictionary of frame number to detections."""
+        detections: Dict[int, List[Detection]] = {}
+        for frame, tensor in enumerate(tensors):
+            # annotator.text((32, 32), text, txt_color=(0, 255, 255))
+            detections[frame] = []
+            for pred in tensor:
+                bndbox = pred["bndbox"]
+                detections[frame].append(
+                    Detection(
+                        label=str(pred["name"]),
+                        confidence=float(pred["conf"]),
+                        xmin=int(bndbox["xmin"]),
+                        ymin=int(bndbox["ymin"]),
+                        xmax=int(bndbox["xmax"]),
+                        ymax=int(bndbox["ymax"]),
+                    )
+                )
+        return detections
+
     def process_video(self, video_path: Path) -> None:
         """
         Process a video and save the processed video to the same folder as the original video.
@@ -95,14 +119,14 @@ class DetectionWorker(QThread):
         # Update threshold
         self.model.conf_thres = settings.prediction_threshold / 100
 
-        frames_with_fish = detection.process_video(
+        frames_with_fish, tensors = detection.process_video(
             model=self.model,
             video_path=video_path,
             batch_size=settings.batch_size,
             max_batches_to_queue=4,
             output_path=None,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
-        )[0]
+        )
 
         print(f"Found {len(frames_with_fish)} frames with fish")
 
@@ -122,8 +146,10 @@ class DetectionWorker(QThread):
         vid_path = Path(video_path)
         out_path = self.output_folder_path / f"{vid_path.stem}_processed.mp4"
 
+        dets = self.tensors_to_predictions(tensors)
+
         # Cut the video to the detected frames
-        video_processor.cut_video(video_path, out_path, frame_ranges)
+        video_processor.cut_video(video_path, out_path, frame_ranges, dets)
         self.log(f"Saved processed video to {out_path}")
 
         self.update_progress.emit(100)
