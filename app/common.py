@@ -33,4 +33,4 @@ class Common:
     buffer_options = ["0", "1", "2", "3", "4", "5"]
 
     # Report variables
-    formats = ["PDF", "CSV", "XML"]
+    formats = ["PDF", "CSV", "XML", "XLSX"]
