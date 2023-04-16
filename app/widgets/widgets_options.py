@@ -49,24 +49,26 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         self.setLayout(layout)
 
         # Sets up a combobox
-        self.buffer_time = QComboBox()
-        self.buffer_time.setFixedWidth(50)
-        self.buffer_time.addItems(buffer)
+        self.combo_box = QComboBox()
+        self.combo_box.setFixedWidth(50)
+        self.combo_box.addItems(buffer)
 
         # TODO: make this into an enum
         # Sets the current index to the stored buffer time
         if title == "Buffer After":
-            self.buffer_time.setCurrentIndex(settings.buffer_after)
+            self.combo_box.setCurrentIndex(settings.buffer_after)
         elif title == "Buffer Before":
-            self.buffer_time.setCurrentIndex(settings.buffer_before)
+            self.combo_box.setCurrentIndex(settings.buffer_before)
+        elif title == "Batch Size":
+            self.combo_box.setCurrentText(str(settings.batch_size))
         else:
-            self.buffer_time.setCurrentText(settings.report_format)
-        self.buffer_time.currentIndexChanged.connect(
+            self.combo_box.setCurrentText(settings.report_format)
+        self.combo_box.currentIndexChanged.connect(
             self.index_changed
         )  # connects interaction to the index changed function
 
         # Adds the combobox widget and label
-        layout.addWidget(self.buffer_time)
+        layout.addWidget(self.combo_box)
         layout.addWidget(add_label(title))
 
         # saves label as a class variable for later use
@@ -83,9 +85,9 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         elif self.label == "Buffer Before":
             settings.buffer_before = index
         elif self.label == "Batch Size":
-            settings.batch_size = index
+            settings.batch_size = int(Common.batch_size[index])
         else:
-            settings.report_format = self.buffer_time.currentText()
+            settings.report_format = Common.formats[index]
 
 
 class AdvancedOptions(QWidget):
@@ -162,7 +164,7 @@ class AdvancedOptions(QWidget):
             DropDownWidget("Report format", Common.formats)
         )
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
-            DropDownWidget("Batch size", Common.batch_size)
+            DropDownWidget("Batch Size", Common.batch_size)
         )
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
             SpinBox("Prediction threshold", 0, 100)
