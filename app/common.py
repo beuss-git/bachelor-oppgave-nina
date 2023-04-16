@@ -33,6 +33,6 @@ class Common:
     buffer_options = ["0", "1", "2", "3", "4", "5"]
 
     # Report variables
-    formats = ["PDF", "CSV", "XML"]
+    formats = ["PDF", "CSV", "XML", "XLSX"]
 
     batch_size = ["8", "16", "32", "64", "128", "256"]

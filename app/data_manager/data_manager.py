@@ -111,14 +111,17 @@ class DataManager:
 
             # sets up query and data that will be in the query
             sqlite_insert_query = """INSERT INTO video
-                          (id, title, date, videolength)  VALUES  (?, ?, ?, ?)"""
+                          (id, title, date, totaldetections, videolength, outputvideolength)
+                          VALUES  (?, ?, ?, ?, ?, ?)"""
             data = (
                 str(video_id),
                 title,
                 datetime.datetime.fromtimestamp(os.path.getctime(video_id)).strftime(
                     "%Y-%m-%d"
                 ),
+                0,
                 duration,
+                0,
             )
             #
             # executes query to add the data into the table
@@ -178,6 +181,34 @@ class DataManager:
         except sqlite3.Error as error:
             # If error occurs log the error
             print("Failed to insert multiple records into sqlite table", error)
+
+    def get_video_data(self) -> typing.List[typing.Any]:
+        """Returns data about the video
+
+        Returns:
+            typing.List[typing.Any]: _description_
+        """
+
+        try:
+            # creates cursor
+            cursor = self.sqlite_connection.cursor()
+
+            # setting up selection query
+            sqlite_select_query = """SELECT title, totaldetections, videolength, outputvideolength
+                                    FROM  video"""
+
+            # executes selection query and saves the data in records
+            cursor.execute(sqlite_select_query)
+            records = cursor.fetchall()
+            cursor.close()
+
+            # returns all data gained from the query
+            return records
+
+        except sqlite3.Error as error:
+            # If error occurs the error is logged and it returns an empty list
+            print("Failed to read data from sqlite table", error)
+            return []
 
     def get_data(self, video_search: typing.List[str]) -> typing.List[typing.Any]:
         """Returns all the data necessary to write a report
