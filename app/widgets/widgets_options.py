@@ -234,7 +234,7 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
         self.setLayout(layout)
 
 
-class SpinBox(QWidget):
+class SpinBox(QWidget):  # pylint: disable=too-few-public-methods
     """Class for SpinBox widget"""
 
     def __init__(self, msg: str, min_val: int, max_val: int) -> None:
