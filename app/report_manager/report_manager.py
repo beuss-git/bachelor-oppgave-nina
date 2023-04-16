@@ -4,6 +4,7 @@ import typing
 from pathlib import Path
 from xml.dom import minidom
 
+import xlsxwriter
 from fpdf import FPDF
 
 from app import settings
@@ -44,6 +45,8 @@ class ReportManager:
                 self.write_pdf_file(videos)
             case "XML":
                 self.write_xml_file(videos)
+            case "XLSX":
+                self.write_xlsx_file(videos)
 
     def write_xml_file(self, videos: typing.List[str]) -> None:
         """Writes a report in the format of an xml file
@@ -136,3 +139,54 @@ class ReportManager:
 
         # opens the output pathway and saves the file
         pdf.output(save_path_file, "F")
+
+    def write_xlsx_file(self, videos: typing.List[str]) -> None:
+        """_summary_
+
+        Args:
+            videos (typing.List[str]): _description_
+        """
+        # Workbook() takes one, non-optional, argument
+        # which is the filename that we want to create.
+        save_path_file = str(self.output_path) + "/meh.xlsx"
+
+        workbook = xlsxwriter.Workbook(save_path_file)
+
+        # The workbook object is then used to add new
+        # worksheet via the add_worksheet() method.
+        detectionsheet = workbook.add_worksheet()
+
+        row_list = [
+            ("Video", "detectionID", "Start", "End")
+        ] + self.datamanager.get_data(videos)
+        logger.info(row_list)
+
+        row = 0
+        col = 0
+
+        for video, detection, start, end in row_list:
+            detectionsheet.write(row, col, video)
+            detectionsheet.write(row, col + 1, detection)
+            detectionsheet.write(row, col + 2, start)
+            detectionsheet.write(row, col + 3, end)
+            row += 1
+
+        summarysheet = workbook.add_worksheet()
+
+        row_list = [
+            ("Video", "Total detections", "Input Videolength", "Output Videolength")
+        ] + self.datamanager.get_video_data()
+        logger.info(row_list)
+
+        row = 0
+
+        for video, detection, start, end in row_list:
+            summarysheet.write(row, col, video)
+            summarysheet.write(row, col + 1, detection)
+            summarysheet.write(row, col + 2, start)
+            summarysheet.write(row, col + 3, end)
+            row += 1
+
+        # Finally, close the Excel file
+        # via the close() method.
+        workbook.close()
