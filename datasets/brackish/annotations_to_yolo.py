@@ -1,8 +1,9 @@
 """Converts the ground truth annotations from AAU Bounding Box annotation format to YOLO format"""
 import argparse
 import os
-import typing
 import pathlib
+import typing
+
 import cv2
 import pandas as pd
 
@@ -165,7 +166,7 @@ def import_categories(file_name: str) -> tuple[dict[int, str], dict[str, int]]:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(
         description="Converts the ground truth annotations from AAU Bounding Box annotation "
-                    "format to YOLO format "
+        "format to YOLO format "
     )
     ap.add_argument(
         "-imageFolder",

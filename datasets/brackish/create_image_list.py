@@ -25,7 +25,7 @@ def create_image_list(parsed_args: dict[str, typing.Any]) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(
         description="Takes a set root dir and creates a list of all images in this dir. Writing "
-                    "with absolute path "
+        "with absolute path "
     )
     ap.add_argument(
         "-inputFolder",
