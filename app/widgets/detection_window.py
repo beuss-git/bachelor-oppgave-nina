@@ -3,8 +3,9 @@ import io
 import os
 from contextlib import redirect_stdout
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
+import cv2
 import torch
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -54,7 +55,7 @@ class DetectionWorker(QThread):
         if self.model is None:
             self.log("Initializing the model...")
             self.model = BatchYolov8(
-                Path(r"yolov8n.pt"),
+                Path(r"data/models/v8s-640-binary.pt"),
                 "cuda:0",
             )
         stream_target = io.StringIO()
@@ -83,7 +84,8 @@ class DetectionWorker(QThread):
             self.data_manager.add_video_data(self.input_folder_path / video, video)
             self.process_video(self.input_folder_path / video)
 
-        self.report_manager.write_report(videos)
+        if settings.get_report:
+            self.report_manager.write_report(videos)
 
     def tensors_to_predictions(
         self, tensors: List[torch.Tensor]
@@ -106,6 +108,24 @@ class DetectionWorker(QThread):
                     )
                 )
         return detections
+
+    def __add_buffer_to_ranges(
+        self, frame_ranges: List[Tuple[int, int]], video_path: Path
+    ) -> List[Tuple[int, int]]:
+        """Add buffer time before and after each frame range"""
+        frame_ranges_with_buffer = []
+        cap = cv2.VideoCapture(str(video_path))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+
+        video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        for frame_range in frame_ranges:
+            start_frame = max(0, frame_range[0] - int(fps * settings.buffer_before))
+            end_frame = min(
+                video_length, frame_range[1] + int(fps * settings.buffer_after)
+            )
+            frame_ranges_with_buffer.append((start_frame, end_frame))
+        return frame_ranges_with_buffer
 
     def process_video(self, video_path: Path) -> None:
         """
@@ -139,6 +159,8 @@ class DetectionWorker(QThread):
         print(f"Found {len(frame_ranges)} frame ranges with fish")
         self.add_log.emit(f"Found {len(frame_ranges)} frame ranges with fish")
 
+        frame_ranges = self.__add_buffer_to_ranges(frame_ranges, video_path)
+
         if len(frame_ranges) == 0:
             print("No fish detected, skipping video")
             return
@@ -146,7 +168,9 @@ class DetectionWorker(QThread):
         vid_path = Path(video_path)
         out_path = self.output_folder_path / f"{vid_path.stem}_processed.mp4"
 
-        dets = self.tensors_to_predictions(tensors)
+        dets = None
+        if settings.box_around_fish:
+            dets = self.tensors_to_predictions(tensors)
 
         # Cut the video to the detected frames
         video_processor.cut_video(video_path, out_path, frame_ranges, dets)
