@@ -240,3 +240,6 @@ runs/
 
 # Database
 *.db
+
+# Settings
+settings.ini

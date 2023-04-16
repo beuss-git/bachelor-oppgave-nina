@@ -38,7 +38,9 @@ box_around_fish: bool = False
 # key: name, value: ((default) value, type)
 __entries: Dict[str, Tuple[Any, type]] = {}
 
-__settings = QSettings("NINA", "FishDetector")
+# Create __settings as QSettings and store it as ini in data folder
+__settings = QSettings("settings.ini", QSettings.Format.IniFormat)
+
 __logger = get_logger()
 
 
@@ -113,9 +115,14 @@ class SettingsModule(ModuleType):  # pylint: disable=too-few-public-methods
     def __setattr__(self, name: str, value: Any) -> None:
         # Access the entries through the module dict
         entries = sys.modules[__name__].__dict__["__entries"]
+        settings = sys.modules[__name__].__dict__["__settings"]
+        logger = sys.modules[__name__].__dict__["__logger"]
 
         if name in entries:
             entries[name] = (value, entries[name][1])
+            settings.setValue(name, value)
+            logger.debug("Storing %s as %s", name, value)
+            settings.sync()
         else:
             super().__setattr__(name, value)
 

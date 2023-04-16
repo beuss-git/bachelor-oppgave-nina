@@ -127,8 +127,6 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         save_path = self.save_dir.get_path()
         settings.save_path = save_path if save_path else ""
 
-        settings.save()
-
         # Settings.close_event
         super().closeEvent(event)
 
