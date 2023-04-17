@@ -33,6 +33,7 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         self,
         title: str,
         buffer: list[str],
+        tooltip_text: str,
     ) -> None:
         """Initiates the widget with a ComboBox and Label
 
@@ -50,7 +51,7 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
 
         # Sets up a combobox
         self.combo_box = QComboBox()
-        self.combo_box.setFixedWidth(50)
+        self.combo_box.setFixedWidth(60)
         self.combo_box.addItems(buffer)
 
         # TODO: make this into an enum
@@ -69,7 +70,7 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
 
         # Adds the combobox widget and label
         layout.addWidget(self.combo_box)
-        layout.addWidget(add_label(title))
+        layout.addWidget(add_label(title, tooltip_text))
 
         # saves label as a class variable for later use
         self.label = title
@@ -156,18 +157,41 @@ class AdvancedOptions(QWidget):
     def advanced_options(self) -> None:
         """Sets up the advanced options"""
 
-        self.advanced_layout_horizontal_checkboxes.addWidget(Checkbox("Get report"))
         self.advanced_layout_horizontal_checkboxes.addWidget(
-            Checkbox("Box around fish detected")
+            Checkbox("Get report", "Whether to get a report or not")
+        )
+        self.advanced_layout_horizontal_checkboxes.addWidget(
+            Checkbox(
+                "Box around fish detected",
+                "If you want prediction boxes around fish and the probability",
+            )
         )
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
-            DropDownWidget("Report format", Common.formats)
+            DropDownWidget(
+                "Report format", Common.formats, "What format the report should be in"
+            )
         )
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
-            DropDownWidget("Batch Size", Common.batch_size)
+            DropDownWidget(
+                "Batch Size",
+                Common.batch_size,
+                "Only for experienced IT (AI) users. \nHow many frames should be processed at once",
+            )
         )
+        prediction_tooltip = """How accurate the AI should be in its predictions,
+                less accurate means more predictions and possibility for false positives,
+                More accurate means less predictions and less false positives."""
+        # Split the string into individual lines
+        lines = prediction_tooltip.split("\n")
+
+        # Remove the leading whitespace from each line
+        lines = [line.lstrip() for line in lines]
+
+        # Join the lines back together into a single string
+        prediction_tooltip = "\n".join(lines)
+
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
-            SpinBox("Prediction threshold", 0, 100)
+            SpinBox("Prediction threshold", 0, 100, prediction_tooltip),
         )
 
     def clear_layout(self, layout: QBoxLayout) -> None:
@@ -192,7 +216,7 @@ class AdvancedOptions(QWidget):
 class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
     """Class for Checkbox widget"""
 
-    def __init__(self, msg: str) -> None:
+    def __init__(self, msg: str, tooltip_text: str) -> None:
         """Sets up a checkbox for 'keeping the original video' option
 
         Returns:
@@ -231,7 +255,7 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
 
         # Adds widgets to layout
         layout.addWidget(self.checkbox)
-        layout.addWidget(add_label(msg))
+        layout.addWidget(add_label(msg, tooltip_text))
 
         self.setLayout(layout)
 
@@ -239,13 +263,14 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
 class SpinBox(QWidget):  # pylint: disable=too-few-public-methods
     """Class for SpinBox widget"""
 
-    def __init__(self, msg: str, min_val: int, max_val: int) -> None:
+    def __init__(self, msg: str, min_val: int, max_val: int, tooltip_text: str) -> None:
         """Sets up a spinbox for 'batch size' option
 
         Args:
             msg (str): the message to be displayed
             min_val (int): the minimum value for the spinbox
             max_val (int): the maximum value for the spinbox
+            tooltil_text (str): a string with explaination of the label
 
         Returns:
             QHBoxLayout: local layout for the spinbox and label
@@ -273,22 +298,27 @@ class SpinBox(QWidget):  # pylint: disable=too-few-public-methods
 
         # Adds widgets to layout
         layout.addWidget(self.spinbox)
-        layout.addWidget(add_label(msg))
+        layout.addWidget(add_label(msg, tooltip_text))
 
         self.setLayout(layout)
 
 
-def add_label(title: str) -> QLabel:
+def add_label(title: str, tooltip_text: str) -> QLabel:
     """Creates a label
 
     Args:
         title (str): a string with the content of the label
+        tooltil_text (str): a string with explaination of the label
 
     Returns:
         QLabel: The label with a standard font and text size
     """
     label = QLabel()
     label.setText(title)
+    label.setToolTip(tooltip_text)
     label.setFont(QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10))
     label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+    label.setStyleSheet(
+        """QToolTip { color: #000000; background-color: #ffffff; border: 1px solid white; }"""
+    )
     return label
