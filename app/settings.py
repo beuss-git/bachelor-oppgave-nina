@@ -74,7 +74,7 @@ def __add_entry(name: str, default_value: Any, value_type: type) -> None:
     """Adds a new entry to the settings entries.
 
     Args:
-        name: The name of the entry as it will be exported by the module and in the registry.
+        name: The name of the entry as it will be exported by the module and in the ini file.
         default_value: The default value
         value_type: The type of the value
 
@@ -92,8 +92,9 @@ def __add_entry(name: str, default_value: Any, value_type: type) -> None:
     __entries[name] = (default_value, value_type)
 
 
-def __populate_entries_from_registry() -> None:
-    """Reads the values from the registry and sets the values in the module."""
+# TODO: rename
+def __populate_entries_from_ini_config() -> None:
+    """Reads the values from the ini file and sets the values in the module."""
 
     for name, (default_value, value_type) in __entries.items():
         value = __settings.value(name, default_value, value_type)
@@ -137,19 +138,17 @@ def __getattr__(name: str) -> Any:
 def setup() -> None:
     """Sets up the settings module."""
 
-    # NOTE: On windows this will be in the registry and will
-    #       be specific to the user that the application runs as
     __logger.debug("Settings stored at %s", __settings.fileName())
 
     __setup_entries()
-    __populate_entries_from_registry()
+    __populate_entries_from_ini_config()
 
     # Replace the settings module with a subclass that overrides __setattr__
     sys.modules[__name__].__class__ = SettingsModule
 
 
 def save() -> None:
-    """Saves the entries to the registry.
+    """Saves the entries to the ini file.
 
     Raises:
         ValueError: If a value does not match the specified type
@@ -161,5 +160,5 @@ def save() -> None:
 
         __settings.setValue(name, value)
 
-    # Write to registry
+    # Write to ini file
     __settings.sync()
