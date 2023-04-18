@@ -95,10 +95,9 @@ class DataManager:
         """Adds a video into the video table
 
         Args:
-            video_id (int): Unique id of the input video
+            video_id (Path | None): The path of the video
             title (str): Filename of video
-            date (str): date the video was captured in YYYY-MM-DD
-            time (str): length of the video in HH:MM:SS
+            output_video (Path | None): The path of the output video
         """
 
         try:
@@ -148,7 +147,7 @@ class DataManager:
             logger.error(traceback.format_exception(exc_type, exc_value, exc_tb))
 
     def video_check(self, video_id: str) -> bool:
-        """_summary_"""
+        """Checks if a video already exists within the database"""
         try:
             # creates a cursor
             cursor = self.sqlite_connection.cursor()
@@ -236,7 +235,7 @@ class DataManager:
         """Returns data about the video
 
         Returns:
-            typing.List[typing.Any]: _description_
+            typing.List[typing.Any]: The list of data from the video data table
         """
 
         try:
@@ -244,8 +243,8 @@ class DataManager:
             cursor = self.sqlite_connection.cursor()
 
             # setting up selection query
-            sqlite_select_query = """SELECT title, totaldetections, videolength, outputvideolength
-                                    FROM  video"""
+            sqlite_select_query = """SELECT title, date, totaldetections, videolength,
+                                    outputvideolength FROM  video"""
 
             # executes selection query and saves the data in records
             cursor.execute(sqlite_select_query)
@@ -305,15 +304,13 @@ class DataManager:
             return []
 
     def get_metadata(self, path: Path) -> typing.Any:
-        """_summary_
+        """Gets the video's metadata
 
         Args:
-            path (str): _description_
-            filename (str): _description_
-            metadata (typing.List[str]): _description_
+            path (Path): path to the video
 
         Returns:
-            typing.Any: _description_
+            typing.Any: A variable with all of the video's metadata
         """
         try:
             file_metadata = ffmpeg.probe(str(path))
@@ -327,7 +324,7 @@ class DataManager:
     def get_timestamps(
         self, path: Path, ranges: typing.List[typing.Tuple[int, int]]
     ) -> typing.List[typing.Tuple[str, str]]:
-        """_summary_
+        """Gets the timestamps for when a frame occurs in the video
 
         Args:
             path (Path): path to the video
