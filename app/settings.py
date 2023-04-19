@@ -120,7 +120,14 @@ class SettingsModule(ModuleType):  # pylint: disable=too-few-public-methods
         logger = sys.modules[__name__].__dict__["__logger"]
 
         if name in entries:
-            entries[name] = (value, entries[name][1])
+            entry_type = entries[name][1]
+            entries[name] = (value, entry_type)
+
+            if not isinstance(value, entry_type):
+                raise ValueError(
+                    f"[{name}] Value {value} is not of type {entries[name][1]}"
+                )
+
             settings.setValue(name, value)
             logger.debug("Storing %s as %s", name, value)
             settings.sync()
