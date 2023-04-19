@@ -49,17 +49,25 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
 
         # Adds file browser panel
         self.open_dir = FileBrowser(
-            "Open Dir",
-            "What path to find video files in",
-            Common.FileType.OPEN_DIR,
-            [settings.open_path],
+            "Open Dir", "What path to find video files in", Common.FileType.OPEN_DIR
         )
+        self.open_dir.set_path(settings.open_path)
+
+        def on_open_dir_changed(new_path: str) -> None:
+            settings.open_path = new_path
+
+        self.open_dir.path_changed.connect(on_open_dir_changed)
+
         self.save_dir = FileBrowser(
-            "Save Dir",
-            "What path to save video files to",
-            Common.FileType.OPEN_DIR,
-            [settings.save_path],
+            "Save Dir", "What path to save video files to", Common.FileType.OPEN_DIR
         )
+        self.save_dir.set_path(settings.save_path)
+
+        def on_save_dir_changed(new_path: str) -> None:
+            settings.save_path = new_path
+
+        self.save_dir.path_changed.connect(on_save_dir_changed)
+
         WidgetsPanel.add_file_browser_panel(
             self.parent_layout, self.open_dir, self.save_dir
         )
@@ -83,25 +91,11 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
 
     def run(self) -> None:
         """This will run core.process_folder with the selected folder"""
-        logger.info("Paths: %s", self.open_dir.get_paths())
-        input_paths = self.open_dir.get_paths()
-        if len(input_paths) == 0:
-            ErrorDialog("No input folder selected", parent=self).exec()
-            return
-
-        output_paths = self.save_dir.get_paths()
-        if len(output_paths) == 0:
-            ErrorDialog("No output folder selected", parent=self).exec()
-            return
-
-        input_folder_path = input_paths[0]
-        output_folder_path = output_paths[0]
-
-        if not os.path.exists(input_folder_path):
+        if not os.path.exists(settings.open_path):
             ErrorDialog("Input folder does not exist", parent=self).exec()
             return
 
-        if not os.path.exists(output_folder_path):
+        if not os.path.exists(settings.save_path):
             ErrorDialog("Output folder does not exist", parent=self).exec()
             return
 
@@ -109,7 +103,7 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         self.run_btn.setEnabled(False)
 
         dlg = DetectionWindow(
-            Path(input_folder_path), Path(output_folder_path), parent=self
+            Path(settings.open_path), Path(settings.save_path), parent=self
         )
         dlg.exec()
 
@@ -117,21 +111,12 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         self.run_btn.setEnabled(True)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
-        """Saves settings when window is closed. Overrides the closeEvent method"""
-        logger.info("Saving settings")
+        """Updates window width and window height settings. Overrides the closeEvent method"""
 
         # Update window size
         frame_geometry = self.central_widget.frameGeometry()
         settings.window_width = frame_geometry.width()
         settings.window_height = frame_geometry.height()
-
-        # Update input/output paths
-        # NOTE: we assume that the user only selects one folder
-        open_path = self.open_dir.get_path()
-        settings.open_path = open_path if open_path else ""
-
-        save_path = self.save_dir.get_path()
-        settings.save_path = save_path if save_path else ""
 
         # Settings.close_event
         super().closeEvent(event)
