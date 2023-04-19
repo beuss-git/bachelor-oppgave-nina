@@ -182,7 +182,7 @@ class ReportManager:
                 "Input Videolength",
                 "Output Videolength",
             )
-        ] + self.datamanager.get_video_data()
+        ] + self.datamanager.get_video_data(videos)
         logger.info(row_list)
 
         row = 0

@@ -231,7 +231,7 @@ class DataManager:
             # If error occurs log the error
             print("Failed to insert multiple records into sqlite table", error)
 
-    def get_video_data(self) -> typing.List[typing.Any]:
+    def get_video_data(self, video_search: typing.List[str]) -> typing.List[typing.Any]:
         """Returns data about the video
 
         Returns:
@@ -244,10 +244,18 @@ class DataManager:
 
             # setting up selection query
             sqlite_select_query = """SELECT title, date, totaldetections, videolength,
-                                    outputvideolength FROM  video"""
+                                    outputvideolength FROM video
+                                    WHERE title """
+
+            # sets up the last part of the query based on the searches wanted
+            addition_query = """ """
+            if len(video_search) > 1:
+                addition_query = " IN " + (str(tuple(video_search)))
+            else:
+                addition_query = "='" + str(video_search[0]) + "'"
 
             # executes selection query and saves the data in records
-            cursor.execute(sqlite_select_query)
+            cursor.execute(sqlite_select_query + addition_query)
             records = cursor.fetchall()
             cursor.close()
 
