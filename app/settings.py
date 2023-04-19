@@ -152,21 +152,3 @@ def setup() -> None:
 
     # Replace the settings module with a subclass that overrides __setattr__
     sys.modules[__name__].__class__ = SettingsModule
-
-
-def save() -> None:
-    """Saves the entries to the ini file.
-
-    Raises:
-        ValueError: If a value does not match the specified type
-    """
-    __logger.warning("Use of deprecated function save()")
-    for name, (value, value_type) in __entries.items():
-        if not isinstance(value, value_type):
-            # This can happen if the value was changed during runtime and is not of the correct type
-            raise ValueError(f"[{name}] Value {value} is not of type {value_type}")
-
-        __settings.setValue(name, value)
-
-    # Write to ini file
-    __settings.sync()
