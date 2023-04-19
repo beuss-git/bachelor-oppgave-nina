@@ -160,6 +160,7 @@ def save() -> None:
     Raises:
         ValueError: If a value does not match the specified type
     """
+    __logger.warning("Use of deprecated function save()")
     for name, (value, value_type) in __entries.items():
         if not isinstance(value, value_type):
             # This can happen if the value was changed during runtime and is not of the correct type
