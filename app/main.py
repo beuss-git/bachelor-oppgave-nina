@@ -49,10 +49,16 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
 
         # Adds file browser panel
         self.open_dir = FileBrowser(
-            "Open Dir", Common.FileType.OPEN_DIR, [settings.open_path]
+            "Open Dir",
+            "What path to find video files in",
+            Common.FileType.OPEN_DIR,
+            [settings.open_path],
         )
         self.save_dir = FileBrowser(
-            "Save Dir", Common.FileType.OPEN_DIR, [settings.save_path]
+            "Save Dir",
+            "What path to save video files to",
+            Common.FileType.OPEN_DIR,
+            [settings.save_path],
         )
         WidgetsPanel.add_file_browser_panel(
             self.parent_layout, self.open_dir, self.save_dir
