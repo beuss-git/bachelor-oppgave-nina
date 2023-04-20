@@ -1,6 +1,7 @@
 """Detection window widget."""
 import io
 import os
+import sys
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -235,9 +236,9 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
         self.open_output_dir_button.hide()
 
         def on_open_output_dir() -> None:
-            if os.name == "nt":
+            if sys.platform == "win32":
                 os.startfile(str(output_folder_path))  # pylint: disable=no-member
-            elif os.name == "posix":
+            elif sys.platform == "linux":
                 os.system(f"xdg-open '{output_folder_path}'")
             else:
                 raise OSError("Unsupported operating system")
