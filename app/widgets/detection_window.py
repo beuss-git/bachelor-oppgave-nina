@@ -236,7 +236,7 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
 
         def on_open_output_dir() -> None:
             if os.name == "nt":
-                os.startfile(str(output_folder_path))
+                os.startfile(str(output_folder_path))  # pylint: disable=no-member
             elif os.name == "posix":
                 os.system(f"xdg-open '{output_folder_path}'")
             else:
