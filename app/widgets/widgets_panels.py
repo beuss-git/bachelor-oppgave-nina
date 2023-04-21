@@ -32,8 +32,22 @@ class WidgetsPanel:
         """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(DropDownWidget("Buffer Before", Common.buffer_options))
-        buffer_layout.addWidget(DropDownWidget("Buffer After", Common.buffer_options))
+        buffer_layout.addWidget(
+            DropDownWidget(
+                "Buffer Before (s)",
+                Common.buffer_options,
+                "Time in seconds before the fish is detected",
+            )
+        )
+        buffer_layout.addWidget(
+            DropDownWidget(
+                "Buffer After (s)",
+                Common.buffer_options,
+                "Time in seconds before the fish is detected",
+            )
+        )
 
         parent_layout.addLayout(buffer_layout)
-        parent_layout.addWidget(Checkbox("Keep original video"))
+        parent_layout.addWidget(
+            Checkbox("Keep original video", "Whether to keep the original video or not")
+        )

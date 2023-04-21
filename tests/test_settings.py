@@ -23,29 +23,18 @@ def test_setup():
 
 def test_save_load():
     """Test the save and load functions."""
+    settings.setup()
 
     settings.window_width = 700
     settings.open_path = ""
 
-    # Save the current values
-    settings.save()
+    # Check that the values were saved correctly
+    assert settings.__settings.value("window_width") == 700
+    assert settings.__settings.value("open_path") == ""
 
-    # Change some values
+    # Change some values again
     settings.window_width = 800
     settings.open_path = "/some/path/to/dir"
-
-    # Load the values from the registry
-    settings.setup()
-
-    # Check that the values were loaded correctly
-    assert settings.window_width == 700
-    assert settings.open_path == ""
-
-    settings.window_width = 800
-    settings.open_path = "/some/path/to/dir"
-
-    # Save the current values again
-    settings.save()
 
     # Check that the values were saved correctly
     assert settings.__settings.value("window_width") == 800
@@ -68,17 +57,15 @@ def test_existing_entry_change_type_raises_error():
     # Arrange
     settings.setup()
 
-    settings.window_width = "not an int"
-
     # Act + Assert
     with pytest.raises(ValueError):
-        settings.save()
+        settings.window_width = "not an int"
 
 
 def test_new_entry_adds_to_entries():
     # Arrange
     settings.setup()
-    expected = ("new entry", 42, int)
+    expected = ("new_entry", 42, int)
 
     # Act
     settings.__add_entry(*expected)
@@ -102,7 +89,6 @@ def test_new_entry_with_wrong_type_raises_error():
     settings.setup()
     settings.__add_entry("bad_entry", 42, int)
 
-    settings.bad_entry = "not an int"
     # Act + Assert
     with pytest.raises(ValueError):
-        settings.save()
+        settings.bad_entry = "not an int"

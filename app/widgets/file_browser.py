@@ -21,6 +21,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
     def __init__(
         self,
         title: str,
+        tooltip_text: str,
         mode: Common.FileType = Common.FileType.OPEN_FILE,
         default_paths: List[str] | None = None,
     ) -> None:
@@ -28,7 +29,9 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
         Args:
             title (Any): Label title
+            tooltip_text (str): Tooltip text
             mode (int, optional): What kind of file browsing widget. Defaults to OpenFile.
+            default_paths (List[str], optional): Default path(s) to display. Defaults to None.
         """
 
         # Creates empty list for filepaths
@@ -41,7 +44,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
         # Adds the label
         self.label = title
-        layout.addWidget(add_label(title))
+        layout.addWidget(add_label(title, tooltip_text))
 
         # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
@@ -97,12 +100,21 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
             # Else open directory
             case Common.FileType.OPEN_DIR:
+                options = QFileDialog.Option(0)
+                # options |= ~QFileDialog.Option.ShowFilesOnly
+
+                # Changes directory to not native directory of OS
+                options = (
+                    QFileDialog.Option.DontUseNativeDialog
+                )  # Use if want to see files in directory
                 filepaths.append(
                     QFileDialog.getExistingDirectory(
-                        self, caption="Choose Directory", directory=start_dir
+                        self,
+                        caption="Choose Directory",
+                        directory=start_dir,
+                        options=options,
                     )
                 )
-
             # Else save file
             case _:
                 filepaths.append(

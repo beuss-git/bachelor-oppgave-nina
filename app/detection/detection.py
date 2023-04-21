@@ -1,7 +1,6 @@
 """Detection module for running inference on video."""
 import time
 from pathlib import Path
-from queue import Empty
 from typing import Any, Callable, List, Tuple
 
 import cv2
@@ -12,7 +11,7 @@ from ultralytics.yolo.utils.plotting import Annotator
 from app.logger import get_logger
 
 from .batch_yolov8 import BatchYolov8
-from .frame_grabber import threaded_frame_grabber
+from .frame_grabber import ThreadedFrameGrabber
 
 logger = get_logger()
 
@@ -116,7 +115,7 @@ def process_video(
         2. A list of predictions for each frame.
     """
 
-    with threaded_frame_grabber(
+    with ThreadedFrameGrabber(
         model=model,
         video_path=video_path,
         batch_size=batch_size,
@@ -140,16 +139,12 @@ def process_video(
         with tqdm(
             total=frame_grabber.frame_count, desc="Processing frames", leave=False
         ) as pbar:
-            for _ in range(frame_grabber.total_batch_count()):
-                try:
-                    batch_wrapper = frame_grabber.processed_batch_queue.get(timeout=5)
-                except Empty:
+            while not frame_grabber.is_done():
+                batch = frame_grabber.get_batch()
+                if batch is None:
                     continue
 
-                if batch_wrapper is None:
-                    continue
-
-                processed_batch, original_batch = batch_wrapper.data
+                processed_batch, original_batch = batch
 
                 (predictions, delta) = __process_batch(
                     original_batch, processed_batch, model

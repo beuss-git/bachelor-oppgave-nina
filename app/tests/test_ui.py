@@ -38,10 +38,10 @@ class TestUI(unittest.TestCase):
         """Sets up the app for testing"""
         self.app = QApplication(sys.argv)
         self.window = MainWindow()
-        self.drop_down = DropDownWidget("Test", (["1", "2", "3"]))
+        self.drop_down = DropDownWidget("Test", (["1", "2", "3"]), "test")
         self.advanced = AdvancedOptions()
-        self.checkbox = Checkbox("Test")
-        self.file_browser = FileBrowser("Test")
+        self.checkbox = Checkbox("Test", "test")
+        self.file_browser = FileBrowser("Test", "test")
 
     def test_main_window(self) -> None:
         """Tests the main window"""
@@ -82,7 +82,7 @@ class TestUI(unittest.TestCase):
 
     def test_drop_down_widget(self) -> None:
         """Tests the drop down widget"""
-        widget = DropDownWidget("Test", ["1", "2", "3"])
+        widget = DropDownWidget("Test", ["1", "2", "3"], "test")
         self.window.show()
         # qtbot = QtBot
         # qtbot.waitExposed(widget)
@@ -92,7 +92,7 @@ class TestUI(unittest.TestCase):
 
     def test_add_label(self) -> None:
         """Tests the add_label function"""
-        widget = add_label("Test")
+        widget = add_label("Test", "test")
         self.window.show()
         # QTest.qWaitForWindowExposed(self.window.windowHandle())
         self.window.layout().addWidget(widget)
