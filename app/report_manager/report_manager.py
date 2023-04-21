@@ -153,32 +153,12 @@ class ReportManager:
 
         workbook = xlsxwriter.Workbook(save_path_file)
 
-        # The workbook object is then used to add new
-        # worksheet via the add_worksheet() method.
-        detectionsheet = workbook.add_worksheet()
-
-        row_list = [
-            ("Video", "detectionID", "Start", "End")
-        ] + self.datamanager.get_data(videos)
-        logger.info(row_list)
-
-        row = 0
-        col = 0
-
-        for video, detection, start, end in row_list:
-            detectionsheet.write(row, col, video)
-            detectionsheet.write(row, col + 1, detection)
-            detectionsheet.write(row, col + 2, start)
-            detectionsheet.write(row, col + 3, end)
-            row += 1
-
-        summarysheet = workbook.add_worksheet()
+        summarysheet = workbook.add_worksheet("Summary")
 
         row_list = [
             (
                 "Video",
                 "Date",
-                "Total detections",
                 "Input Videolength",
                 "Output Videolength",
             )
@@ -186,13 +166,31 @@ class ReportManager:
         logger.info(row_list)
 
         row = 0
+        col = 0
 
-        for video, date, detection, start, end in row_list:
+        for video, date, start, end in row_list:
             summarysheet.write(row, col, video)
             summarysheet.write(row, col + 1, date)
-            summarysheet.write(row, col + 2, detection)
-            summarysheet.write(row, col + 3, start)
-            summarysheet.write(row, col + 4, end)
+            summarysheet.write(row, col + 2, start)
+            summarysheet.write(row, col + 3, end)
+            row += 1
+
+        # The workbook object is then used to add new
+        # worksheet via the add_worksheet() method.
+        detectionsheet = workbook.add_worksheet("Detections")
+
+        row_list = [
+            ("Video", "detectionID", "Start", "End")
+        ] + self.datamanager.get_data(videos)
+        logger.info(row_list)
+
+        row = 0
+
+        for video, detection, start, end in row_list:
+            detectionsheet.write(row, col, video)
+            detectionsheet.write(row, col + 1, detection)
+            detectionsheet.write(row, col + 2, start)
+            detectionsheet.write(row, col + 3, end)
             row += 1
 
         # Finally, close the Excel file

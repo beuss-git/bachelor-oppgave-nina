@@ -243,7 +243,7 @@ class DataManager:
             cursor = self.sqlite_connection.cursor()
 
             # setting up selection query
-            sqlite_select_query = """SELECT title, date, totaldetections, videolength,
+            sqlite_select_query = """SELECT title, date, videolength,
                                     outputvideolength FROM video
                                     WHERE title """
 
