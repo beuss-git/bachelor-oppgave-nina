@@ -19,7 +19,6 @@ class ReportManager:
 
     def __init__(
         self,
-        input_path: Path | None,
         output_path: Path | None,
         data: DataManager,
     ) -> None:
@@ -31,7 +30,6 @@ class ReportManager:
             data (DataManager): manager for connecting to the sqlite database
         """
         self.output_path = output_path
-        self.input_path = input_path
         self.datamanager = data
         self.file_format = settings.report_format
         self.report_name = "/Processing_report"
@@ -94,11 +92,23 @@ class ReportManager:
 
         save_path_file = str(self.output_path) + self.report_name + ".csv"
 
+        video_list = [
+            (
+                "Video",
+                "Date",
+                "Input Videolength",
+                "Output Videolength",
+            )
+        ] + self.datamanager.get_video_data(videos)
+        logger.info(video_list)
+
         # Gets data from database and appends it to column titles
-        row_list = [
+        detection_list = [
             ("Video", "detectionID", "Start", "End")
         ] + self.datamanager.get_data(videos)
-        logger.info(row_list)
+        logger.info(detection_list)
+
+        row_list = video_list + [("", "", "", "")] + detection_list
 
         # opens the output pathway and saves the file
         with open(

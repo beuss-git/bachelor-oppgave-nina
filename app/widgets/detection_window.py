@@ -47,7 +47,6 @@ class DetectionWorker(QThread):
         """Run the detection."""
         self.data_manager = DataManager()
         self.report_manager = ReportManager(
-            self.input_folder_path,
             self.output_folder_path,
             self.data_manager,
         )
