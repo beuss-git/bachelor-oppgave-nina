@@ -79,7 +79,7 @@ def frame_to_timestamp(frame: int, video_stream: av.video.stream) -> int:
     Returns:
         int: The timestamp in microseconds.
     """
-    return int((frame * av.time_base) / video_stream.average_rate)
+    return int((frame * video_stream.time_base) / video_stream.average_rate)
 
 
 def timestamp_to_frame(timestamp: float, video_stream: av.video.stream) -> int:
