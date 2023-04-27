@@ -1,7 +1,8 @@
 """Creates a widget for browsing files depending on the mode"""
-from typing import List
+import os
+from typing import ClassVar, List
 
-from PyQt6.QtCore import QDir
+from PyQt6.QtCore import QDir, pyqtSignal
 from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, QWidget
 
 from app.common import Common
@@ -17,13 +18,13 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
 
     # Creates empty list for filepaths
     filepaths: List[str] = []
+    path_changed: ClassVar[pyqtSignal] = pyqtSignal(str)
 
     def __init__(
         self,
         title: str,
         tooltip_text: str,
         mode: Common.FileType = Common.FileType.OPEN_FILE,
-        default_paths: List[str] | None = None,
     ) -> None:
         """Initiates the widget with LineEdit, Label and Button to browse files
 
@@ -35,7 +36,7 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         """
 
         # Creates empty list for filepaths
-        self.filepaths: List[str] = []
+        self.filepath = ""
 
         QWidget.__init__(self)
         layout = QHBoxLayout()
@@ -50,6 +51,9 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         self.line_edit = QLineEdit(self)
         layout.addWidget(self.line_edit)
 
+        # Connect signal to update the path
+        self.line_edit.textChanged.connect(self.update_path)
+
         # Creates a button to open the file browser
         button = QPushButton("Browse Files")
 
@@ -60,45 +64,31 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         layout.addWidget(button)
         layout.addStretch()
 
-        # Sets the default path(s)
-        if default_paths is not None:
-            self.update_paths(default_paths)
-
-    def update_paths(self, paths: List[str]) -> None:
+    def update_path(self, path: str) -> None:
         """Sets the path in the line edit"""
-        self.line_edit.setText(",".join(paths))
-        self.filepaths = paths
+        self.line_edit.setText(path)
+        self.filepath = path
+        self.path_changed.emit(self.filepath)
 
     def get_file(self, mode: Common.FileType) -> None:
         """Opens file browser to gather one or more file(s) or save a file"""
         stored_path = self.get_path()
-        start_dir = stored_path if stored_path else QDir.currentPath()
 
-        filepaths: List[str] = []
+        # Check that the path is valid
+        if stored_path and os.path.exists(stored_path):
+            start_dir = stored_path
+        else:
+            start_dir = QDir.currentPath()
+
+        filepath: str = ""
         match mode:
-            # If open single file
             case Common.FileType.OPEN_FILE:
-                filepaths.append(
-                    QFileDialog.getOpenFileName(
-                        self,
-                        caption="Choose File",
-                        directory=start_dir,
-                        filter=self.filter_name,
-                    )[0]
-                )
-
-            # Else open multiple files
-            case Common.FileType.OPEN_FILES:
-                filepaths.extend(
-                    QFileDialog.getOpenFileNames(
-                        self,
-                        caption="Choose Files",
-                        directory=start_dir,
-                        filter=self.filter_name,
-                    )[0]
-                )
-
-            # Else open directory
+                filepath = QFileDialog.getOpenFileName(
+                    self,
+                    caption="Choose File",
+                    directory=start_dir,
+                    filter=self.filter_name,
+                )[0]
             case Common.FileType.OPEN_DIR:
                 options = QFileDialog.Option(0)
                 # options |= ~QFileDialog.Option.ShowFilesOnly
@@ -107,43 +97,32 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
                 options = (
                     QFileDialog.Option.DontUseNativeDialog
                 )  # Use if want to see files in directory
-                filepaths.append(
-                    QFileDialog.getExistingDirectory(
-                        self,
-                        caption="Choose Directory",
-                        directory=start_dir,
-                        options=options,
-                    )
+                filepath = QFileDialog.getExistingDirectory(
+                    self,
+                    caption="Choose Directory",
+                    directory=start_dir,
+                    options=options,
                 )
             # Else save file
+            case Common.FileType.SAVE_FILE:
+                filepath = QFileDialog.getSaveFileName(
+                    self,
+                    caption="Save/Save As",
+                    directory=start_dir,
+                    filter=self.filter_name,
+                )[0]
             case _:
-                filepaths.append(
-                    QFileDialog.getSaveFileName(
-                        self,
-                        caption="Save/Save As",
-                        directory=start_dir,
-                        filter=self.filter_name,
-                    )[0]
-                )
+                raise ValueError(f"Invalid mode {mode}")
 
-        # If the user cancels the file browser, the filepaths list will be empty
-        if len(filepaths) == 0:
-            return
+        self.update_path(filepath)
 
-        # The above statement seems to be wrong, as it returns an empty string if the user cancels-
-        # but keeping both for now.
-        if len(filepaths) == 1 and filepaths[0] == "":
-            return
+    def set_path(self, path: str) -> None:
+        """Sets the file path
 
-        self.update_paths(filepaths)
-
-    def get_paths(self) -> List[str]:
-        """Returns the file path
-
-        Returns:
-            str: File path
+        Args:
+            path (str): File path
         """
-        return self.filepaths
+        self.update_path(path)
 
     def get_path(self) -> str | None:
         """Returns the file path
@@ -151,6 +130,4 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
         Returns:
             str: File path
         """
-        if len(self.filepaths) > 0:
-            return self.filepaths[0]
-        return None
+        return self.filepath

@@ -18,9 +18,8 @@ class Common:
         """
 
         OPEN_FILE = 0
-        OPEN_FILES = 1
-        OPEN_DIR = 2
-        SAVE_FILE = 3
+        OPEN_DIR = 1
+        SAVE_FILE = 2
 
     process: typing.Optional[QProcess] = None  # The process to be executed
     process_path = r"app\dummy_script.py"  # The path to script executed
