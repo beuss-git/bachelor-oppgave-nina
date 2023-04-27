@@ -36,6 +36,9 @@ class ReportManager:
 
     def write_report(self, videos: typing.List[str]) -> None:
         """writes a report based on the list of videos entered"""
+        if len(videos) == 0:
+            logger.info("No videos to write a report for")
+            return
 
         match self.file_format:
             case "CSV":

@@ -79,6 +79,10 @@ class DetectionWorker(QThread):
             if filename.endswith(".mp4")
         ]
 
+        if len(videos) == 0:
+            self.log("No videos found in the input folder")
+            return
+
         for i, video in enumerate(videos):
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
             self.process_video(self.input_folder_path / video)
