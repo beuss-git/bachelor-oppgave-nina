@@ -1,6 +1,7 @@
 """Detection window widget."""
 import io
 import os
+import sys
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -223,6 +224,7 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
         self.finished.connect(self.worker.terminate)
 
         self.close_button = QPushButton("Close")
+        self.close_button.hide()
 
         # This is needed because self.close returns a bool
         def on_close() -> None:
@@ -230,9 +232,24 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
 
         self.close_button.clicked.connect(on_close)
         self.dialog_layout.addWidget(self.close_button)
-        self.close_button.hide()
+
+        self.open_output_dir_button = QPushButton("Open output directory")
+        self.open_output_dir_button.hide()
+
+        def on_open_output_dir() -> None:
+            if sys.platform == "win32":
+                os.startfile(str(output_folder_path))  # pylint: disable=no-member
+            elif sys.platform == "linux":
+                os.system(f"xdg-open '{output_folder_path}'")
+            else:
+                raise OSError("Unsupported operating system")
+
+        self.open_output_dir_button.clicked.connect(on_open_output_dir)
+
+        self.dialog_layout.addWidget(self.open_output_dir_button)
 
     def worker_finished(self) -> None:
         """Called when the worker has finished."""
         # Show button to close window now that the worker has finished
         self.close_button.show()
+        self.open_output_dir_button.show()
