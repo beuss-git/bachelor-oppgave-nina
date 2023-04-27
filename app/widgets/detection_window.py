@@ -1,6 +1,7 @@
 """Detection window widget."""
 import io
 import os
+import sys
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -47,7 +48,6 @@ class DetectionWorker(QThread):
         """Run the detection."""
         self.data_manager = DataManager()
         self.report_manager = ReportManager(
-            self.input_folder_path,
             self.output_folder_path,
             self.data_manager,
         )
@@ -79,10 +79,16 @@ class DetectionWorker(QThread):
             if filename.endswith(".mp4")
         ]
 
+        if len(videos) == 0:
+            self.log("No videos found in the input folder")
+            return
+
         for i, video in enumerate(videos):
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
-            self.data_manager.add_video_data(self.input_folder_path / video, video)
             self.process_video(self.input_folder_path / video)
+            self.data_manager.add_video_data(
+                self.input_folder_path / video, video, self.output_folder_path
+            )
 
         if settings.get_report:
             self.report_manager.write_report(videos)
@@ -112,20 +118,33 @@ class DetectionWorker(QThread):
     def __add_buffer_to_ranges(
         self, frame_ranges: List[Tuple[int, int]], video_path: Path
     ) -> List[Tuple[int, int]]:
-        """Add buffer time before and after each frame range"""
-        frame_ranges_with_buffer = []
+        """Add buffer time before and after each frame range and merge overlapping ranges"""
+
         cap = cv2.VideoCapture(str(video_path))
         fps = cap.get(cv2.CAP_PROP_FPS)
-
         video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        for frame_range in frame_ranges:
-            start_frame = max(0, frame_range[0] - int(fps * settings.buffer_before))
-            end_frame = min(
-                video_length, frame_range[1] + int(fps * settings.buffer_after)
+        # Add buffer time to each frame range
+        frame_ranges_with_buffer = [
+            (
+                max(0, start_frame - int(fps * settings.buffer_before)),
+                min(video_length, end_frame + int(fps * settings.buffer_after)),
             )
-            frame_ranges_with_buffer.append((start_frame, end_frame))
-        return frame_ranges_with_buffer
+            for (start_frame, end_frame) in frame_ranges
+        ]
+
+        # Merge overlapping frame ranges
+        merged_ranges: List[Tuple[int, int]] = []
+        for start_frame, end_frame in frame_ranges_with_buffer:
+            if not merged_ranges or start_frame > merged_ranges[-1][1]:
+                merged_ranges.append((start_frame, end_frame))
+            else:
+                merged_ranges[-1] = (
+                    merged_ranges[-1][0],
+                    max(merged_ranges[-1][1], end_frame),
+                )
+
+        return merged_ranges
 
     def process_video(self, video_path: Path) -> None:
         """
@@ -235,9 +254,9 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
         self.open_output_dir_button.hide()
 
         def on_open_output_dir() -> None:
-            if os.name == "nt":
-                os.startfile(str(output_folder_path))
-            elif os.name == "posix":
+            if sys.platform == "win32":
+                os.startfile(str(output_folder_path))  # pylint: disable=no-member
+            elif sys.platform == "linux":
                 os.system(f"xdg-open '{output_folder_path}'")
             else:
                 raise OSError("Unsupported operating system")
