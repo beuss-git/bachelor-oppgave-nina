@@ -47,7 +47,6 @@ class DetectionWorker(QThread):
         """Run the detection."""
         self.data_manager = DataManager()
         self.report_manager = ReportManager(
-            self.input_folder_path,
             self.output_folder_path,
             self.data_manager,
         )
@@ -81,8 +80,10 @@ class DetectionWorker(QThread):
 
         for i, video in enumerate(videos):
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
-            self.data_manager.add_video_data(self.input_folder_path / video, video)
             self.process_video(self.input_folder_path / video)
+            self.data_manager.add_video_data(
+                self.input_folder_path / video, video, self.output_folder_path
+            )
 
         if settings.get_report:
             self.report_manager.write_report(videos)

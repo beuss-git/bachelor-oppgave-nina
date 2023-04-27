@@ -56,6 +56,7 @@ class DataManager:
                 return True
 
             print("Tables found!")
+            cursor.close()
             return False
 
         except sqlite3.Error as error:
@@ -88,48 +89,52 @@ class DataManager:
             # Log error if anything fails in the process
             print("Error while creating a sqlite table", error)
 
-    def add_video_data(self, video_id: Path, title: str) -> None:
+    def add_video_data(
+        self, video_id: Path | None, title: str, output_video: Path | None
+    ) -> None:
         """Adds a video into the video table
 
         Args:
-            video_id (int): Unique id of the input video
+            video_id (Path | None): The path of the video
             title (str): Filename of video
-            date (str): date the video was captured in YYYY-MM-DD
-            time (str): length of the video in HH:MM:SS
+            output_video (Path | None): The path of the output video
         """
 
         try:
             # creates cursor
             cursor = self.sqlite_connection.cursor()
 
-            # gets videolength from metadata
-            metadata = self.get_metadata(video_id)
-            duration = "00:00:00"
-            if metadata is not None:
-                duration = str(datetime.timedelta(seconds=float(metadata["duration"])))
-                # .strftime("%H:%M:%S")
+            if video_id is None:
+                return
 
-            # sets up query and data that will be in the query
-            sqlite_insert_query = """INSERT INTO video
-                          (id, title, date, totaldetections, videolength, outputvideolength)
-                          VALUES  (?, ?, ?, ?, ?, ?)"""
-            data = (
-                str(video_id),
-                title,
-                datetime.datetime.fromtimestamp(os.path.getctime(video_id)).strftime(
-                    "%Y-%m-%d"
-                ),
-                0,
-                duration,
-                0,
-            )
-            #
-            # executes query to add the data into the table
-            cursor.execute(sqlite_insert_query, data)
-            self.sqlite_connection.commit()
-            logger.info(
-                "Record inserted successfully into table at %s", cursor.rowcount
-            )
+            if output_video is None:
+                return
+
+            video_exist = self.video_check(str(video_id))
+            if video_exist:
+                # sets up query and data that will be in the query
+                sqlite_insert_query = """INSERT INTO video
+                            (id, title, date, totaldetections, videolength, outputvideolength)
+                            VALUES  (?, ?, ?, ?, ?, ?)"""
+                data = (
+                    str(video_id),
+                    title,
+                    datetime.datetime.fromtimestamp(
+                        os.path.getctime(video_id)
+                    ).strftime("%Y-%m-%d"),
+                    0,
+                    self.get_video_duration(video_id),
+                    self.get_video_duration(
+                        output_video / f"{video_id.stem}_processed.mp4"
+                    ),
+                )
+                #
+                # executes query to add the data into the table
+                cursor.execute(sqlite_insert_query, data)
+                self.sqlite_connection.commit()
+                logger.info(
+                    "Record inserted successfully into table at %s", cursor.rowcount
+                )
             cursor.close()
 
         except sqlite3.Error as error:
@@ -140,6 +145,50 @@ class DataManager:
             logger.error("Printing detailed SQLite exception traceback: ")
             exc_type, exc_value, exc_tb = sys.exc_info()
             logger.error(traceback.format_exception(exc_type, exc_value, exc_tb))
+
+    def video_check(self, video_id: str) -> bool:
+        """Checks if a video already exists within the database"""
+        try:
+            # creates a cursor
+            cursor = self.sqlite_connection.cursor()
+
+            # checks if there are tables in the database
+            video = cursor.execute(
+                """SELECT title FROM video WHERE id='""" + video_id + """'; """
+            ).fetchall()
+
+            # returns true if there isnt any tables found in the database
+            if video == []:
+                print("Video not found!")
+                return True
+
+            print("Video already exists in database!")
+            cursor.close()
+            return False
+
+        except sqlite3.Error as error:
+            # Log error if anything fails in the process
+            print("Error while checking for sqlite table", error)
+            return False
+
+    def get_video_duration(self, path: Path | None) -> str:
+        """Returns the duration of a video based on metadata
+
+        Args:
+            path (Path | None): path to the video
+
+        Returns:
+            str: string with duration in the format HH:MM:SS
+        """
+
+        duration = "00:00:00"
+        if path is not None:
+            # gets videolength from metadata
+            metadata = self.get_metadata(path)
+            if metadata is not None:
+                duration = str(datetime.timedelta(seconds=float(metadata["duration"])))
+                # .strftime("%H:%M:%S")
+        return duration
 
     def add_detection_data(
         self, video_id: Path, detections: typing.List[typing.Tuple[int, int]]
@@ -182,11 +231,11 @@ class DataManager:
             # If error occurs log the error
             print("Failed to insert multiple records into sqlite table", error)
 
-    def get_video_data(self) -> typing.List[typing.Any]:
+    def get_video_data(self, video_search: typing.List[str]) -> typing.List[typing.Any]:
         """Returns data about the video
 
         Returns:
-            typing.List[typing.Any]: _description_
+            typing.List[typing.Any]: The list of data from the video data table
         """
 
         try:
@@ -194,11 +243,19 @@ class DataManager:
             cursor = self.sqlite_connection.cursor()
 
             # setting up selection query
-            sqlite_select_query = """SELECT title, totaldetections, videolength, outputvideolength
-                                    FROM  video"""
+            sqlite_select_query = """SELECT title, date, videolength,
+                                    outputvideolength FROM video
+                                    WHERE title """
+
+            # sets up the last part of the query based on the searches wanted
+            addition_query = """ """
+            if len(video_search) > 1:
+                addition_query = " IN " + (str(tuple(video_search)))
+            else:
+                addition_query = "='" + str(video_search[0]) + "'"
 
             # executes selection query and saves the data in records
-            cursor.execute(sqlite_select_query)
+            cursor.execute(sqlite_select_query + addition_query)
             records = cursor.fetchall()
             cursor.close()
 
@@ -255,15 +312,13 @@ class DataManager:
             return []
 
     def get_metadata(self, path: Path) -> typing.Any:
-        """_summary_
+        """Gets the video's metadata
 
         Args:
-            path (str): _description_
-            filename (str): _description_
-            metadata (typing.List[str]): _description_
+            path (Path): path to the video
 
         Returns:
-            typing.Any: _description_
+            typing.Any: A variable with all of the video's metadata
         """
         try:
             file_metadata = ffmpeg.probe(str(path))
@@ -277,7 +332,7 @@ class DataManager:
     def get_timestamps(
         self, path: Path, ranges: typing.List[typing.Tuple[int, int]]
     ) -> typing.List[typing.Tuple[str, str]]:
-        """_summary_
+        """Gets the timestamps for when a frame occurs in the video
 
         Args:
             path (Path): path to the video

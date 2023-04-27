@@ -19,21 +19,20 @@ class ReportManager:
 
     def __init__(
         self,
-        input_path: Path | None,
         output_path: Path | None,
         data: DataManager,
     ) -> None:
         """Initiates by saving necessary values to be available across the class
 
         Args:
-            input_path (str): the path the video is inputted from
-            output_path (str): the path the report will be outputted
+            input_path (Path): the path the video is inputted from
+            output_path (Path): the path the report will be outputted
             data (DataManager): manager for connecting to the sqlite database
         """
         self.output_path = output_path
-        self.input_path = input_path
         self.datamanager = data
         self.file_format = settings.report_format
+        self.report_name = "/Processing_report"
 
     def write_report(self, videos: typing.List[str]) -> None:
         """writes a report based on the list of videos entered"""
@@ -78,7 +77,7 @@ class ReportManager:
 
         xml_str = root.toprettyxml(indent="\t")
 
-        save_path_file = str(self.output_path) + "/me.xml"
+        save_path_file = str(self.output_path) + self.report_name + ".xml"
 
         # open the output pathway and saves the file
         with open(save_path_file, "w", encoding="ascii", errors="ignore") as out:
@@ -91,13 +90,25 @@ class ReportManager:
            videos (List[str]): List of videos that should be included in the report
         """
 
-        save_path_file = str(self.output_path) + "/meh.csv"
+        save_path_file = str(self.output_path) + self.report_name + ".csv"
+
+        video_list = [
+            (
+                "Video",
+                "Date",
+                "Input Videolength",
+                "Output Videolength",
+            )
+        ] + self.datamanager.get_video_data(videos)
+        logger.info(video_list)
 
         # Gets data from database and appends it to column titles
-        row_list = [
+        detection_list = [
             ("Video", "detectionID", "Start", "End")
         ] + self.datamanager.get_data(videos)
-        logger.info(row_list)
+        logger.info(detection_list)
+
+        row_list = video_list + [("", "", "", "")] + detection_list
 
         # opens the output pathway and saves the file
         with open(
@@ -107,13 +118,13 @@ class ReportManager:
             writer.writerows(row_list)
 
     def write_pdf_file(self, videos: typing.List[str]) -> None:
-        """Writes a report in teh format of a pdf file
+        """Writes a report in the format of a pdf file
 
         Args:
             videos (List[str]): List of videos that should be included in the report
         """
 
-        save_path_file = str(self.output_path) + "/meh.pdf"
+        save_path_file = str(self.output_path) + self.report_name + ".pdf"
 
         # Gets data from the data base
         item_list = self.datamanager.get_data(videos)
@@ -141,20 +152,42 @@ class ReportManager:
         pdf.output(save_path_file, "F")
 
     def write_xlsx_file(self, videos: typing.List[str]) -> None:
-        """_summary_
+        """writes a report in the format of a xlsx file
 
         Args:
-            videos (typing.List[str]): _description_
+            videos (typing.List[str]): List of videos that should be included in the report
         """
         # Workbook() takes one, non-optional, argument
         # which is the filename that we want to create.
-        save_path_file = str(self.output_path) + "/meh.xlsx"
+        save_path_file = str(self.output_path) + self.report_name + ".xlsx"
 
         workbook = xlsxwriter.Workbook(save_path_file)
 
+        summarysheet = workbook.add_worksheet("Summary")
+
+        row_list = [
+            (
+                "Video",
+                "Date",
+                "Input Videolength",
+                "Output Videolength",
+            )
+        ] + self.datamanager.get_video_data(videos)
+        logger.info(row_list)
+
+        row = 0
+        col = 0
+
+        for video, date, start, end in row_list:
+            summarysheet.write(row, col, video)
+            summarysheet.write(row, col + 1, date)
+            summarysheet.write(row, col + 2, start)
+            summarysheet.write(row, col + 3, end)
+            row += 1
+
         # The workbook object is then used to add new
         # worksheet via the add_worksheet() method.
-        detectionsheet = workbook.add_worksheet()
+        detectionsheet = workbook.add_worksheet("Detections")
 
         row_list = [
             ("Video", "detectionID", "Start", "End")
@@ -162,29 +195,12 @@ class ReportManager:
         logger.info(row_list)
 
         row = 0
-        col = 0
 
         for video, detection, start, end in row_list:
             detectionsheet.write(row, col, video)
             detectionsheet.write(row, col + 1, detection)
             detectionsheet.write(row, col + 2, start)
             detectionsheet.write(row, col + 3, end)
-            row += 1
-
-        summarysheet = workbook.add_worksheet()
-
-        row_list = [
-            ("Video", "Total detections", "Input Videolength", "Output Videolength")
-        ] + self.datamanager.get_video_data()
-        logger.info(row_list)
-
-        row = 0
-
-        for video, detection, start, end in row_list:
-            summarysheet.write(row, col, video)
-            summarysheet.write(row, col + 1, detection)
-            summarysheet.write(row, col + 2, start)
-            summarysheet.write(row, col + 3, end)
             row += 1
 
         # Finally, close the Excel file
