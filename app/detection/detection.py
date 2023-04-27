@@ -1,4 +1,5 @@
 """Detection module for running inference on video."""
+import threading
 import time
 from pathlib import Path
 from typing import Any, Callable, List, Tuple
@@ -97,6 +98,7 @@ def process_video(
     batch_size: int,
     max_batches_to_queue: int,  # pylint: disable=unused-argument
     output_path: Path | None,
+    stop_event: threading.Event,
     notify_progress: Callable[[int], None] | None = None,
 ) -> Tuple[List[int], List[torch.Tensor]]:
     """Runs inference on a video.
@@ -140,6 +142,10 @@ def process_video(
             total=frame_grabber.frame_count, desc="Processing frames", leave=False
         ) as pbar:
             while not frame_grabber.is_done():
+                if stop_event.is_set():
+                    logger.info("Stopping video processing")
+                    break
+
                 batch = frame_grabber.get_batch()
                 if batch is None:
                     continue

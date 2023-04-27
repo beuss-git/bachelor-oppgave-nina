@@ -2,12 +2,14 @@
 import io
 import os
 import sys
+import threading
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import cv2
 import torch
+from PyQt6 import QtGui
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
@@ -43,6 +45,12 @@ class DetectionWorker(QThread):
         self.output_folder_path = output_folder_path
         self.data_manager: DataManager
         self.report_manager: ReportManager
+        self.stop_event = threading.Event()
+
+    def stop(self) -> None:
+        """Stop worker from processing more videos."""
+        self.log("Stopping...")
+        self.stop_event.set()
 
     def run(self) -> None:
         """Run the detection."""
@@ -84,6 +92,9 @@ class DetectionWorker(QThread):
             return
 
         for i, video in enumerate(videos):
+            if self.stop_event.is_set():
+                break
+
             self.log(f"Processing {i + 1}/{len(videos)} ({video})")
             self.process_video(self.input_folder_path / video)
             self.data_manager.add_video_data(
@@ -164,8 +175,13 @@ class DetectionWorker(QThread):
             batch_size=settings.batch_size,
             max_batches_to_queue=4,
             output_path=None,
+            stop_event=self.stop_event,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
         )
+
+        # If the stop event is set, stop processing and return
+        if self.stop_event.is_set():
+            return
 
         print(f"Found {len(frames_with_fish)} frames with fish")
 
@@ -192,6 +208,7 @@ class DetectionWorker(QThread):
             dets = self.tensors_to_predictions(tensors)
 
         # Cut the video to the detected frames
+        # TODO: implement the stop event for this function too
         video_processor.cut_video(video_path, out_path, frame_ranges, dets)
         self.log(f"Saved processed video to {out_path}")
 
@@ -237,19 +254,16 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
         self.worker.finished.connect(self.worker_finished)
         self.worker.start()
 
-        # Stop worker when window is closed
-        self.finished.connect(self.worker.terminate)
+        self.__add_stop_button()
+        self.__add_open_output_dir_button(output_folder_path)
+        self.__add_close_button()
 
-        self.close_button = QPushButton("Close")
-        self.close_button.hide()
+    def __add_stop_button(self) -> None:
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self.worker.stop)
+        self.dialog_layout.addWidget(self.stop_button)
 
-        # This is needed because self.close returns a bool
-        def on_close() -> None:
-            self.close()
-
-        self.close_button.clicked.connect(on_close)
-        self.dialog_layout.addWidget(self.close_button)
-
+    def __add_open_output_dir_button(self, output_folder_path: Path) -> None:
         self.open_output_dir_button = QPushButton("Open output directory")
         self.open_output_dir_button.hide()
 
@@ -265,8 +279,26 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
 
         self.dialog_layout.addWidget(self.open_output_dir_button)
 
+    def __add_close_button(self) -> None:
+        self.close_button = QPushButton("Close")
+        self.close_button.hide()
+
+        # This is needed because self.close returns a bool
+        def on_close() -> None:
+            self.close()
+
+        self.close_button.clicked.connect(on_close)
+        self.dialog_layout.addWidget(self.close_button)
+
     def worker_finished(self) -> None:
         """Called when the worker has finished."""
         # Show button to close window now that the worker has finished
-        self.close_button.show()
         self.open_output_dir_button.show()
+        self.close_button.show()
+        self.stop_button.hide()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
+        """Called when the window is closed."""
+        # Stop the worker when the window is closed
+        self.worker.stop()
+        event.accept()
