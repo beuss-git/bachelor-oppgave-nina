@@ -26,6 +26,9 @@ from app.detection.batch_yolov8 import BatchYolov8
 from app.report_manager.report_manager import ReportManager
 from app.video_processor import Detection, video_processor
 
+# TODO: test all these file types
+ALLOWED_EXTENSIONS = (".mp4", ".m4a", ".avi", ".mkv", ".mov", ".wmv")
+
 
 class DetectionWorker(QThread):
     """Detection worker thread."""
@@ -81,7 +84,7 @@ class DetectionWorker(QThread):
             videos = [
                 filename
                 for filename in os.listdir(self.input_folder_path)
-                if filename.endswith(".mp4")
+                if filename.lower().endswith(ALLOWED_EXTENSIONS)
             ]
 
             if len(videos) == 0:
