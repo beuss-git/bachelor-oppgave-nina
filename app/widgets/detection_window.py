@@ -209,6 +209,10 @@ class DetectionWorker(QThread):
         self.update_progress.emit(100)
         data_manager.add_detection_data(video_path, frame_ranges)
 
+        # Delete the original video if the user has selected to do so
+        if not settings.keep_original:
+            video_path.unlink()
+
 
 class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
     """Detection window widget."""
