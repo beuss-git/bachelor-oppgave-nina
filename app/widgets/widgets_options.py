@@ -1,4 +1,6 @@
 """_summary_"""
+from typing import Callable
+
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -157,15 +159,26 @@ class AdvancedOptions(QWidget):
     def advanced_options(self) -> None:
         """Sets up the advanced options"""
 
-        self.advanced_layout_horizontal_checkboxes.addWidget(
-            Checkbox("Get report", "Whether to get a report or not")
+        get_report_cb = Checkbox("Get report", "Whether to get a report or not")
+        get_report_cb.set_check_state(settings.get_report)
+
+        def on_get_report_changed(state: bool) -> None:
+            settings.get_report = state
+
+        get_report_cb.connect(on_get_report_changed)
+        self.advanced_layout_horizontal_checkboxes.addWidget(get_report_cb)
+
+        box_around_fish_cb = Checkbox(
+            "Box around fish detected",
+            "If you want prediction boxes around fish and the probability",
         )
-        self.advanced_layout_horizontal_checkboxes.addWidget(
-            Checkbox(
-                "Box around fish detected",
-                "If you want prediction boxes around fish and the probability",
-            )
-        )
+        box_around_fish_cb.set_check_state(settings.box_around_fish)
+
+        def on_box_around_fish_changed(state: bool) -> None:
+            settings.box_around_fish = state
+
+        box_around_fish_cb.connect(on_box_around_fish_changed)
+        self.advanced_layout_horizontal_checkboxes.addWidget(box_around_fish_cb)
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
             DropDownWidget(
                 "Report format", Common.formats, "What format the report should be in"
@@ -229,35 +242,32 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
 
         # Sets up the checkbox
         self.checkbox = QCheckBox()
-        self.checkbox.setCheckState(Qt.CheckState.Checked)
+        self.checkbox.setCheckState(Qt.CheckState.Unchecked)
         self.checkbox.setFixedWidth(20)
-        if msg == "Keep original video":
-            self.checkbox.setChecked(settings.keep_original)
-
-            def state_changed(state: Qt.CheckState) -> None:
-                settings.keep_original = Qt.CheckState(state) == Qt.CheckState.Checked
-
-            self.checkbox.stateChanged.connect(state_changed)
-        elif msg == "Box around fish detected":
-            self.checkbox.setChecked(settings.box_around_fish)
-
-            def state_changed(state: Qt.CheckState) -> None:
-                settings.box_around_fish = Qt.CheckState(state) == Qt.CheckState.Checked
-
-            self.checkbox.stateChanged.connect(state_changed)
-        else:
-
-            def state_changed(state: Qt.CheckState) -> None:
-                settings.get_report = Qt.CheckState(state) == Qt.CheckState.Checked
-
-            self.checkbox.setChecked(settings.get_report)
-            self.checkbox.stateChanged.connect(state_changed)
 
         # Adds widgets to layout
         layout.addWidget(self.checkbox)
         layout.addWidget(add_label(msg, tooltip_text))
+        self.setToolTip(tooltip_text)
 
         self.setLayout(layout)
+
+    def set_check_state(self, state: bool) -> None:
+        """Sets the check state of the checkbox
+
+        Args:
+            state (Qt.CheckState): the state to set the checkbox to
+        """
+        qt_state = Qt.CheckState.Checked if state else Qt.CheckState.Unchecked
+        self.checkbox.setCheckState(qt_state)
+
+    def connect(self, slot: Callable[[bool], None]) -> None:
+        """Connects the checkbox 'toggled' to a function
+
+        Args:
+            function (Callable): the function to connect to
+        """
+        self.checkbox.toggled.connect(lambda: slot(self.checkbox.isChecked()))
 
 
 class SpinBox(QWidget):  # pylint: disable=too-few-public-methods
