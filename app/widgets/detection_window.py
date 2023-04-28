@@ -28,23 +28,25 @@ from app.detection.batch_yolov8 import BatchYolov8
 from app.report_manager.report_manager import ReportManager
 from app.video_processor import Detection, video_processor
 
+# TODO: test all these file types
+ALLOWED_EXTENSIONS = (".mp4", ".m4a", ".avi", ".mkv", ".mov", ".wmv")
+
 
 class DetectionWorker(QThread):
     """Detection worker thread."""
 
     update_progress = pyqtSignal(int)
     add_log = pyqtSignal(str)
-    input_folder_path: Path | None = None
-    output_folder_path: Path | None = None
-    model: BatchYolov8 | None = None
+    input_folder_path: Path
+    output_folder_path: Path
+    model: BatchYolov8 | None
 
     def __init__(self, folder_path: Path, output_folder_path: Path) -> None:
         super().__init__()
 
         self.input_folder_path = folder_path
         self.output_folder_path = output_folder_path
-        self.data_manager: DataManager
-        self.report_manager: ReportManager
+        self.model = None
         self.stop_event = threading.Event()
 
     def stop(self) -> None:
@@ -54,11 +56,6 @@ class DetectionWorker(QThread):
 
     def run(self) -> None:
         """Run the detection."""
-        self.data_manager = DataManager()
-        self.report_manager = ReportManager(
-            self.output_folder_path,
-            self.data_manager,
-        )
 
         if self.model is None:
             self.log("Initializing the model...")
@@ -71,8 +68,6 @@ class DetectionWorker(QThread):
             self.process_folder()
         # self.log(stream_target.getvalue())
 
-        self.data_manager.close_connection()
-
     def log(self, text: str) -> None:
         """Log text to the console."""
         self.add_log.emit(text)
@@ -81,28 +76,41 @@ class DetectionWorker(QThread):
         """Process a folder of videos."""
         if self.input_folder_path is None:
             return
-        videos = [
-            filename
-            for filename in os.listdir(self.input_folder_path)
-            if filename.endswith(".mp4")
-        ]
 
-        if len(videos) == 0:
-            self.log("No videos found in the input folder")
-            return
-
-        for i, video in enumerate(videos):
-            if self.stop_event.is_set():
-                break
-
-            self.log(f"Processing {i + 1}/{len(videos)} ({video})")
-            self.process_video(self.input_folder_path / video)
-            self.data_manager.add_video_data(
-                self.input_folder_path / video, video, self.output_folder_path
+        with DataManager() as data_manager:
+            report_manager = ReportManager(
+                self.output_folder_path,
+                data_manager,
             )
 
-        if settings.get_report:
-            self.report_manager.write_report(videos)
+            try:
+                report_manager.check_can_write_report()
+            except PermissionError:
+                self.log("Please close the report file.")
+                return
+
+            videos = [
+                filename
+                for filename in os.listdir(self.input_folder_path)
+                if filename.lower().endswith(ALLOWED_EXTENSIONS)
+            ]
+
+            if len(videos) == 0:
+                self.log("No videos found in the input folder")
+                return
+
+            for i, video in enumerate(videos):
+                self.log(f"Processing {i + 1}/{len(videos)} ({video})")
+                self.process_video(self.input_folder_path / video, data_manager)
+                data_manager.add_video_data(
+                    self.input_folder_path / video, video, self.output_folder_path
+                )
+
+            if settings.get_report:
+                try:
+                    report_manager.write_report(videos)
+                except PermissionError:
+                    self.log("Could not write report. Please close the report file.")
 
     def tensors_to_predictions(
         self, tensors: List[torch.Tensor]
@@ -157,7 +165,7 @@ class DetectionWorker(QThread):
 
         return merged_ranges
 
-    def process_video(self, video_path: Path) -> None:
+    def process_video(self, video_path: Path, data_manager: DataManager) -> None:
         """
         Process a video and save the processed video to the same folder as the original video.
         """
@@ -213,7 +221,7 @@ class DetectionWorker(QThread):
         self.log(f"Saved processed video to {out_path}")
 
         self.update_progress.emit(100)
-        self.data_manager.add_detection_data(video_path, frame_ranges)
+        data_manager.add_detection_data(video_path, frame_ranges)
 
 
 class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods

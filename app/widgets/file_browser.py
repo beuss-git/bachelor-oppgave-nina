@@ -114,7 +114,8 @@ class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
             case _:
                 raise ValueError(f"Invalid mode {mode}")
 
-        self.update_path(filepath)
+        if len(filepath) > 0:
+            self.update_path(filepath)
 
     def set_path(self, path: str) -> None:
         """Sets the file path

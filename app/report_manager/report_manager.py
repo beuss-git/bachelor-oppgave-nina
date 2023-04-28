@@ -1,5 +1,6 @@
 """Writes a detection report into chosen path"""
 import csv
+import os
 import typing
 from pathlib import Path
 from xml.dom import minidom
@@ -19,7 +20,7 @@ class ReportManager:
 
     def __init__(
         self,
-        output_path: Path | None,
+        output_path: Path,
         data: DataManager,
     ) -> None:
         """Initiates by saving necessary values to be available across the class
@@ -32,13 +33,41 @@ class ReportManager:
         self.output_path = output_path
         self.datamanager = data
         self.file_format = settings.report_format
-        self.report_name = "/Processing_report"
+        self.report_name = "Processing_report"
+
+    def check_can_write_report(self) -> None:
+        """Checks if the report can be written to the output path
+
+        Raises:
+            PermissionError: if the file is open and cannot be written to
+        """
+        save_path = self.__get_save_path()
+        existed = save_path.exists()
+        try:
+            with os.fdopen(os.open(save_path, os.O_WRONLY | os.O_CREAT), "w"):
+                pass
+            # Delete the file if it didn't exist before
+            if not existed:
+                save_path.unlink()
+        except OSError as err:
+            logger.warning("Unable to write to the report, the file is open")
+            raise PermissionError(f"Unable to write to {save_path}") from err
+
+    def __get_extension(self) -> str:
+        """returns the file extension of the report"""
+        return "." + self.file_format.lower()
+
+    def __get_save_path(self) -> Path:
+        return self.output_path / (self.report_name + self.__get_extension())
 
     def write_report(self, videos: typing.List[str]) -> None:
         """writes a report based on the list of videos entered"""
         if len(videos) == 0:
             logger.info("No videos to write a report for")
             return
+
+        # This will throw an error if we can't write to the file
+        self.check_can_write_report()
 
         match self.file_format:
             case "CSV":
@@ -80,10 +109,10 @@ class ReportManager:
 
         xml_str = root.toprettyxml(indent="\t")
 
-        save_path_file = str(self.output_path) + self.report_name + ".xml"
-
         # open the output pathway and saves the file
-        with open(save_path_file, "w", encoding="ascii", errors="ignore") as out:
+        with open(
+            self.__get_save_path(), "w", encoding="ascii", errors="ignore"
+        ) as out:
             out.write(xml_str)
 
     def write_csv_file(self, videos: typing.List[str]) -> None:
@@ -92,8 +121,6 @@ class ReportManager:
         Args:
            videos (List[str]): List of videos that should be included in the report
         """
-
-        save_path_file = str(self.output_path) + self.report_name + ".csv"
 
         video_list = [
             (
@@ -114,11 +141,22 @@ class ReportManager:
         row_list = video_list + [("", "", "", "")] + detection_list
 
         # opens the output pathway and saves the file
-        with open(
-            save_path_file, "w", newline="", encoding="ascii", errors="ignore"
-        ) as file:
-            writer = csv.writer(file)
-            writer.writerows(row_list)
+        try:
+            with open(
+                self.__get_save_path(),
+                "w",
+                newline="",
+                encoding="ascii",
+                errors="ignore",
+            ) as file:
+                writer = csv.writer(file)
+                writer.writerows(row_list)
+        except PermissionError as err:
+            # The file is probably open in another program
+            logger.error(
+                "Could not write to file. Is it open in another program?", exc_info=err
+            )
+            raise err
 
     def write_pdf_file(self, videos: typing.List[str]) -> None:
         """Writes a report in the format of a pdf file
@@ -126,8 +164,6 @@ class ReportManager:
         Args:
             videos (List[str]): List of videos that should be included in the report
         """
-
-        save_path_file = str(self.output_path) + self.report_name + ".pdf"
 
         # Gets data from the data base
         item_list = self.datamanager.get_data(videos)
@@ -152,7 +188,7 @@ class ReportManager:
             pdf.ln(8)
 
         # opens the output pathway and saves the file
-        pdf.output(save_path_file, "F")
+        pdf.output(str(self.__get_save_path()), "F")
 
     def write_xlsx_file(self, videos: typing.List[str]) -> None:
         """writes a report in the format of a xlsx file
@@ -162,9 +198,8 @@ class ReportManager:
         """
         # Workbook() takes one, non-optional, argument
         # which is the filename that we want to create.
-        save_path_file = str(self.output_path) + self.report_name + ".xlsx"
 
-        workbook = xlsxwriter.Workbook(save_path_file)
+        workbook = xlsxwriter.Workbook(self.__get_save_path())
 
         summarysheet = workbook.add_worksheet("Summary")
 

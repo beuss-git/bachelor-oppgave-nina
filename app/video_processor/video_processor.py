@@ -6,9 +6,11 @@ import av
 import av.datasets
 import av.packet
 import av.video
-import cv2
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+from PIL import __version__ as pil_version
 from tqdm import tqdm
+from ultralytics.yolo.utils.checks import check_font, check_version
 
 from app.logger import get_logger
 from app.video_processor import Detection
@@ -21,51 +23,81 @@ def color_to_hex(color: Tuple[int, int, int]) -> str:
     return f"0x{color[0]:02x}{color[1]:02x}{color[2]:02x}"
 
 
-def draw_detections(
-    frame: np.ndarray[Any, Any], detections: List[Detection]
-) -> np.ndarray[Any, Any]:
+class Annotator:  # pylint: disable=too-few-public-methods
     """
-    Draws bounding boxes and labels on a frame for the specified detections.
-
-    Args:
-        frame: The frame to draw on.
-        detections: A list of detections to draw.
-
-    Returns:
-        The frame with bounding boxes and labels drawn on it.
+    A more performant and specialized version of the
+    Annotator class from ultralytics.yolo.utils.plotting
     """
-    for detection in detections:
-        x_pos = round(detection.xmin / 2) * 2
-        y_pos = round(detection.ymin / 2) * 2
-        width = round((detection.xmax - detection.xmin) / 2) * 2
-        height = round((detection.ymax - detection.ymin) / 2) * 2
 
-        cv2.rectangle(
-            frame, (x_pos, y_pos), (x_pos + width, y_pos + height), (255, 0, 0), 2
-        )
+    def __init__(
+        self,
+        frame_size: Tuple[int, int],
+        color: Tuple[int, int, int] = (255, 0, 0),
+        line_width: int | None = None,
+        font_size: int | None = None,
+    ) -> None:
+        try:
+            font = check_font("Arial.Unicode.ttf")
+            size = font_size or max(round(sum(frame_size) / 2 * 0.035), 12)
+            self.font = ImageFont.truetype(str(font), size)
+        except Exception:  # pylint: disable=broad-except
+            self.font = ImageFont.load_default()
+        self.line_width = line_width or max(round(sum(frame_size) / 2 * 0.003), 2)
+        self.color = color
+        self.pil_9_2_0_check = check_version(pil_version, "9.2.0")  # deprecation check
+        self.text_color = (255, 255, 255)
 
-        text = f"{detection.label}: {detection.confidence:.2f}"
-        (text_width, text_height), _ = cv2.getTextSize(
-            text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1
-        )
-        cv2.rectangle(
-            frame,
-            (x_pos, y_pos - text_height - 2),
-            (x_pos + text_width, y_pos),
-            (0, 0, 0),
-            -1,
-        )
-        cv2.putText(
-            frame,
-            text,
-            (x_pos, y_pos - 2),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (255, 255, 255),
-            1,
-        )
+    def annotate(
+        self, frame: np.ndarray[Any, Any], detections: List[Detection]
+    ) -> np.ndarray[Any, Any]:
+        """
+        Draws bounding boxes and labels on a frame for the specified detections.
 
-    return frame
+        Args:
+            frame: The frame to draw on.
+            detections: A list of detections to draw.
+
+        Returns:
+            The frame with bounding boxes and labels drawn on it.
+        """
+        image = frame if isinstance(frame, Image.Image) else Image.fromarray(frame)
+        draw = ImageDraw.Draw(image)
+        for detection in detections:
+            label = f"{detection.confidence:.2f} {detection.label}"
+
+            box = (
+                int(detection.xmin),
+                int(detection.ymin),
+                int(detection.xmax),
+                int(detection.ymax),
+            )
+
+            draw.rectangle(box, width=self.line_width, outline=self.color)  # box
+            if self.pil_9_2_0_check:
+                _, _, width, height = self.font.getbbox(
+                    label
+                )  # text width, height (New)
+            else:
+                width, height = self.font.getsize(
+                    label
+                )  # text width, height (Old, deprecated in 9.2.0)
+            outside = box[1] - height >= 0  # label fits outside box
+            draw.rectangle(
+                (
+                    box[0],
+                    box[1] - height if outside else box[1],
+                    box[0] + width + 1,
+                    box[1] + 1 if outside else box[1] + height + 1,
+                ),
+                fill=self.color,
+            )
+            draw.text(
+                (box[0], box[1] - height if outside else box[1]),
+                label,
+                fill=self.text_color,
+                font=self.font,
+            )
+        return np.asarray(image)
 
 
 def frame_to_timestamp(frame: int, video_stream: av.video.stream) -> int:
@@ -109,6 +141,7 @@ def process_packet(  # pylint: disable=too-many-arguments
     output_container: av.container.output,
     output_stream: av.video.stream,
     predictions: Dict[int, List[Detection]] | None,
+    annotator: Annotator,
     pbar: tqdm,
 ) -> Tuple[int, bool]:
     """
@@ -144,7 +177,7 @@ def process_packet(  # pylint: disable=too-many-arguments
 
             if predictions is not None:
                 frame_detections = predictions.get(current_frame, [])
-                frame_image = draw_detections(frame_image, frame_detections)
+                frame_image = annotator.annotate(frame_image, frame_detections)
 
             output_frame = av.VideoFrame.from_ndarray(frame_image, format="bgr24")
 
@@ -166,6 +199,7 @@ def process_frame_ranges(  # pylint: disable=too-many-arguments
     output_container: av.container.output,
     output_stream: av.video.stream,
     predictions: Dict[int, List[Detection]] | None,
+    annotator: Annotator,
 ) -> None:
     """
     Process a list of frame ranges, seek to the appropriate timestamps,
@@ -197,6 +231,7 @@ def process_frame_ranges(  # pylint: disable=too-many-arguments
                     output_container,
                     output_stream,
                     predictions,
+                    annotator,
                     pbar,
                 )
                 if not continue_processing:
@@ -240,6 +275,10 @@ def cut_video(
     output_stream.height = video_stream.codec_context.height
     output_stream.pix_fmt = video_stream.codec_context.pix_fmt
 
+    # frame_ranges = [(0, 10)]
+
+    annotator = Annotator((output_stream.width, output_stream.height))
+
     process_frame_ranges(
         frame_ranges,
         input_container,
@@ -247,6 +286,7 @@ def cut_video(
         output_container,
         output_stream,
         predictions,
+        annotator,
     )
 
     packet = output_stream.encode(None)
