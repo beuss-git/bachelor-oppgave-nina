@@ -11,12 +11,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
 
 from app import settings
-
-# import app.settings as settings
 from app.common import Common
 from app.logger import create_logger, get_logger
-
-# from app.settings import Settings
 from app.widgets.detection_window import DetectionWindow
 from app.widgets.error_dialog import ErrorDialog
 from app.widgets.file_browser import FileBrowser
