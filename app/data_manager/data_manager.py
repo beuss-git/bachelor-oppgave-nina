@@ -110,8 +110,8 @@ class DataManager:
             if output_video is None:
                 return
 
-            video_exist = self.video_check(str(video_id))
-            if video_exist:
+            video_notexist = self.video_check(str(video_id))
+            if video_notexist:
                 # sets up query and data that will be in the query
                 sqlite_insert_query = """INSERT INTO video
                             (id, title, date, totaldetections, videolength, outputvideolength)
@@ -205,6 +205,16 @@ class DataManager:
             # create a cursor
             cursor = self.sqlite_connection.cursor()
 
+            detections_exist = self.detection_check(str(video_id))
+            if detections_exist:
+                sqlite_remove_query = (
+                    """DELLETE FROM detection WHERE videoid ='"""
+                    + str(video_id)
+                    + """';"""
+                )
+                cursor.execute(sqlite_remove_query)
+                print("Deleted previous entries!")
+
             # sets up query
             sqlite_insert_query = """INSERT INTO detection
                           (videoid, starttime, endtime)
@@ -230,6 +240,31 @@ class DataManager:
         except sqlite3.Error as error:
             # If error occurs log the error
             print("Failed to insert multiple records into sqlite table", error)
+
+    def detection_check(self, video_id: str) -> bool:
+        """Checks if a detections for the video already exists within the database"""
+        try:
+            # creates a cursor
+            cursor = self.sqlite_connection.cursor()
+
+            # checks if there are tables in the database
+            detections = cursor.execute(
+                """SELECT id FROM detection WHERE videoid='""" + video_id + """'; """
+            ).fetchall()
+
+            # returns true if there isnt any tables found in the database
+            if detections == []:
+                print("not detections for video found!")
+                return False
+
+            print("Detections already exists in database!")
+            cursor.close()
+            return True
+
+        except sqlite3.Error as error:
+            # Log error if anything fails in the process
+            print("Error while checking for sqlite table", error)
+            return False
 
     def get_video_data(self, video_search: typing.List[str]) -> typing.List[typing.Any]:
         """Returns data about the video
