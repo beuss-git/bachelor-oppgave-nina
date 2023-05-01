@@ -93,10 +93,13 @@ class DetectionWorker(QThread):
 
             for i, video in enumerate(videos):
                 self.log(f"Processing {i + 1}/{len(videos)} ({video})")
-                self.process_video(self.input_folder_path / video, data_manager)
-                data_manager.add_video_data(
-                    self.input_folder_path / video, video, self.output_folder_path
-                )
+                video_path = self.input_folder_path / video
+                self.process_video(video_path, data_manager)
+                data_manager.add_video_data(video_path, video, self.output_folder_path)
+
+                # Delete the original video if the user has selected to do so
+                if not settings.keep_original:
+                    video_path.unlink()
 
             if settings.get_report:
                 try:
@@ -208,10 +211,6 @@ class DetectionWorker(QThread):
 
         self.update_progress.emit(100)
         data_manager.add_detection_data(video_path, frame_ranges)
-
-        # Delete the original video if the user has selected to do so
-        if not settings.keep_original:
-            video_path.unlink()
 
 
 class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
