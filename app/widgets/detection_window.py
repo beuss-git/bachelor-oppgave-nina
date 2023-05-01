@@ -2,12 +2,14 @@
 import io
 import os
 import sys
+import threading
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import cv2
 import torch
+from PyQt6 import QtGui
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
@@ -26,31 +28,34 @@ from app.detection.batch_yolov8 import BatchYolov8
 from app.report_manager.report_manager import ReportManager
 from app.video_processor import Detection, video_processor
 
+# TODO: test all these file types
+ALLOWED_EXTENSIONS = (".mp4", ".m4a", ".avi", ".mkv", ".mov", ".wmv")
+
 
 class DetectionWorker(QThread):
     """Detection worker thread."""
 
     update_progress = pyqtSignal(int)
     add_log = pyqtSignal(str)
-    input_folder_path: Path | None = None
-    output_folder_path: Path | None = None
-    model: BatchYolov8 | None = None
+    input_folder_path: Path
+    output_folder_path: Path
+    model: BatchYolov8 | None
 
     def __init__(self, folder_path: Path, output_folder_path: Path) -> None:
         super().__init__()
 
         self.input_folder_path = folder_path
         self.output_folder_path = output_folder_path
-        self.data_manager: DataManager
-        self.report_manager: ReportManager
+        self.model = None
+        self.stop_event = threading.Event()
+
+    def stop(self) -> None:
+        """Stop worker from processing more videos."""
+        self.log("Stopping...")
+        self.stop_event.set()
 
     def run(self) -> None:
         """Run the detection."""
-        self.data_manager = DataManager()
-        self.report_manager = ReportManager(
-            self.output_folder_path,
-            self.data_manager,
-        )
 
         if self.model is None:
             self.log("Initializing the model...")
@@ -63,8 +68,6 @@ class DetectionWorker(QThread):
             self.process_folder()
         # self.log(stream_target.getvalue())
 
-        self.data_manager.close_connection()
-
     def log(self, text: str) -> None:
         """Log text to the console."""
         self.add_log.emit(text)
@@ -73,25 +76,41 @@ class DetectionWorker(QThread):
         """Process a folder of videos."""
         if self.input_folder_path is None:
             return
-        videos = [
-            filename
-            for filename in os.listdir(self.input_folder_path)
-            if filename.endswith(".mp4")
-        ]
 
-        if len(videos) == 0:
-            self.log("No videos found in the input folder")
-            return
-
-        for i, video in enumerate(videos):
-            self.log(f"Processing {i + 1}/{len(videos)} ({video})")
-            self.process_video(self.input_folder_path / video)
-            self.data_manager.add_video_data(
-                self.input_folder_path / video, video, self.output_folder_path
+        with DataManager() as data_manager:
+            report_manager = ReportManager(
+                self.output_folder_path,
+                data_manager,
             )
 
-        if settings.get_report:
-            self.report_manager.write_report(videos)
+            try:
+                report_manager.check_can_write_report()
+            except PermissionError:
+                self.log("Please close the report file.")
+                return
+
+            videos = [
+                filename
+                for filename in os.listdir(self.input_folder_path)
+                if filename.lower().endswith(ALLOWED_EXTENSIONS)
+            ]
+
+            if len(videos) == 0:
+                self.log("No videos found in the input folder")
+                return
+
+            for i, video in enumerate(videos):
+                self.log(f"Processing {i + 1}/{len(videos)} ({video})")
+                self.process_video(self.input_folder_path / video, data_manager)
+                data_manager.add_video_data(
+                    self.input_folder_path / video, video, self.output_folder_path
+                )
+
+            if settings.get_report:
+                try:
+                    report_manager.write_report(videos)
+                except PermissionError:
+                    self.log("Could not write report. Please close the report file.")
 
     def tensors_to_predictions(
         self, tensors: List[torch.Tensor]
@@ -146,7 +165,7 @@ class DetectionWorker(QThread):
 
         return merged_ranges
 
-    def process_video(self, video_path: Path) -> None:
+    def process_video(self, video_path: Path, data_manager: DataManager) -> None:
         """
         Process a video and save the processed video to the same folder as the original video.
         """
@@ -164,8 +183,13 @@ class DetectionWorker(QThread):
             batch_size=settings.batch_size,
             max_batches_to_queue=4,
             output_path=None,
+            stop_event=self.stop_event,
             notify_progress=lambda progress: self.update_progress.emit(int(progress)),
         )
+
+        # If the stop event is set, stop processing and return
+        if self.stop_event.is_set():
+            return
 
         print(f"Found {len(frames_with_fish)} frames with fish")
 
@@ -192,11 +216,12 @@ class DetectionWorker(QThread):
             dets = self.tensors_to_predictions(tensors)
 
         # Cut the video to the detected frames
+        # TODO: implement the stop event for this function too
         video_processor.cut_video(video_path, out_path, frame_ranges, dets)
         self.log(f"Saved processed video to {out_path}")
 
         self.update_progress.emit(100)
-        self.data_manager.add_detection_data(video_path, frame_ranges)
+        data_manager.add_detection_data(video_path, frame_ranges)
 
 
 class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
@@ -237,19 +262,16 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
         self.worker.finished.connect(self.worker_finished)
         self.worker.start()
 
-        # Stop worker when window is closed
-        self.finished.connect(self.worker.terminate)
+        self.__add_stop_button()
+        self.__add_open_output_dir_button(output_folder_path)
+        self.__add_close_button()
 
-        self.close_button = QPushButton("Close")
-        self.close_button.hide()
+    def __add_stop_button(self) -> None:
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self.worker.stop)
+        self.dialog_layout.addWidget(self.stop_button)
 
-        # This is needed because self.close returns a bool
-        def on_close() -> None:
-            self.close()
-
-        self.close_button.clicked.connect(on_close)
-        self.dialog_layout.addWidget(self.close_button)
-
+    def __add_open_output_dir_button(self, output_folder_path: Path) -> None:
         self.open_output_dir_button = QPushButton("Open output directory")
         self.open_output_dir_button.hide()
 
@@ -265,8 +287,26 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
 
         self.dialog_layout.addWidget(self.open_output_dir_button)
 
+    def __add_close_button(self) -> None:
+        self.close_button = QPushButton("Close")
+        self.close_button.hide()
+
+        # This is needed because self.close returns a bool
+        def on_close() -> None:
+            self.close()
+
+        self.close_button.clicked.connect(on_close)
+        self.dialog_layout.addWidget(self.close_button)
+
     def worker_finished(self) -> None:
         """Called when the worker has finished."""
         # Show button to close window now that the worker has finished
-        self.close_button.show()
         self.open_output_dir_button.show()
+        self.close_button.show()
+        self.stop_button.hide()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
+        """Called when the window is closed."""
+        # Stop the worker when the window is closed
+        self.worker.stop()
+        event.accept()

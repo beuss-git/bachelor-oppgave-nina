@@ -6,6 +6,8 @@ import sys
 import traceback
 import typing
 from pathlib import Path
+from types import TracebackType
+from typing import Type
 
 import ffmpeg
 
@@ -33,6 +35,20 @@ class DataManager:
         except sqlite3.Error as error:
             # If error occurs log the error
             print("Error while connecting to sqlite", error)
+
+    def __enter__(self) -> "DataManager":
+        """Returns the data manager object"""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Type[BaseException] | None,  # pylint: disable=unused-argument
+        exc_value: BaseException | None,  # pylint: disable=unused-argument
+        trace_back: TracebackType | None,  # pylint: disable=unused-argument
+    ) -> None:
+        """Closes the connection with the database"""
+        if self.sqlite_connection:
+            self.sqlite_connection.close()
 
     def tables_check(self) -> bool:
         """Checking if tables aleady exist in the database
@@ -407,10 +423,3 @@ class DataManager:
         except ffmpeg.Error as error:
             logger.error("Error occured: %s", error.stderr.decode("utf8"))
             return []
-
-    def close_connection(self) -> None:
-        """Closes the connection with sqlite"""
-
-        if self.sqlite_connection:
-            self.sqlite_connection.close()
-            print("sqlite connection is closed")
