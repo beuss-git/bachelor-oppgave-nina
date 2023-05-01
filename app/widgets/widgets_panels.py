@@ -48,20 +48,33 @@ class WidgetsPanel:
         """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()
-        buffer_layout.addWidget(
-            DropDownWidget(
-                "Buffer Before (s)",
-                Common.buffer_options,
-                "Time in seconds before the fish is detected",
-            )
+
+        buffer_before_dd = DropDownWidget(
+            "Buffer Before (s)",
+            Common.buffer_options,
+            "Time in seconds before the fish is detected",
         )
-        buffer_layout.addWidget(
-            DropDownWidget(
-                "Buffer After (s)",
-                Common.buffer_options,
-                "Time in seconds before the fish is detected",
-            )
+        buffer_before_dd.set_index(settings.buffer_before)
+
+        def on_buffer_before_changed(index: int) -> None:
+            settings.buffer_before = index
+
+        buffer_before_dd.connect(on_buffer_before_changed)
+
+        buffer_layout.addWidget(buffer_before_dd)
+
+        buffer_after_dd = DropDownWidget(
+            "Buffer After (s)",
+            Common.buffer_options,
+            "Time in seconds before the fish is detected",
         )
+        buffer_after_dd.set_index(settings.buffer_after)
+
+        def on_buffer_after_changed(index: int) -> None:
+            settings.buffer_after = index
+
+        buffer_after_dd.connect(on_buffer_after_changed)
+        buffer_layout.addWidget(buffer_after_dd)
 
         parent_layout.addLayout(buffer_layout)
         keep_original_cb = Checkbox(

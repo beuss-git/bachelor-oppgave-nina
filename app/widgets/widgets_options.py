@@ -56,26 +56,28 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         self.combo_box.setFixedWidth(60)
         self.combo_box.addItems(buffer)
 
-        # TODO: make this into an enum
-        # Sets the current index to the stored buffer time
-        if title == "Buffer After":
-            self.combo_box.setCurrentIndex(settings.buffer_after)
-        elif title == "Buffer Before":
-            self.combo_box.setCurrentIndex(settings.buffer_before)
-        elif title == "Batch Size":
-            self.combo_box.setCurrentText(str(settings.batch_size))
-        else:
-            self.combo_box.setCurrentText(settings.report_format)
-        self.combo_box.currentIndexChanged.connect(
-            self.index_changed
-        )  # connects interaction to the index changed function
-
         # Adds the combobox widget and label
         layout.addWidget(self.combo_box)
         layout.addWidget(add_label(title, tooltip_text))
 
         # saves label as a class variable for later use
         self.label = title
+
+    def connect(self, slot: Callable[[int], None]) -> None:
+        """Connects the index changed function to the slot
+
+        Args:
+            slot (Callable[[int], None]): function to be called when index is changed
+        """
+        self.combo_box.currentIndexChanged.connect(slot)
+
+    def set_index(self, index: int) -> None:
+        """Sets the index of the combobox
+
+        Args:
+            index (int): the new index of the combobox
+        """
+        self.combo_box.setCurrentIndex(index)
 
     def index_changed(self, index: int) -> None:
         """Saves the changed index in the comboBox
@@ -179,18 +181,33 @@ class AdvancedOptions(QWidget):
 
         box_around_fish_cb.connect(on_box_around_fish_changed)
         self.advanced_layout_horizontal_checkboxes.addWidget(box_around_fish_cb)
-        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
-            DropDownWidget(
-                "Report format", Common.formats, "What format the report should be in"
-            )
+
+        report_format_dd = DropDownWidget(
+            "Report format", Common.formats, "What format the report should be in"
         )
-        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
-            DropDownWidget(
-                "Batch Size",
-                Common.batch_size,
-                "Only for experienced IT (AI) users. \nHow many frames should be processed at once",
-            )
+        report_format_dd.set_index(Common.formats.index(settings.report_format))
+
+        def on_report_format_changed(index: int) -> None:
+            settings.report_format = Common.formats[index]
+
+        report_format_dd.connect(on_report_format_changed)
+
+        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(report_format_dd)
+
+        batch_size_dd = DropDownWidget(
+            "Batch Size",
+            Common.batch_size,
+            "Only for experienced IT (AI) users. \nHow many frames should be processed at once",
         )
+
+        batch_size_dd.set_index(Common.batch_size.index(str(settings.batch_size)))
+
+        def on_batch_size_changed(index: int) -> None:
+            settings.batch_size = int(Common.batch_size[index])
+
+        batch_size_dd.connect(on_batch_size_changed)
+
+        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(batch_size_dd)
         prediction_tooltip = """How accurate the AI should be in its predictions,
                 less accurate means more predictions and possibility for false positives,
                 More accurate means less predictions and less false positives."""
