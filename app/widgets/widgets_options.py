@@ -85,9 +85,9 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         Args:
             index (int): the new number that the combobox contains
         """
-        if self.label == "Buffer After":
+        if self.label == "Buffer After (s)":
             settings.buffer_after = index
-        elif self.label == "Buffer Before":
+        elif self.label == "Buffer Before (s)":
             settings.buffer_before = index
         elif self.label == "Batch Size":
             settings.batch_size = int(Common.batch_size[index])
