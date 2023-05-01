@@ -1,6 +1,7 @@
 """Main module for detection."""
 import argparse
 import sys
+import threading
 from pathlib import Path
 
 from app.logger import get_logger
@@ -74,12 +75,14 @@ def main() -> int:
         # print("Failed to initialize detector", err)
         return 1
 
+    stop_event = threading.Event()
     frames_with_fish = process_video(
         model,
         Path(args.video_path),
         args.batch_size,
         args.max_batches_to_queue,
         Path(args.output_path) if args.output_path is not None else None,
+        stop_event,
     )
 
     # print(f"Found {len(frames_with_fish)} frames with fish")
