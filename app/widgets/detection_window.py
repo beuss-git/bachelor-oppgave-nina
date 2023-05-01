@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple
 import cv2
 import torch
 from PyQt6 import QtGui
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
     QPlainTextEdit,
@@ -319,3 +319,10 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
         # Stop the worker when the window is closed
         self.worker.stop()
         event.accept()
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # pylint: disable=C0103
+        """We use this to ignore the escape key, so that the window can't be closed by accident."""
+        if event.key() == Qt.Key.Key_Escape:
+            event.ignore()
+        else:
+            super().keyPressEvent(event)
