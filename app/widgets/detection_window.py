@@ -102,7 +102,8 @@ class DetectionWorker(QThread):
             for i, video in enumerate(videos):
                 self.log(f"Processing {i + 1}/{len(videos)} ({video})")
                 video_path = self.input_folder_path / video
-                self.process_video(video_path, data_manager)
+                if not self.process_video(video_path, data_manager):
+                    break
                 data_manager.add_video_data(video_path, video, self.output_folder_path)
 
                 # Delete the original video if the user has selected to do so
@@ -168,12 +169,15 @@ class DetectionWorker(QThread):
 
         return merged_ranges
 
-    def process_video(self, video_path: Path, data_manager: DataManager) -> None:
+    def process_video(self, video_path: Path, data_manager: DataManager) -> bool:
         """
         Process a video and save the processed video to the same folder as the original video.
+
+        Returns True if we should continue processing videos, False if we should stop.
         """
         if self.model is None or self.output_folder_path is None:
-            return
+            self.log("Model or output folder path is None")
+            return False
 
         # self.add_text.emit(f"Processing {video_path}")
 
@@ -192,7 +196,7 @@ class DetectionWorker(QThread):
 
         # If the stop event is set, stop processing and return
         if self.stop_event.is_set():
-            return
+            return False
 
         print(f"Found {len(frames_with_fish)} frames with fish")
 
@@ -209,7 +213,7 @@ class DetectionWorker(QThread):
 
         if len(frame_ranges) == 0:
             print("No fish detected, skipping video")
-            return
+            return True
 
         vid_path = Path(video_path)
         out_path = self.output_folder_path / f"{vid_path.stem}_processed.mp4"
@@ -225,6 +229,8 @@ class DetectionWorker(QThread):
 
         self.update_progress.emit(100)
         data_manager.add_detection_data(video_path, frame_ranges)
+
+        return True
 
 
 class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
