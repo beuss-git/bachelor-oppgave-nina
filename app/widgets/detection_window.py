@@ -3,7 +3,9 @@ import io
 import os
 import sys
 import threading
+import time
 from contextlib import redirect_stdout
+from datetime import timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -40,6 +42,8 @@ class DetectionWorker(QThread):
     update_task_format = pyqtSignal(str)
     update_overall_progress = pyqtSignal(int)
     set_video_count = pyqtSignal(int)
+    update_time_prediction_sig = pyqtSignal(str)
+
     add_log = pyqtSignal(str)
 
     input_folder_path: Path
@@ -53,6 +57,9 @@ class DetectionWorker(QThread):
         self.output_folder_path = output_folder_path
         self.model = None
         self.stop_event = threading.Event()
+        self.start_time = time.time()
+        self.video_start_time = 0.0
+        self.last_time_update = 0.0
 
     def stop(self) -> None:
         """Stop worker from processing more videos."""
@@ -110,7 +117,7 @@ class DetectionWorker(QThread):
             for i, video in enumerate(videos):
                 self.log(f"Processing {i + 1}/{len(videos)} ({video})")
                 video_path = self.input_folder_path / video
-                if not self.process_video(video_path, data_manager):
+                if not self.process_video(i, len(videos), video_path, data_manager):
                     break
                 data_manager.add_video_data(video_path, video, self.output_folder_path)
 
@@ -179,7 +186,13 @@ class DetectionWorker(QThread):
 
         return merged_ranges
 
-    def process_video(self, video_path: Path, data_manager: DataManager) -> bool:
+    def process_video(
+        self,
+        video_num: int,
+        num_videos: int,
+        video_path: Path,
+        data_manager: DataManager,
+    ) -> bool:
         """
         Process a video and save the processed video to the same folder as the original video.
 
@@ -196,6 +209,13 @@ class DetectionWorker(QThread):
 
         self.update_task_progress.emit(0)
         self.update_task_format.emit("Performing detection: %p%")
+
+        self.video_start_time = time.time()
+
+        def detection_notify_progress(progress: int) -> None:
+            self.update_task_progress.emit(progress)
+            self.update_time_prediction(int(progress / 2), video_num, num_videos)
+
         frames_with_fish, tensors = detection.process_video(
             model=self.model,
             video_path=video_path,
@@ -203,9 +223,7 @@ class DetectionWorker(QThread):
             max_batches_to_queue=4,
             output_path=None,
             stop_event=self.stop_event,
-            notify_progress=lambda progress: self.update_task_progress.emit(
-                int(progress)
-            ),
+            notify_progress=detection_notify_progress,
         )
 
         # If the stop event is set, stop processing and return
@@ -239,6 +257,10 @@ class DetectionWorker(QThread):
         self.update_task_progress.emit(0)
         self.update_task_format.emit("Cutting video: %p%")
 
+        def cut_notify_progress(progress: int) -> None:
+            self.update_task_progress.emit(progress)
+            self.update_time_prediction(int(progress / 2) + 50, video_num, num_videos)
+
         # Cut the video to the detected frames
         # TODO: implement the stop event for this function too
         video_processor.cut_video(
@@ -246,9 +268,7 @@ class DetectionWorker(QThread):
             out_path,
             frame_ranges,
             dets,
-            notify_progress=lambda progress: self.update_task_progress.emit(
-                int(progress)
-            ),
+            notify_progress=cut_notify_progress,
         )
         # Just show percentage at this point
         self.update_task_format.emit("%p%")
@@ -261,6 +281,46 @@ class DetectionWorker(QThread):
         self.update_task_progress.emit(100)
 
         return True
+
+    def update_time_prediction(
+        self, progress: int, video_num: int, num_videos: int
+    ) -> None:
+        """Update the time prediction."""
+        current_time = time.time()
+        # Don't update more than once per second
+        if current_time - self.last_time_update < 1.0:
+            return
+        self.last_time_update = current_time
+
+        total_elapsed_time = current_time - self.start_time
+        video_elapsed_time = current_time - self.video_start_time
+
+        if progress > 0:
+            # Calculate the remaining time for the current video
+            time_left_current_video = video_elapsed_time * (100 - progress) / progress
+
+            if video_num > 0:
+                # Calculate the average time spent per video for the videos processed so far
+                avg_time_per_video = (
+                    total_elapsed_time - video_elapsed_time
+                ) / video_num
+
+                # Estimate the time left for the remaining videos
+                time_left_remaining_videos = avg_time_per_video * (
+                    num_videos - (video_num + 1)
+                )
+            else:
+                # If this is the first video, estimate the total time for the current video
+                total_time_current_video = video_elapsed_time * 100 / progress
+
+                # Use the total time for the current video as an estimate for the remaining videos
+                time_left_remaining_videos = total_time_current_video * (num_videos - 1)
+
+            # Calculate the total time left
+            time_left = time_left_current_video + time_left_remaining_videos
+
+            time_left_str = str(timedelta(seconds=int(time_left)))
+            self.update_time_prediction_sig.emit(f"Time left: {time_left_str}")
 
 
 class DetectionWindow(
@@ -277,6 +337,8 @@ class DetectionWindow(
         super().__init__(parent)
 
         self.dialog_layout = QVBoxLayout()
+
+        self.__add_time_prediction_label()
 
         # Add the main output textbox.
         self.output = QPlainTextEdit()
@@ -319,6 +381,9 @@ class DetectionWindow(
         self.worker.update_task_progress.connect(self.task_progress_bar.setValue)
         self.worker.update_task_format.connect(self.task_progress_bar.setFormat)
         self.worker.update_overall_progress.connect(self.overall_progress_bar.setValue)
+        self.worker.update_time_prediction_sig.connect(
+            self.update_time_prediction_label
+        )
         self.worker.set_video_count.connect(
             lambda count: self.overall_progress_bar.setRange(0, count)
         )
@@ -331,6 +396,15 @@ class DetectionWindow(
         self.__add_stop_button()
         self.__add_open_output_dir_button(output_folder_path)
         self.__add_close_button()
+
+    def update_time_prediction_label(self, text: str) -> None:
+        """Update the time prediction label with the given text."""
+        self.time_prediction_label.setText(text)
+
+    def __add_time_prediction_label(self) -> None:
+        """Add the time prediction label to the layout."""
+        self.time_prediction_label = QLabel("Time left: N/A")
+        self.dialog_layout.addWidget(self.time_prediction_label)
 
     def __add_stop_button(self) -> None:
         self.stop_button = QPushButton("Stop")
@@ -377,6 +451,7 @@ class DetectionWindow(
 
         # Set the overall progress bar to finished
         self.overall_progress_bar.setFormat("Finished")
+        self.update_time_prediction_label("Time left: N/A")
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
         """Called when the window is closed."""
