@@ -1,6 +1,6 @@
 """Video processor module. Contains functions for processing videos."""
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 import av
 import av.datasets
@@ -143,6 +143,7 @@ def process_packet(  # pylint: disable=too-many-arguments
     predictions: Dict[int, List[Detection]] | None,
     annotator: Annotator,
     pbar: tqdm,
+    notify_progress: Callable[[int], None] | None = None,
 ) -> Tuple[int, bool]:
     """
     Process a packet of video frames, encode the frames,
@@ -185,6 +186,8 @@ def process_packet(  # pylint: disable=too-many-arguments
             if packet is not None:
                 output_container.mux(packet)
                 pbar.update(1)
+                if notify_progress is not None:
+                    notify_progress(int((pbar.n / float(pbar.total)) * 100))
 
     if current_frame is None:
         return 0, True
@@ -200,6 +203,7 @@ def process_frame_ranges(  # pylint: disable=too-many-arguments
     output_stream: av.video.stream,
     predictions: Dict[int, List[Detection]] | None,
     annotator: Annotator,
+    notify_progress: Callable[[int], None] | None = None,
 ) -> None:
     """
     Process a list of frame ranges, seek to the appropriate timestamps,
@@ -233,6 +237,7 @@ def process_frame_ranges(  # pylint: disable=too-many-arguments
                     predictions,
                     annotator,
                     pbar,
+                    notify_progress,
                 )
                 if not continue_processing:
                     break
@@ -243,6 +248,7 @@ def cut_video(
     output_path: Path,
     frame_ranges: List[Tuple[int, int]],
     predictions: Dict[int, List[Detection]] | None = None,
+    notify_progress: Callable[[int], None] | None = None,
 ) -> None:
     """
     Cut a video into segments specified by a list of frame ranges,
@@ -287,6 +293,7 @@ def cut_video(
         output_stream,
         predictions,
         annotator,
+        notify_progress,
     )
 
     packet = output_stream.encode(None)
