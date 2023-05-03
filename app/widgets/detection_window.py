@@ -13,6 +13,7 @@ from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
+    QLabel,
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
@@ -35,8 +36,12 @@ ALLOWED_EXTENSIONS = (".mp4", ".m4a", ".avi", ".mkv", ".mov", ".wmv")
 class DetectionWorker(QThread):
     """Detection worker thread."""
 
-    update_progress = pyqtSignal(int)
+    update_task_progress = pyqtSignal(int)
+    update_task_format = pyqtSignal(str)
+    update_overall_progress = pyqtSignal(int)
+    set_video_count = pyqtSignal(int)
     add_log = pyqtSignal(str)
+
     input_folder_path: Path
     output_folder_path: Path
     model: BatchYolov8 | None
@@ -99,6 +104,9 @@ class DetectionWorker(QThread):
                 self.log("No videos found in the input folder")
                 return
 
+            self.set_video_count.emit(len(videos))
+            self.update_overall_progress.emit(0)
+
             for i, video in enumerate(videos):
                 self.log(f"Processing {i + 1}/{len(videos)} ({video})")
                 video_path = self.input_folder_path / video
@@ -109,6 +117,8 @@ class DetectionWorker(QThread):
                 # Delete the original video if the user has selected to do so
                 if not settings.keep_original:
                     video_path.unlink()
+
+                self.update_overall_progress.emit(i + 1)
 
             if settings.get_report:
                 try:
@@ -184,6 +194,8 @@ class DetectionWorker(QThread):
         # Update threshold
         self.model.conf_thres = settings.prediction_threshold / 100
 
+        self.update_task_progress.emit(0)
+        self.update_task_format.emit("Performing detection: %p%")
         frames_with_fish, tensors = detection.process_video(
             model=self.model,
             video_path=video_path,
@@ -191,7 +203,9 @@ class DetectionWorker(QThread):
             max_batches_to_queue=4,
             output_path=None,
             stop_event=self.stop_event,
-            notify_progress=lambda progress: self.update_progress.emit(int(progress)),
+            notify_progress=lambda progress: self.update_task_progress.emit(
+                int(progress)
+            ),
         )
 
         # If the stop event is set, stop processing and return
@@ -222,18 +236,36 @@ class DetectionWorker(QThread):
         if settings.box_around_fish:
             dets = self.tensors_to_predictions(tensors)
 
+        self.update_task_progress.emit(0)
+        self.update_task_format.emit("Cutting video: %p%")
+
         # Cut the video to the detected frames
         # TODO: implement the stop event for this function too
-        video_processor.cut_video(video_path, out_path, frame_ranges, dets)
+        video_processor.cut_video(
+            video_path,
+            out_path,
+            frame_ranges,
+            dets,
+            notify_progress=lambda progress: self.update_task_progress.emit(
+                int(progress)
+            ),
+        )
+        # Just show percentage at this point
+        self.update_task_format.emit("%p%")
+
         self.log(f"Saved processed video to {out_path}")
 
-        self.update_progress.emit(100)
+        # It will get set to 100 in cut_video, but we aren't actually done
+        self.update_task_progress.emit(99)
         data_manager.add_detection_data(video_path, frame_ranges)
+        self.update_task_progress.emit(100)
 
         return True
 
 
-class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
+class DetectionWindow(
+    QDialog
+):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Detection window widget."""
 
     def __init__(
@@ -258,16 +290,41 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
 
         self.setMinimumSize(600, 300)
 
-        # Add the progress bar.
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 100)
-        self.dialog_layout.addWidget(self.progress_bar)
+        # Create the label and set its text.
+        self.task_progress_label = QLabel("Task Progress:")
+        # Add the label to the layout.
+        self.dialog_layout.addWidget(self.task_progress_label)
+        # Create the progress bar.
+        self.task_progress_bar = QProgressBar()
+        self.task_progress_bar.setRange(0, 100)
+        # Add the progress bar to the layout.
+        self.dialog_layout.addWidget(self.task_progress_bar)
+
+        # Create the label and set its text.
+        label = QLabel("Overall Progress:")
+        # Add the label to the layout.
+        self.dialog_layout.addWidget(label)
+        # Create the overall progress bar.
+        self.overall_progress_bar = QProgressBar()
+        self.overall_progress_bar.setRange(0, 100)
+        # Set the format
+        self.overall_progress_bar.setFormat("%v / %m")
+        # Add the overall progress bar to the layout.
+        self.dialog_layout.addWidget(self.overall_progress_bar)
 
         self.setLayout(self.dialog_layout)
 
         self.worker = DetectionWorker(input_folder_path, output_folder_path)
-        self.worker.update_progress.connect(self.progress_bar.setValue)
+        # Connect the signals to the worker.
+        self.worker.update_task_progress.connect(self.task_progress_bar.setValue)
+        self.worker.update_task_format.connect(self.task_progress_bar.setFormat)
+        self.worker.update_overall_progress.connect(self.overall_progress_bar.setValue)
+        self.worker.set_video_count.connect(
+            lambda count: self.overall_progress_bar.setRange(0, count)
+        )
+
         self.worker.add_log.connect(self.output.appendPlainText)
+
         self.worker.finished.connect(self.worker_finished)
         self.worker.start()
 
@@ -313,6 +370,13 @@ class DetectionWindow(QDialog):  # pylint: disable=too-few-public-methods
         self.open_output_dir_button.show()
         self.close_button.show()
         self.stop_button.hide()
+
+        # Hide the task progress bar and label
+        self.task_progress_bar.hide()
+        self.task_progress_label.hide()
+
+        # Set the overall progress bar to finished
+        self.overall_progress_bar.setFormat("Finished")
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
         """Called when the window is closed."""
