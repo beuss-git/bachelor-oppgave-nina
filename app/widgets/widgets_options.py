@@ -146,13 +146,11 @@ class AdvancedOptions(QWidget):
         # Checks if the advanced options are open or not
         if self.options_open is False:
             # If not open, then it shows the advanced options
-            print("open options")
             self.advanced_options()
             self.options_open = True
 
         else:
             # If it is open, then the advanced options are removed from view
-            print("close options")
             self.clear_layout(self.advanced_layout)
             self.clear_layout(self.advanced_layout_horizontal_checkboxes)
             self.clear_layout(self.advanced_layout_horizontal_dropdown_spinbox)
