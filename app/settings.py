@@ -19,7 +19,7 @@ open_path: str = ""  # Path to open file
 save_path: str = ""  # Path to save file
 buffer_before: int = 0
 buffer_after: int = 0
-keep_original: bool = False
+keep_original: bool = True
 
 # Advanced settings
 get_report: bool = False

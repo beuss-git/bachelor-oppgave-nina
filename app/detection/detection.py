@@ -201,10 +201,13 @@ def process_video(
                 processed_frames,
                 frame_grabber.frame_count,
             )
-        logger.info(
-            "Average FPS: %s",
-            {fps_count / (processed_frames / frame_grabber.batch_size)},
-        )
+
+        # Will be 0 if stop_event is set before any frames are processed
+        if processed_frames > 0:
+            logger.info(
+                "Average FPS: %s",
+                {fps_count / (processed_frames / frame_grabber.batch_size)},
+            )
 
     return frames_with_fish, predictions_per_frame
 

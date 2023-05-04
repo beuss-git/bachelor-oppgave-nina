@@ -132,6 +132,7 @@ class DataManager:
                 sqlite_insert_query = """INSERT INTO video
                             (id, title, date, totaldetections, videolength, outputvideolength)
                             VALUES  (?, ?, ?, ?, ?, ?)"""
+                # TODO: guard if file deleted
                 data = (
                     str(video_id),
                     title,
