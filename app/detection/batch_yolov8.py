@@ -74,8 +74,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         self.augment = augment
         self.agnostic_nms = agnostic_nms
         self.classes = classes
-        # self.half = self.device.type != "cpu"
-        self.half = False
+        self.half = self.device.type != "cpu"
         if self.half:
             self.model.half()
         if self.device.type != "cpu":
