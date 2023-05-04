@@ -26,7 +26,7 @@ class Common:
 
     # default window size
     default_window_width: int = 700
-    default_window_height: int = 400
+    default_window_height: int = 440
 
     # Buffer time saved
     buffer_options = ["0", "1", "2", "3", "4", "5"]

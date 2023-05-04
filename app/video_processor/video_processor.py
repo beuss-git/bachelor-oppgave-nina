@@ -12,6 +12,7 @@ from PIL import __version__ as pil_version
 from tqdm import tqdm
 from ultralytics.yolo.utils.checks import check_font, check_version
 
+from app import settings
 from app.logger import get_logger
 from app.video_processor import Detection
 
@@ -274,14 +275,13 @@ def cut_video(
     video_stream.thread_type = "AUTO"
 
     output_container = av.open(str(output_path), mode="w")
-    codec_name = video_stream.codec_context.name
     fps = video_stream.average_rate.numerator / video_stream.average_rate.denominator
-    output_stream = output_container.add_stream(codec_name, str(fps))
+    output_stream = output_container.add_stream(
+        "libx264", str(fps), options={"crf": str(settings.video_crf)}
+    )
     output_stream.width = video_stream.codec_context.width
     output_stream.height = video_stream.codec_context.height
     output_stream.pix_fmt = video_stream.codec_context.pix_fmt
-
-    # frame_ranges = [(0, 10)]
 
     annotator = Annotator((output_stream.width, output_stream.height))
 

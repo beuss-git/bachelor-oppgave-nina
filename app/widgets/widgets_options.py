@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QSlider,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -214,6 +215,21 @@ More accurate means less predictions and less false positives."""
             SpinBox("Prediction threshold", 0, 100, prediction_tooltip),
         )
 
+        crf_slider = Slider(
+            "CRF",
+            0,
+            51,
+            settings.video_crf,
+            """Constant Rate Factor (CRF) is a quality control option for the H.264 codec.
+The CRF value chosen determines the video bitrate (quality). The available range is 0–51""",
+        )
+
+        def on_crf_slider_changed(value: int) -> None:
+            settings.video_crf = value
+
+        crf_slider.connect(on_crf_slider_changed)
+        self.advanced_layout.addWidget(crf_slider)
+
     def clear_layout(self, layout: QBoxLayout) -> None:
         """Removes all of the advanced options
 
@@ -275,6 +291,60 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
             function (Callable): the function to connect to
         """
         self.checkbox.toggled.connect(lambda: slot(self.checkbox.isChecked()))
+
+
+class Slider(QWidget):
+    """Class for Slider widget"""
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        msg: str,
+        min_val: int,
+        max_val: int,
+        default_value: int,
+        tooltip_text: str,
+    ) -> None:
+        QWidget.__init__(self)
+
+        # Create a vertical layout for the widget
+        layout = QVBoxLayout()
+
+        # Create a horizontal layout for the slider and the label showing the value
+        slider_layout = QHBoxLayout()
+
+        # Create the slider widget
+        self.slider = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider.setRange(min_val, max_val)
+        self.slider.setTickInterval(1)
+        self.slider.setFixedWidth(200)
+        self.slider.setSingleStep(1)
+        self.slider.setValue(default_value)
+        self.slider.setPageStep(1)
+
+        # Create the label showing the value and add it to the slider layout
+        self.label = QLabel(str(default_value), self)
+        slider_layout.addWidget(self.slider)
+        slider_layout.addWidget(self.label)
+
+        # Add the slider layout and the label with tooltip to the vertical layout
+        layout.addWidget(add_label(msg, tooltip_text))
+        layout.addLayout(slider_layout)
+
+        self.slider.valueChanged.connect(self.update_label)
+
+        self.setLayout(layout)
+
+    def update_label(self, value: int) -> None:
+        """Updates the label text when the slider value changes"""
+        self.label.setText(str(value))
+
+    def connect(self, slot: Callable[[int], None]) -> None:
+        """Connects the slider 'valueChanged' to a function
+
+        Args:
+            function (Callable): the function to connect to
+        """
+        self.slider.valueChanged.connect(lambda: slot(self.slider.value()))
 
 
 class SpinBox(QWidget):  # pylint: disable=too-few-public-methods
