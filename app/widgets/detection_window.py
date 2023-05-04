@@ -408,7 +408,7 @@ class DetectionWindow(
 
     def __add_stop_button(self) -> None:
         self.stop_button = QPushButton("Stop")
-        self.stop_button.clicked.connect(self.worker.stop)
+        self.stop_button.clicked.connect(self.__stop_button_clicked)
         self.dialog_layout.addWidget(self.stop_button)
 
     def __add_open_output_dir_button(self, output_folder_path: Path) -> None:
@@ -437,6 +437,11 @@ class DetectionWindow(
 
         self.close_button.clicked.connect(on_close)
         self.dialog_layout.addWidget(self.close_button)
+
+    def __stop_button_clicked(self) -> None:
+        """Called when the stop button is clicked."""
+        self.worker.stop()
+        self.stop_button.setEnabled(False)
 
     def worker_finished(self) -> None:
         """Called when the worker has finished."""
