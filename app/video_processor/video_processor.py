@@ -219,7 +219,8 @@ def process_frame_ranges(  # pylint: disable=too-many-arguments
         predictions (Dict[int, List[Detection]] | None): Optional detections for each frame.
     """
     with tqdm(
-        total=sum(end - start for start, end in frame_ranges), desc="Processing frames"
+        total=sum(end - start + 1 for start, end in frame_ranges),
+        desc="Processing frames",
     ) as pbar:
         for start, end in frame_ranges:
             timestamp = frame_to_timestamp(start, video_stream)
