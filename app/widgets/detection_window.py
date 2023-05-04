@@ -450,7 +450,10 @@ class DetectionWindow(
         self.task_progress_label.hide()
 
         # Set the overall progress bar to finished
-        self.overall_progress_bar.setFormat("Finished")
+        if self.worker.stop_event.is_set():
+            self.overall_progress_bar.setFormat("Stopped")
+        else:
+            self.overall_progress_bar.setFormat("Finished")
         self.update_time_prediction_label("Time left: N/A")
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # pylint: disable=C0103
