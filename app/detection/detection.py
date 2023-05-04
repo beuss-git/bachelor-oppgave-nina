@@ -184,8 +184,6 @@ def process_video(
                 # Update the frame count
                 frame_count += len(original_batch)
 
-                # if frame_count > 2000:
-                # break
                 if notify_progress is not None:
                     notify_progress(
                         int((processed_frames / frame_grabber.frame_count) * 100)

@@ -120,6 +120,16 @@ class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
     def __put_unprocessed_batch(
         self, batch_index: int, batch: List[np.ndarray[Any, Any]]
     ) -> bool:
+        """Attempts to put a batch of frames into the unprocessed batch queue.
+
+        Args:
+            batch_index (int): The index of the batch.
+            batch (List[np.ndarray[Any, Any]]): The batch of frames.
+
+        Returns:
+            bool: True if the batch was successfully put into the queue, False otherwise.
+        """
+
         def try_put_unprocessed_batch(
             batch_index: int, batch: List[np.ndarray[Any, Any]]
         ) -> PutState:
