@@ -209,16 +209,8 @@ class AdvancedOptions(QWidget):
 
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(batch_size_dd)
         prediction_tooltip = """How accurate the AI should be in its predictions,
-                less accurate means more predictions and possibility for false positives,
-                More accurate means less predictions and less false positives."""
-        # Split the string into individual lines
-        lines = prediction_tooltip.split("\n")
-
-        # Remove the leading whitespace from each line
-        lines = [line.lstrip() for line in lines]
-
-        # Join the lines back together into a single string
-        prediction_tooltip = "\n".join(lines)
+less accurate means more predictions and possibility for false positives,
+More accurate means less predictions and less false positives."""
 
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
             SpinBox("Prediction threshold", 0, 100, prediction_tooltip),
