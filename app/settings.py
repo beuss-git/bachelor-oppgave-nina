@@ -36,6 +36,8 @@ video_crf: int = 23
 
 max_detections: int = 100
 
+frame_buffer_seconds: int = 1
+
 # endregion
 
 # ----------------------------------------------------------------------------- #

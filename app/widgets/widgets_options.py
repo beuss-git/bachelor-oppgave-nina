@@ -263,6 +263,21 @@ Reducing this number will improve performance when there are a lot of fish in fr
         max_detections_spinbox.connect(on_max_detections_changed)
         self.advanced_layout_horizontal_3.addWidget(max_detections_spinbox)
 
+        frame_buffer_spinbox = SpinBox(
+            "Frame Buffer (s)(needs renaming)",
+            0,
+            10,
+            settings.frame_buffer_seconds,
+            "The allowed time of dead frames (frames without detections) between two frames"
+            + "with detections that will still be considered as one range.",
+        )
+
+        def on_frame_buffer_changed(value: int) -> None:
+            settings.frame_buffer_seconds = value
+
+        frame_buffer_spinbox.connect(on_frame_buffer_changed)
+        self.advanced_layout_horizontal_3.addWidget(frame_buffer_spinbox)
+
     def clear_layout(self, layout: QBoxLayout) -> None:
         """Removes all of the advanced options
 
