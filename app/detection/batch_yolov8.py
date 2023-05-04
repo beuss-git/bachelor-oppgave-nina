@@ -137,6 +137,7 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
         img0s: List[Any],
         imgs: torch.Tensor,
         max_objects: Optional[Dict[Any, Any]] = None,
+        max_detections: int = 300,
     ) -> List[Any]:
         """Predict on a batch of images.
 
@@ -158,7 +159,10 @@ class BatchYolov8:  # pylint: disable=too-many-instance-attributes
 
             # Run NMS
             preds = non_max_suppression(
-                inf_out, conf_thres=self.conf_thres, iou_thres=self.iou_thres
+                inf_out,
+                conf_thres=self.conf_thres,
+                iou_thres=self.iou_thres,
+                max_det=max_detections,
             )
 
         batch_output = []

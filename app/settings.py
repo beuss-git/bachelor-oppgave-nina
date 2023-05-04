@@ -34,6 +34,8 @@ box_around_fish: bool = False
 
 video_crf: int = 23
 
+max_detections: int = 100
+
 # endregion
 
 # ----------------------------------------------------------------------------- #
