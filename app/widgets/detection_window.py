@@ -320,7 +320,7 @@ class DetectionWorker(QThread):
             time_left = time_left_current_video + time_left_remaining_videos
 
             time_left_str = str(timedelta(seconds=int(time_left)))
-            self.update_time_prediction_sig.emit(f"Time left: {time_left_str}")
+            self.update_time_prediction_sig.emit(f"Total Time Left: {time_left_str}")
 
 
 class DetectionWindow(
@@ -403,7 +403,7 @@ class DetectionWindow(
 
     def __add_time_prediction_label(self) -> None:
         """Add the time prediction label to the layout."""
-        self.time_prediction_label = QLabel("Time left: N/A")
+        self.time_prediction_label = QLabel("Total Time Left: N/A")
         self.dialog_layout.addWidget(self.time_prediction_label)
 
     def __add_stop_button(self) -> None:
