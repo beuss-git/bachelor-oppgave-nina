@@ -24,7 +24,7 @@ class DataManager:
 
         try:
             # Creates a connection with the db file
-            self.sqlite_connection = sqlite3.connect("SQLite_Python.db")
+            self.sqlite_connection = sqlite3.connect("database.db")
             print("Successfully Connected to SQLite")
 
             table_exists = self.tables_check()
