@@ -4,7 +4,7 @@ import os
 from logging.handlers import TimedRotatingFileHandler
 
 LOGGER_NAME = "log"
-LOG_PATH = "app/log"
+LOG_PATH = "logs"
 
 
 def __create_file_handler(
