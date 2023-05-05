@@ -186,6 +186,11 @@ class DetectionWorker(QThread):
 
         return merged_ranges
 
+    def get_fps(self, video_path: Path) -> float:
+        """Get the FPS of a video."""
+        cap = cv2.VideoCapture(str(video_path))
+        return float(cap.get(cv2.CAP_PROP_FPS))
+
     def process_video(
         self,
         video_num: int,
@@ -236,7 +241,8 @@ class DetectionWorker(QThread):
 
         # Convert the detected frames to frame ranges to cut the video
         frame_ranges = detection.detected_frames_to_ranges(
-            frames_with_fish, frame_buffer=31
+            frames_with_fish,
+            frame_buffer=int(self.get_fps(video_path) * settings.frame_buffer_seconds),
         )
         print(f"Found {len(frame_ranges)} frame ranges with fish")
         self.add_log.emit(f"Found {len(frame_ranges)} frame ranges with fish")
@@ -408,7 +414,7 @@ class DetectionWindow(
 
     def __add_stop_button(self) -> None:
         self.stop_button = QPushButton("Stop")
-        self.stop_button.clicked.connect(self.worker.stop)
+        self.stop_button.clicked.connect(self.__stop_button_clicked)
         self.dialog_layout.addWidget(self.stop_button)
 
     def __add_open_output_dir_button(self, output_folder_path: Path) -> None:
@@ -437,6 +443,11 @@ class DetectionWindow(
 
         self.close_button.clicked.connect(on_close)
         self.dialog_layout.addWidget(self.close_button)
+
+    def __stop_button_clicked(self) -> None:
+        """Called when the stop button is clicked."""
+        self.worker.stop()
+        self.stop_button.setEnabled(False)
 
     def worker_finished(self) -> None:
         """Called when the worker has finished."""

@@ -12,6 +12,7 @@ from PIL import __version__ as pil_version
 from tqdm import tqdm
 from ultralytics.yolo.utils.checks import check_font, check_version
 
+from app import settings
 from app.logger import get_logger
 from app.video_processor import Detection
 
@@ -100,6 +101,7 @@ class Annotator:  # pylint: disable=too-few-public-methods
         return np.asarray(image)
 
 
+# Thanks to https://github.com/PyAV-Org/PyAV/blob/main/tests/test_seek.py
 def frame_to_timestamp(frame: int, video_stream: av.video.stream) -> int:
     """
     Convert a frame number to a timestamp using the time base and frame rate of a video stream.
@@ -111,7 +113,14 @@ def frame_to_timestamp(frame: int, video_stream: av.video.stream) -> int:
     Returns:
         int: The timestamp in microseconds.
     """
-    return int((frame * video_stream.time_base) / video_stream.average_rate)
+
+    time_base = float(video_stream.time_base)
+    rate = float(video_stream.average_rate)
+
+    target_sec = float(frame) * 1.0 / rate
+    timestamp = target_sec / time_base + video_stream.start_time
+
+    return int(round(timestamp))
 
 
 def timestamp_to_frame(timestamp: float, video_stream: av.video.stream) -> int:
@@ -126,9 +135,11 @@ def timestamp_to_frame(timestamp: float, video_stream: av.video.stream) -> int:
         int: The frame number.
     """
     return int(
-        (timestamp - video_stream.start_time)
-        * float(video_stream.time_base)
-        * float(video_stream.average_rate)
+        round(
+            (timestamp - video_stream.start_time)
+            * float(video_stream.time_base)
+            * float(video_stream.average_rate)
+        )
     )
 
 
@@ -144,7 +155,7 @@ def process_packet(  # pylint: disable=too-many-arguments
     annotator: Annotator,
     pbar: tqdm,
     notify_progress: Callable[[int], None] | None = None,
-) -> Tuple[int, bool]:
+) -> Tuple[int | None, bool]:
     """
     Process a packet of video frames, encode the frames,
     and mux the resulting packets into an output container.
@@ -167,6 +178,9 @@ def process_packet(  # pylint: disable=too-many-arguments
     for frame in packet.decode():
         if current_frame is None:
             current_frame = timestamp_to_frame(frame.pts, video_stream)
+            assert (
+                current_frame - start <= 0
+            ), f"Delta: {current_frame - start}, probably seeked past start frame"
         else:
             current_frame += 1
 
@@ -190,7 +204,7 @@ def process_packet(  # pylint: disable=too-many-arguments
                     notify_progress(int((pbar.n / float(pbar.total)) * 100))
 
     if current_frame is None:
-        return 0, True
+        return None, True
 
     return int(current_frame), True
 
@@ -218,11 +232,16 @@ def process_frame_ranges(  # pylint: disable=too-many-arguments
         predictions (Dict[int, List[Detection]] | None): Optional detections for each frame.
     """
     with tqdm(
-        total=sum(end - start for start, end in frame_ranges), desc="Processing frames"
+        total=sum(end - start + 1 for start, end in frame_ranges),
+        desc="Processing frames",
     ) as pbar:
         for start, end in frame_ranges:
             timestamp = frame_to_timestamp(start, video_stream)
-            input_container.seek(timestamp)
+            # Verify that the timestamp is correct
+            assert timestamp_to_frame(timestamp, video_stream) == start
+            input_container.seek(
+                int(timestamp), any_frame=False, backward=True, stream=video_stream
+            )
 
             current_frame = None
             for packet in input_container.demux(video_stream):
@@ -274,14 +293,13 @@ def cut_video(
     video_stream.thread_type = "AUTO"
 
     output_container = av.open(str(output_path), mode="w")
-    codec_name = video_stream.codec_context.name
     fps = video_stream.average_rate.numerator / video_stream.average_rate.denominator
-    output_stream = output_container.add_stream(codec_name, str(fps))
+    output_stream = output_container.add_stream(
+        "libx264", str(fps), options={"crf": str(settings.video_crf)}
+    )
     output_stream.width = video_stream.codec_context.width
     output_stream.height = video_stream.codec_context.height
     output_stream.pix_fmt = video_stream.codec_context.pix_fmt
-
-    # frame_ranges = [(0, 10)]
 
     annotator = Annotator((output_stream.width, output_stream.height))
 

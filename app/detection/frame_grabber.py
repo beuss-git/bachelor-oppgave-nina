@@ -3,9 +3,10 @@
 import math
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from enum import Enum
 from multiprocessing import cpu_count
 from pathlib import Path
-from queue import Empty, PriorityQueue
+from queue import Empty, Full, PriorityQueue
 from threading import Event, Thread
 from types import TracebackType
 from typing import Any, List, Optional, Tuple, Type
@@ -31,6 +32,14 @@ class BatchWrapper:
     def __lt__(self, other: "BatchWrapper") -> bool:
         """Less than operator for sorting batches."""
         return self.index < other.index
+
+
+class PutState(Enum):
+    """Enum for the put state of the unprocessed batch queue."""
+
+    EXIT = 0
+    SUCCESS = 1
+    FULL = 2
 
 
 @dataclass
@@ -108,23 +117,64 @@ class ThreadedFrameGrabber:  # pylint: disable=too-many-instance-attributes
             return frame
         return None
 
+    def __put_unprocessed_batch(
+        self, batch_index: int, batch: List[np.ndarray[Any, Any]]
+    ) -> bool:
+        """Attempts to put a batch of frames into the unprocessed batch queue.
+
+        Args:
+            batch_index (int): The index of the batch.
+            batch (List[np.ndarray[Any, Any]]): The batch of frames.
+
+        Returns:
+            bool: True if the batch was successfully put into the queue, False otherwise.
+        """
+
+        def try_put_unprocessed_batch(
+            batch_index: int, batch: List[np.ndarray[Any, Any]]
+        ) -> PutState:
+            """Attempts to put a batch of frames into the unprocessed batch queue."""
+            try:
+                self.unprocessed_batch_queue.put((batch_index, batch), timeout=1)
+            except Full:
+                if self.shutdown_flag.is_set():
+                    return PutState.EXIT
+                return PutState.FULL
+            return PutState.SUCCESS
+
+        while True:
+            put_state = try_put_unprocessed_batch(batch_index, batch)
+            match put_state:
+                case PutState.SUCCESS:
+                    break
+                case PutState.EXIT:
+                    return False
+                case PutState.FULL:
+                    continue
+                case _:
+                    raise RuntimeError("Invalid put state")
+        return True
+
     def batch_loader(self) -> None:
         """Loadds batches of frames into the unprocessed batch queue"""
         batch: List[np.ndarray[Any, Any]] = []
         batch_index = 0
         while not self.shutdown_flag.is_set():
             frame: np.ndarray[Any, Any] | None = self.read_next_frame()
-            ret = frame is not None
+            frame_available = frame is not None
 
-            if ret and frame is not None:
+            if frame_available and frame is not None:
                 batch.append(frame)
                 if len(batch) == self.batch_size:
-                    self.unprocessed_batch_queue.put((batch_index, batch))
+                    if not self.__put_unprocessed_batch(batch_index, batch):
+                        break
+
                     batch_index += 1
                     batch = []
             else:
                 if len(batch) > 0:
-                    self.unprocessed_batch_queue.put((batch_index, batch))
+                    if not self.__put_unprocessed_batch(batch_index, batch):
+                        break
                 break
 
         logger.debug("Finished loading batches")

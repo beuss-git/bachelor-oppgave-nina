@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QSlider,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -113,6 +114,7 @@ class AdvancedOptions(QWidget):
         self.advanced_layout = QVBoxLayout()
         self.advanced_layout_horizontal_checkboxes = QHBoxLayout()
         self.advanced_layout_horizontal_dropdown_spinbox = QHBoxLayout()
+        self.advanced_layout_horizontal_3 = QHBoxLayout()
 
         self.setLayout(layout)
 
@@ -138,6 +140,7 @@ class AdvancedOptions(QWidget):
         layout.addWidget(self.label)
         layout.addLayout(self.advanced_layout_horizontal_checkboxes)
         layout.addLayout(self.advanced_layout_horizontal_dropdown_spinbox)
+        layout.addLayout(self.advanced_layout_horizontal_3)
         layout.addLayout(self.advanced_layout)
 
     def show_options(self) -> None:
@@ -146,16 +149,15 @@ class AdvancedOptions(QWidget):
         # Checks if the advanced options are open or not
         if self.options_open is False:
             # If not open, then it shows the advanced options
-            print("open options")
             self.advanced_options()
             self.options_open = True
 
         else:
             # If it is open, then the advanced options are removed from view
-            print("close options")
             self.clear_layout(self.advanced_layout)
             self.clear_layout(self.advanced_layout_horizontal_checkboxes)
             self.clear_layout(self.advanced_layout_horizontal_dropdown_spinbox)
+            self.clear_layout(self.advanced_layout_horizontal_3)
             self.options_open = False
 
     def advanced_options(self) -> None:
@@ -209,20 +211,72 @@ class AdvancedOptions(QWidget):
 
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(batch_size_dd)
         prediction_tooltip = """How accurate the AI should be in its predictions,
-                less accurate means more predictions and possibility for false positives,
-                More accurate means less predictions and less false positives."""
-        # Split the string into individual lines
-        lines = prediction_tooltip.split("\n")
+less accurate means more predictions and possibility for false positives,
+More accurate means less predictions and less false positives."""
 
-        # Remove the leading whitespace from each line
-        lines = [line.lstrip() for line in lines]
-
-        # Join the lines back together into a single string
-        prediction_tooltip = "\n".join(lines)
-
-        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(
-            SpinBox("Prediction threshold", 0, 100, prediction_tooltip),
+        threshold_spinbox = SpinBox(
+            "Prediction threshold",
+            0,
+            100,
+            settings.prediction_threshold,
+            prediction_tooltip,
         )
+        threshold_spinbox.set_suffix("%")
+
+        def on_threshold_changed(value: int) -> None:
+            settings.prediction_threshold = value
+
+        threshold_spinbox.connect(on_threshold_changed)
+        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(threshold_spinbox)
+
+        self.__populate_advanced_layout_horizontal_3()
+
+    def __populate_advanced_layout_horizontal_3(self) -> None:
+        crf_slider = Slider(
+            "CRF",
+            0,
+            51,
+            settings.video_crf,
+            """Constant Rate Factor (CRF) is a quality control option for the H.264 codec.
+The CRF value chosen determines the video bitrate (quality).
+The available range is 0–51 (0 is lossless, 51 is worst quality possible, default is 23)""",
+        )
+
+        def on_crf_slider_changed(value: int) -> None:
+            settings.video_crf = value
+
+        crf_slider.connect(on_crf_slider_changed)
+        self.advanced_layout_horizontal_3.addWidget(crf_slider)
+
+        max_detections_spinbox = SpinBox(
+            "Max detections",
+            1,
+            300,
+            settings.max_detections,
+            """The maximum number of detections to display per frame.
+Reducing this number will improve performance when there are a lot of fish in frames.""",
+        )
+
+        def on_max_detections_changed(value: int) -> None:
+            settings.max_detections = value
+
+        max_detections_spinbox.connect(on_max_detections_changed)
+        self.advanced_layout_horizontal_3.addWidget(max_detections_spinbox)
+
+        frame_buffer_spinbox = SpinBox(
+            "Frame Buffer (s)(needs renaming)",
+            0,
+            10,
+            settings.frame_buffer_seconds,
+            "The allowed time of dead frames (frames without detections) between two frames"
+            + "with detections that will still be considered as one range.",
+        )
+
+        def on_frame_buffer_changed(value: int) -> None:
+            settings.frame_buffer_seconds = value
+
+        frame_buffer_spinbox.connect(on_frame_buffer_changed)
+        self.advanced_layout_horizontal_3.addWidget(frame_buffer_spinbox)
 
     def clear_layout(self, layout: QBoxLayout) -> None:
         """Removes all of the advanced options
@@ -287,10 +341,71 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
         self.checkbox.toggled.connect(lambda: slot(self.checkbox.isChecked()))
 
 
+class Slider(QWidget):
+    """Class for Slider widget"""
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        msg: str,
+        min_val: int,
+        max_val: int,
+        default_value: int,
+        tooltip_text: str,
+    ) -> None:
+        QWidget.__init__(self)
+
+        # Create a vertical layout for the widget
+        layout = QVBoxLayout()
+
+        # Create a horizontal layout for the slider and the label showing the value
+        slider_layout = QHBoxLayout()
+
+        # Create the slider widget
+        self.slider = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider.setRange(min_val, max_val)
+        self.slider.setTickInterval(1)
+        self.slider.setFixedWidth(200)
+        self.slider.setSingleStep(1)
+        self.slider.setValue(default_value)
+        self.slider.setPageStep(1)
+
+        # Create the label showing the value and add it to the slider layout
+        self.label = QLabel(str(default_value), self)
+        slider_layout.addWidget(self.slider)
+        slider_layout.addWidget(self.label)
+
+        # Add the slider layout and the label with tooltip to the vertical layout
+        layout.addWidget(add_label(msg, tooltip_text))
+        layout.addLayout(slider_layout)
+
+        self.slider.valueChanged.connect(self.update_label)
+
+        self.setLayout(layout)
+
+    def update_label(self, value: int) -> None:
+        """Updates the label text when the slider value changes"""
+        self.label.setText(str(value))
+
+    def connect(self, slot: Callable[[int], None]) -> None:
+        """Connects the slider 'valueChanged' to a function
+
+        Args:
+            function (Callable): the function to connect to
+        """
+        self.slider.valueChanged.connect(lambda: slot(self.slider.value()))
+
+
 class SpinBox(QWidget):  # pylint: disable=too-few-public-methods
     """Class for SpinBox widget"""
 
-    def __init__(self, msg: str, min_val: int, max_val: int, tooltip_text: str) -> None:
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        msg: str,
+        min_val: int,
+        max_val: int,
+        default_value: int,
+        tooltip_text: str,
+    ) -> None:
         """Sets up a spinbox for 'batch size' option
 
         Args:
@@ -312,22 +427,30 @@ class SpinBox(QWidget):  # pylint: disable=too-few-public-methods
         self.spinbox.setRange(min_val, max_val)
 
         self.spinbox.setFixedWidth(50)
-        # self.spinbox.setMinimum(min_val)
-        # self.spinbox.setMaximum(max_val)
-        self.spinbox.setSuffix("%")
-        self.spinbox.setValue(95)
 
-        def value_changed(value: int) -> None:
-            settings.prediction_threshold = value
-
-        self.spinbox.setValue(settings.prediction_threshold)
-        self.spinbox.valueChanged.connect(value_changed)
+        self.spinbox.setValue(default_value)
 
         # Adds widgets to layout
         layout.addWidget(self.spinbox)
         layout.addWidget(add_label(msg, tooltip_text))
 
         self.setLayout(layout)
+
+    def set_suffix(self, suffix: str) -> None:
+        """Sets the suffix of the spinbox
+
+        Args:
+            suffix (str): the suffix to set the spinbox to
+        """
+        self.spinbox.setSuffix(suffix)
+
+    def connect(self, slot: Callable[[int], None]) -> None:
+        """Connects the spinbox 'valueChanged' to a function
+
+        Args:
+            function (Callable): the function to connect to
+        """
+        self.spinbox.valueChanged.connect(lambda: slot(self.spinbox.value()))
 
 
 def add_label(title: str, tooltip_text: str) -> QLabel:

@@ -31,6 +31,13 @@ batch_size: int = 8
 prediction_threshold: int = 50
 
 box_around_fish: bool = False
+
+video_crf: int = 23
+
+max_detections: int = 100
+
+frame_buffer_seconds: int = 1
+
 # endregion
 
 # ----------------------------------------------------------------------------- #

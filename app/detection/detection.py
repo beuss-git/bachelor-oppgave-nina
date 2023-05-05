@@ -9,6 +9,7 @@ import torch
 from tqdm import tqdm
 from ultralytics.yolo.utils.plotting import Annotator
 
+from app import settings
 from app.logger import get_logger
 
 from .batch_yolov8 import BatchYolov8
@@ -84,7 +85,9 @@ def __process_batch(
     """
 
     start_time = time.time()
-    predictions = model.predict_batch(original_batch, processed_batch)
+    predictions = model.predict_batch(
+        original_batch, processed_batch, max_detections=settings.max_detections
+    )
     end_time = time.time()
     delta = end_time - start_time
     return predictions, delta
@@ -181,8 +184,6 @@ def process_video(
                 # Update the frame count
                 frame_count += len(original_batch)
 
-                # if frame_count > 2000:
-                # break
                 if notify_progress is not None:
                     notify_progress(
                         int((processed_frames / frame_grabber.frame_count) * 100)
