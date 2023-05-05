@@ -9,7 +9,7 @@ from pathlib import Path
 from types import TracebackType
 from typing import Type
 
-import ffmpeg
+import cv2
 
 from app.logger import get_logger
 
@@ -188,24 +188,24 @@ class DataManager:
             print("Error while checking for sqlite table", error)
             return False
 
-    def get_video_duration(self, path: Path | None) -> str:
-        """Returns the duration of a video based on metadata
+    def get_video_duration(self, path: Path) -> str:
+        """Get the duration of a video file as a string in the format HH:MM:SS.
 
         Args:
-            path (Path | None): path to the video
+            path (Path): path to the video file.
 
         Returns:
-            str: string with duration in the format HH:MM:SS
+            str: the duration of the video file in the format HH:MM:SS.
         """
-
-        duration = "00:00:00"
-        if path is not None:
-            # gets videolength from metadata
-            metadata = self.get_metadata(path)
-            if metadata is not None:
-                duration = str(datetime.timedelta(seconds=float(metadata["duration"])))
-                # .strftime("%H:%M:%S")
-        return duration
+        try:
+            cap = cv2.VideoCapture(str(path))
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            duration = frame_count / fps
+            return str(datetime.timedelta(seconds=duration))
+        except cv2.error as error:
+            logger.error("Error occurred: %s", error)
+            return "00:00:00"
 
     def add_detection_data(
         self, video_id: Path, detections: typing.List[typing.Tuple[int, int]]
@@ -363,23 +363,10 @@ class DataManager:
             print("Failed to read data from sqlite table", error)
             return []
 
-    def get_metadata(self, path: Path) -> typing.Any:
-        """Gets the video's metadata
-
-        Args:
-            path (Path): path to the video
-
-        Returns:
-            typing.Any: A variable with all of the video's metadata
-        """
-        try:
-            file_metadata = ffmpeg.probe(str(path))
-
-            return file_metadata["format"]
-
-        except ffmpeg.Error as error:
-            logger.error("Error occured: %s", error.stderr.decode("utf8"))
-            return None
+    def get_framerate(self, video_path: Path) -> float:
+        """Get the FPS of a video."""
+        cap = cv2.VideoCapture(str(video_path))
+        return float(cap.get(cv2.CAP_PROP_FPS))
 
     def get_timestamps(
         self, path: Path, ranges: typing.List[typing.Tuple[int, int]]
@@ -397,15 +384,7 @@ class DataManager:
                                                  timestamps
         """
         try:
-            # probes for frame rate in video metadata
-            file_metadata = ffmpeg.probe(str(path), select_streams="v")
-            frame_rate: str = file_metadata["streams"][0]["r_frame_rate"]
-
-            # parcing metadata from str to float
-            temp = frame_rate.split("/")
-            first = int(temp[0])
-            second = int(temp[1])
-            framerate = first / second
+            framerate = self.get_framerate(path)
 
             # iterated through the frame ranges to convert into timestamps
             timestamps: typing.List[typing.Tuple[str, str]] = []
