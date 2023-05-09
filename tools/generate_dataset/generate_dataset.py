@@ -19,11 +19,15 @@ import yaml
 from tqdm import tqdm
 
 CVAT_EXPORTS_FOLDER = Path(r"D:\dataset_temp\cvat_exports")
-DATASET_FOLDER = Path(r"D:\dataset_temp\generated_test")
+DATASET_FOLDER = Path(r"D:\dataset_temp\generated_with_oreskyt")
 SOURCE_VIDEO_FOLDERS = [
     Path(r"X:\Myggbukta 2022"),
     Path(r"X:\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU"),
 ]
+MANUAL_BACKGROUND_IMAGES = [
+    "backgrounds",
+    "backgrounds_2",
+]  # The images in the backgrounds folder are already validated
 BACKGROUND_IMAGE_PERCENTAGE = 0.1
 TRAIN_SPLIT = 0.8
 PNG_QUALITY = 3  # 0-9 where 0 is the best quality
@@ -57,7 +61,6 @@ def get_video_filename(annotation_xml: Path) -> str:
 def extract_annotations(
     cvat_exports_folder: Path, output_folder: Path, processed_counter: mp.Value
 ) -> None:
-
     # NOTE: We do this because background images are randomly selected and we
     #       don't want to add more and more background images to the dataset if run multiple times
     #       also other parameters and the dataset itself might have changed.
@@ -72,7 +75,6 @@ def extract_annotations(
     def process_zip_file(
         zip_filepath: Path, id: int, total: int, processed_counter: mp.Value
     ) -> None:
-
         try:
             with zipfile.ZipFile(zip_filepath, "r") as zip_file:
                 zip_file.extract(
@@ -334,6 +336,64 @@ def generate_yolo_dataset(
     extract_frames(video_path, background_frames)
 
 
+def get_background_images(images: List[Path]) -> List[Path]:
+    # Count the number of background frames by counting the number of empty annotation files and images without annotations
+    background_images = []
+    for image in images:
+        if image.parent.name in MANUAL_BACKGROUND_IMAGES:
+            continue
+        annotation_file = image.with_suffix(".txt")
+        if not annotation_file.exists() or annotation_file.stat().st_size == 0:
+            background_images.append(image)
+    return background_images
+
+
+def get_manual_background_images(images: List[Path]) -> List[Path]:
+    manual_background_images = []
+    for image in images:
+        if image.parent.name in MANUAL_BACKGROUND_IMAGES:
+            manual_background_images.append(image)
+    return manual_background_images
+
+
+def adjust_background_images(images: List[Path]) -> List[Path]:
+    automated_background_images: List[Path] = get_background_images(images)
+
+    manual_background_images: List[Path] = get_manual_background_images(images)
+
+    # Remove all background images from the list of images so we don't use them twice
+    images = (
+        set(images) - set(automated_background_images) - set(manual_background_images)
+    )
+
+    # Determine the number of manual background images to use
+    num_manual_background_images = int(
+        BACKGROUND_IMAGE_PERCENTAGE * (len(images) + len(manual_background_images))
+    )
+
+    if num_manual_background_images > len(manual_background_images):
+        print("WARNING: not enough manual background images")
+
+    num_manual_background_images = min(
+        num_manual_background_images, len(manual_background_images)
+    )
+
+    # Shuffle the manual background images
+    random.shuffle(manual_background_images)
+
+    # Use the first n_manual_background_images images
+    manual_background_images = manual_background_images[:num_manual_background_images]
+
+    # Add the manual background images to the set of images
+    images = list(images) + manual_background_images
+
+    print(
+        f"Percantage of background images: {len(manual_background_images) / len(images):.2f}"
+    )
+
+    return list(images)
+
+
 def split_train_val(dataset_path: Path, train_split: float) -> None:
     all_images: List[Path] = []
 
@@ -348,8 +408,11 @@ def split_train_val(dataset_path: Path, train_split: float) -> None:
             # images = [img.relative_to(dataset_path) for img in images]
             all_images.extend(images)
 
+    all_images = adjust_background_images(all_images)
+
     # Shuffle the images and split them into train and val sets
     random.shuffle(all_images)
+
     train_size = int(len(all_images) * train_split)
 
     print(f"Total images: {len(all_images)}")
@@ -440,9 +503,9 @@ if __name__ == "__main__":
     # generate_obj_files(DATASET_FOLDER)
 
     # Split the downloaded yolo dataset into train and val
-    split_train_val(Path(r"D:\dataset_temp\yolo_updated_with_images"), TRAIN_SPLIT)
-    merge_datasets(
-        DATASET_FOLDER,  # Path(r"C:\Users\benja\Documents\datasets\nina_yolo_new"),
-        Path(r"D:\dataset_temp\yolo_updated_with_images"),
-        output_folder=Path(r"D:\dataset_temp\spliced"),
-    )
+    # split_train_val(Path(r"D:\dataset_temp\yolo_updated_with_images"), TRAIN_SPLIT)
+    # merge_datasets(
+    # DATASET_FOLDER,  # Path(r"C:\Users\benja\Documents\datasets\nina_yolo_new"),
+    # Path(r"D:\dataset_temp\yolo_updated_with_images"),
+    ##output_folder=Path(r"D:\dataset_temp\spliced"),
+    # )
