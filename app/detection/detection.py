@@ -95,7 +95,7 @@ def __process_batch(
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
-def process_video(
+def process_video(  # pylint:disable=too-many-branches
     model: BatchYolov8,
     video_path: Path,
     batch_size: int,
@@ -103,6 +103,7 @@ def process_video(
     output_path: Path | None,
     stop_event: threading.Event,
     notify_progress: Callable[[int], None] | None = None,
+    end_frame: int | None = None,
 ) -> Tuple[List[int], List[torch.Tensor]]:
     """Runs inference on a video.
     And returns a list of frames containing fish and a list of predictions for each frame.
@@ -125,6 +126,8 @@ def process_video(
         video_path=video_path,
         batch_size=batch_size,
     ) as frame_grabber:
+        if end_frame:
+            frame_grabber.frame_count = min(end_frame, frame_grabber.frame_count)
         if output_path is not None:
             vid_cap = frame_grabber.capture
             video_writer = __create_video_writer(
