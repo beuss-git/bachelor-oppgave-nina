@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
 )
 
 from app import settings
+from app.common import Common
 from app.data_manager.data_manager import DataManager
 from app.detection import detection
 from app.detection.batch_yolov8 import BatchYolov8
@@ -70,9 +71,9 @@ class DetectionWorker(QThread):
         """Run the detection."""
 
         if self.model is None:
-            self.log("Initializing the model...")
+            self.log(f"Initializing the model using {settings.weights}...")
             self.model = BatchYolov8(
-                Path(r"data/models/v8s-640-classes-augmented-backgrounds.pt"),
+                Common.weights_folder / settings.weights,
                 "cuda:0",
             )
         stream_target = io.StringIO()
