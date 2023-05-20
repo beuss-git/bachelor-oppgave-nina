@@ -1,124 +1,22 @@
 {
-    "videos": [
+  "videos": [
+    {
+      "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-06-01_15-58-09]-001.mp4",
+      "ranges": [
         {
-            "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\27.05.2020 - 28.05.2020\\File1-[2020-05-26_09-26-43]-049.mp4",
-            "ranges": [
-                {
-                    "start": 22,
-                    "end": 25,
-                    "seconds": true
-                },
-                {
-                    "start": 32,
-                    "end": 42,
-                    "seconds": true
-                },
-                {
-                    "start": 49,
-                    "end": 56,
-                    "seconds": true
-                },
-                {
-                    "start": 64,
-                    "end": 70,
-                    "seconds": true
-                },
-                {
-                    "start": 78,
-                    "end": 78.5,
-                    "seconds": true
-                },
-                {
-                    "start": 100,
-                    "end": 120,
-                    "seconds": true
-                }
-            ],
-            "video_end": 3000
+          "start": 3144,
+          "end": 3424
         },
         {
-            "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-06-08_10-49-42]- 09.06.2020 kl 1228-000.mp4",
-            "ranges": [
-                {
-                    "start": 53,
-                    "end": 54,
-                    "seconds": true
-                }
-            ],
-            "video_end": 2100
+          "start": 6055,
+          "end": 6370
         },
         {
-            "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-05-27_11-18-41]-019.mp4",
-            "ranges": [
-                {
-                    "start": 0,
-                    "end": 14,
-                    "seconds": true
-                },
-                {
-                    "start": 18,
-                    "end": 20,
-                    "seconds": true
-                },
-                {
-                    "start": 23,
-                    "end": 29,
-                    "seconds": true
-                },
-                {
-                    "start": 31,
-                    "end": 35,
-                    "seconds": true
-                },
-                {
-                    "start": 57,
-                    "end": 120,
-                    "seconds": true
-                },
-                {
-                    "start": 134,
-                    "end": 150,
-                    "seconds": true
-                }
-            ],
-            "video_end": 3750
-        },
-        {
-            "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-05-27_11-18-41]- 28.05.2020 kl ca1100-000.mp4",
-            "ranges": [
-                {
-                    "start": 0,
-                    "end": 44,
-                    "seconds": false
-                }
-            ],
-            "video_end": 2000
-        },
-        {
-            "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-05-27_11-18-41]-004.mp4",
-            "ranges": [
-                {
-                    "start": 14,
-                    "end": 19,
-                    "seconds": true
-                }
-            ],
-            "video_end": 2000
-        },
-        {
-            "path": "C:\\Users\\benja\\Pictures\\myggbuktav2.mp4",
-            "ranges": [
-                {
-                    "start": 0,
-                    "end": 9,
-                    "seconds": true
-                },
-                {
-                    "start": 30,
-                    "end": 45,
-                    "seconds": true
-                }
-            ]
+          "start": 7390,
+          "end": 7460
         }
-    ]
+      ],
+      "video_end": 8000
+    }
+  ]
 }

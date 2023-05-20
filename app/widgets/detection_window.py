@@ -133,8 +133,9 @@ class DetectionWorker(QThread):
                 except PermissionError:
                     self.log("Could not write report. Please close the report file.")
 
+    @staticmethod
     def tensors_to_predictions(
-        self, tensors: List[torch.Tensor]
+        tensors: List[torch.Tensor],
     ) -> Dict[int, List[Detection]]:
         """Convert the tensors to a dictionary of frame number to detections."""
         detections: Dict[int, List[Detection]] = {}
@@ -258,7 +259,7 @@ class DetectionWorker(QThread):
 
         dets = None
         if settings.box_around_fish:
-            dets = self.tensors_to_predictions(tensors)
+            dets = DetectionWorker.tensors_to_predictions(tensors)
 
         self.update_task_progress.emit(0)
         self.update_task_format.emit("Cutting video: %p%")

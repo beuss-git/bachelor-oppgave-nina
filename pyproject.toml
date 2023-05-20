@@ -23,6 +23,7 @@ poethepoet = "^0.18.1"
 xlsxwriter = "^3.1.0"
 av = "^10.0.0"
 scikit-learn = "^1.2.2"
+adjusttext = "^0.8"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.0.0"
