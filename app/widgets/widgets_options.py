@@ -163,7 +163,7 @@ class AdvancedOptions(QWidget):
     def advanced_options(self) -> None:
         """Sets up the advanced options"""
 
-        get_report_cb = Checkbox("Get report", "Whether to get a report or not")
+        get_report_cb = Checkbox("Get Report", "Whether to get a report or not")
         get_report_cb.set_check_state(settings.get_report)
 
         def on_get_report_changed(state: bool) -> None:
@@ -173,8 +173,9 @@ class AdvancedOptions(QWidget):
         self.advanced_layout_horizontal_checkboxes.addWidget(get_report_cb)
 
         box_around_fish_cb = Checkbox(
-            "Box around fish detected",
-            "If you want prediction boxes around fish and the probability",
+            "Box Around Fish Detected",
+            "Will place a box around the fish detected in the video "
+            + "including the confidence level and label",
         )
         box_around_fish_cb.set_check_state(settings.box_around_fish)
 
@@ -185,7 +186,7 @@ class AdvancedOptions(QWidget):
         self.advanced_layout_horizontal_checkboxes.addWidget(box_around_fish_cb)
 
         report_format_dd = DropDownWidget(
-            "Report format", Common.formats, "What format the report should be in"
+            "Report Format", Common.formats, "What format the report should be in"
         )
         report_format_dd.set_index(Common.formats.index(settings.report_format))
 
@@ -210,12 +211,34 @@ class AdvancedOptions(QWidget):
         batch_size_dd.connect(on_batch_size_changed)
 
         self.advanced_layout_horizontal_dropdown_spinbox.addWidget(batch_size_dd)
-        prediction_tooltip = """How accurate the AI should be in its predictions,
-less accurate means more predictions and possibility for false positives,
-More accurate means less predictions and less false positives."""
+        prediction_tooltip = (
+            "The prediction thres"
+            "hold determines the "
+            "minimum confidence l"
+            "evel required for a "
+            "prediction to be con"
+            "sidered valid.\r\n"
+            "A higher threshold m"
+            "eans that only predi"
+            "ctions with a high c"
+            "onfidence level will"
+            " be accepted, reduci"
+            "ng the number of pre"
+            "dictions and potenti"
+            "al false positives."
+            "\r\n"
+            "A lower threshold in"
+            "cludes predictions w"
+            "ith lower confidence"
+            " levels, resulting i"
+            "n more predictions b"
+            "ut also a possibilit"
+            "y of more false posi"
+            "tives."
+        )
 
         threshold_spinbox = SpinBox(
-            "Prediction threshold",
+            "Prediction Threshold",
             0,
             100,
             settings.prediction_threshold,
@@ -238,7 +261,7 @@ More accurate means less predictions and less false positives."""
             51,
             settings.video_crf,
             """Constant Rate Factor (CRF) is a quality control option for the H.264 codec.
-The CRF value chosen determines the video bitrate (quality).
+The CRF value chosen determines the output video bitrate (quality).
 The available range is 0–51 (0 is lossless, 51 is worst quality possible, default is 23)""",
         )
 
@@ -249,12 +272,12 @@ The available range is 0–51 (0 is lossless, 51 is worst quality possible, defa
         self.advanced_layout_horizontal_3.addWidget(crf_slider)
 
         max_detections_spinbox = SpinBox(
-            "Max detections",
+            "Max Detections",
             1,
             300,
             settings.max_detections,
-            """The maximum number of detections to display per frame.
-Reducing this number will improve performance when there are a lot of fish in frames.""",
+            """The maximum number of detections to include per frame.
+Reducing this number will improve performance when there are a lot of fish frames.""",
         )
 
         def on_max_detections_changed(value: int) -> None:
@@ -264,12 +287,12 @@ Reducing this number will improve performance when there are a lot of fish in fr
         self.advanced_layout_horizontal_3.addWidget(max_detections_spinbox)
 
         frame_buffer_spinbox = SpinBox(
-            "Frame Buffer (s)(needs renaming)",
+            "Frame Gap Tolerance (S)",
             0,
             10,
             settings.frame_buffer_seconds,
-            "The allowed time of dead frames (frames without detections) between two frames"
-            + "with detections that will still be considered as one range.",
+            "The maximum allowed gap (in seconds) between frames without detections "
+            + "within a valid range. Frames beyond this gap will be considered as a new range.",
         )
 
         def on_frame_buffer_changed(value: int) -> None:

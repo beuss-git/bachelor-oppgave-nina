@@ -78,7 +78,7 @@ class WidgetsPanel:
 
         parent_layout.addLayout(buffer_layout)
         keep_original_cb = Checkbox(
-            "Keep original video", "Whether to keep the original video or not"
+            "Keep Original Video", "Whether to keep the original video or not"
         )
         keep_original_cb.set_check_state(settings.keep_original)
 
