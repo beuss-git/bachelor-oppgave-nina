@@ -1,5 +1,6 @@
 """_summary_"""
-from typing import Callable
+import sys
+from typing import Callable, List
 
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
@@ -17,6 +18,9 @@ from PyQt6.QtWidgets import (
 
 from app import settings
 from app.common import Common
+from app.logger import get_logger
+
+logger = get_logger()
 
 # from app.settings import Settings
 
@@ -37,6 +41,7 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         title: str,
         buffer: list[str],
         tooltip_text: str,
+        fit_content: bool = False,
     ) -> None:
         """Initiates the widget with a ComboBox and Label
 
@@ -54,7 +59,13 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
 
         # Sets up a combobox
         self.combo_box = QComboBox()
-        self.combo_box.setFixedWidth(60)
+        if not fit_content:
+            self.combo_box.setFixedWidth(60)
+        else:
+            self.combo_box.setSizeAdjustPolicy(
+                QComboBox.SizeAdjustPolicy.AdjustToContents
+            )
+
         self.combo_box.addItems(buffer)
 
         # Adds the combobox widget and label
@@ -80,228 +91,12 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         """
         self.combo_box.setCurrentIndex(index)
 
-    def index_changed(self, index: int) -> None:
-        """Saves the changed index in the comboBox
-
-        Args:
-            index (int): the new number that the combobox contains
-        """
-        if self.label == "Buffer After (s)":
-            settings.buffer_after = index
-        elif self.label == "Buffer Before (s)":
-            settings.buffer_before = index
-        elif self.label == "Batch Size":
-            settings.batch_size = int(Common.batch_size[index])
-        else:
-            settings.report_format = Common.formats[index]
-
-
-class AdvancedOptions(QWidget):
-    """Class for Advanced option widget
-
-    Args:
-        QWidget (QWidget): Inherits from the QWidget class
-    """
-
-    options_open = False  # Variable for if the advanced options are open or not
-
-    def __init__(self) -> None:
-        """Initiates the widget with link to open  advanced options"""
-
-        # Creates the local layout for the class
-        QWidget.__init__(self)
-        layout = QVBoxLayout()
-        self.advanced_layout = QVBoxLayout()
-        self.advanced_layout_horizontal_checkboxes = QHBoxLayout()
-        self.advanced_layout_horizontal_dropdown_spinbox = QHBoxLayout()
-        self.advanced_layout_horizontal_3 = QHBoxLayout()
-
-        self.setLayout(layout)
-
-        # Adds a clickable label
-        self.label = QLabel()
-        self.text = "<a href='#'>Advanced Options</a>"
-        self.label.setText(self.text)
-        self.label.setFont(
-            QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10)
-        )
-        self.label.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
-        self.setStyleSheet(
-            """QToolTip { color: #000000; background-color: #ffffff; border: 1px solid white; }"""
-        )
-        self.label.setToolTip("Click to show advanced options")
-
-        # Adds function to clickable link
-        self.label.linkActivated.connect(self.show_options)
-
-        # Adds widgets to the layout
-        layout.addWidget(self.label)
-        layout.addLayout(self.advanced_layout_horizontal_checkboxes)
-        layout.addLayout(self.advanced_layout_horizontal_dropdown_spinbox)
-        layout.addLayout(self.advanced_layout_horizontal_3)
-        layout.addLayout(self.advanced_layout)
-
-    def show_options(self) -> None:
-        """Shows or removes the advanced options"""
-
-        # Checks if the advanced options are open or not
-        if self.options_open is False:
-            # If not open, then it shows the advanced options
-            self.advanced_options()
-            self.options_open = True
-
-        else:
-            # If it is open, then the advanced options are removed from view
-            self.clear_layout(self.advanced_layout)
-            self.clear_layout(self.advanced_layout_horizontal_checkboxes)
-            self.clear_layout(self.advanced_layout_horizontal_dropdown_spinbox)
-            self.clear_layout(self.advanced_layout_horizontal_3)
-            self.options_open = False
-
-    def advanced_options(self) -> None:
-        """Sets up the advanced options"""
-
-        get_report_cb = Checkbox("Get report", "Whether to get a report or not")
-        get_report_cb.set_check_state(settings.get_report)
-
-        def on_get_report_changed(state: bool) -> None:
-            settings.get_report = state
-
-        get_report_cb.connect(on_get_report_changed)
-        self.advanced_layout_horizontal_checkboxes.addWidget(get_report_cb)
-
-        box_around_fish_cb = Checkbox(
-            "Box around fish detected",
-            "If you want prediction boxes around fish and the probability",
-        )
-        box_around_fish_cb.set_check_state(settings.box_around_fish)
-
-        def on_box_around_fish_changed(state: bool) -> None:
-            settings.box_around_fish = state
-
-        box_around_fish_cb.connect(on_box_around_fish_changed)
-        self.advanced_layout_horizontal_checkboxes.addWidget(box_around_fish_cb)
-
-        report_format_dd = DropDownWidget(
-            "Report format", Common.formats, "What format the report should be in"
-        )
-        report_format_dd.set_index(Common.formats.index(settings.report_format))
-
-        def on_report_format_changed(index: int) -> None:
-            settings.report_format = Common.formats[index]
-
-        report_format_dd.connect(on_report_format_changed)
-
-        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(report_format_dd)
-
-        batch_size_dd = DropDownWidget(
-            "Batch Size",
-            Common.batch_size,
-            "Only for experienced IT (AI) users. \nHow many frames should be processed at once",
-        )
-
-        batch_size_dd.set_index(Common.batch_size.index(str(settings.batch_size)))
-
-        def on_batch_size_changed(index: int) -> None:
-            settings.batch_size = int(Common.batch_size[index])
-
-        batch_size_dd.connect(on_batch_size_changed)
-
-        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(batch_size_dd)
-        prediction_tooltip = """How accurate the AI should be in its predictions,
-less accurate means more predictions and possibility for false positives,
-More accurate means less predictions and less false positives."""
-
-        threshold_spinbox = SpinBox(
-            "Prediction threshold",
-            0,
-            100,
-            settings.prediction_threshold,
-            prediction_tooltip,
-        )
-        threshold_spinbox.set_suffix("%")
-
-        def on_threshold_changed(value: int) -> None:
-            settings.prediction_threshold = value
-
-        threshold_spinbox.connect(on_threshold_changed)
-        self.advanced_layout_horizontal_dropdown_spinbox.addWidget(threshold_spinbox)
-
-        self.__populate_advanced_layout_horizontal_3()
-
-    def __populate_advanced_layout_horizontal_3(self) -> None:
-        crf_slider = Slider(
-            "CRF",
-            0,
-            51,
-            settings.video_crf,
-            """Constant Rate Factor (CRF) is a quality control option for the H.264 codec.
-The CRF value chosen determines the video bitrate (quality).
-The available range is 0–51 (0 is lossless, 51 is worst quality possible, default is 23)""",
-        )
-
-        def on_crf_slider_changed(value: int) -> None:
-            settings.video_crf = value
-
-        crf_slider.connect(on_crf_slider_changed)
-        self.advanced_layout_horizontal_3.addWidget(crf_slider)
-
-        max_detections_spinbox = SpinBox(
-            "Max detections",
-            1,
-            300,
-            settings.max_detections,
-            """The maximum number of detections to display per frame.
-Reducing this number will improve performance when there are a lot of fish in frames.""",
-        )
-
-        def on_max_detections_changed(value: int) -> None:
-            settings.max_detections = value
-
-        max_detections_spinbox.connect(on_max_detections_changed)
-        self.advanced_layout_horizontal_3.addWidget(max_detections_spinbox)
-
-        frame_buffer_spinbox = SpinBox(
-            "Frame Buffer (s)(needs renaming)",
-            0,
-            10,
-            settings.frame_buffer_seconds,
-            "The allowed time of dead frames (frames without detections) between two frames"
-            + "with detections that will still be considered as one range.",
-        )
-
-        def on_frame_buffer_changed(value: int) -> None:
-            settings.frame_buffer_seconds = value
-
-        frame_buffer_spinbox.connect(on_frame_buffer_changed)
-        self.advanced_layout_horizontal_3.addWidget(frame_buffer_spinbox)
-
-    def clear_layout(self, layout: QBoxLayout) -> None:
-        """Removes all of the advanced options
-
-        Args:
-            layout (QHBoxLayout): the local layout that is to be cleared
-        """
-        if layout is None:  # Checks if the layout is empty
-            return
-
-        # Iterates through the items in the layout to delete them
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-            else:
-                self.clear_layout(item.layout())
-
 
 class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
     """Class for Checkbox widget"""
 
     def __init__(self, msg: str, tooltip_text: str) -> None:
-        """Sets up a checkbox for 'keeping the original video' option
+        """Sets up a checkbox
 
         Returns:
             QHBoxLayout: local layout for the checkbox and label
@@ -472,3 +267,241 @@ def add_label(title: str, tooltip_text: str) -> QLabel:
         """QToolTip { color: #000000; background-color: #ffffff; border: 1px solid white; }"""
     )
     return label
+
+
+class AdvancedOptions(QWidget):
+    """Class for Advanced option widget
+
+    Args:
+        QWidget (QWidget): Inherits from the QWidget class
+    """
+
+    options_open = False  # Variable for if the advanced options are open or not
+
+    def __init__(self) -> None:
+        """Initiates the widget with link to open  advanced options"""
+
+        # Creates the local layout for the class
+        QWidget.__init__(self)
+        layout = QVBoxLayout()
+        self.layout_r1 = QHBoxLayout()
+        self.layout_r2 = QHBoxLayout()
+        self.layout_r3 = QHBoxLayout()
+        self.layout_r4 = QHBoxLayout()
+
+        self.setLayout(layout)
+
+        # Adds a clickable label
+        self.label = QLabel()
+        self.text = "<a href='#'>Advanced Options</a>"
+        self.label.setText(self.text)
+        self.label.setFont(
+            QtGui.QFont("Arial", weight=QtGui.QFont.Weight.Bold, pointSize=10)
+        )
+        self.label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.setStyleSheet(
+            """QToolTip { color: #000000; background-color: #ffffff; border: 1px solid white; }"""
+        )
+        self.label.setToolTip("Click to show advanced options")
+
+        # Adds function to clickable link
+        self.label.linkActivated.connect(self.show_options)
+
+        # Adds widgets to the layout
+        layout.addWidget(self.label)
+        layout.addLayout(self.layout_r1)
+        layout.addLayout(self.layout_r2)
+        layout.addLayout(self.layout_r3)
+        layout.addLayout(self.layout_r4)
+
+    def show_options(self) -> None:
+        """Shows or removes the advanced options"""
+
+        # Checks if the advanced options are open or not
+        if self.options_open is False:
+            # If not open, then it shows the advanced options
+            self.advanced_options()
+            self.options_open = True
+
+        else:
+            # If it is open, then the advanced options are removed from view
+            self.clear_layout(self.layout_r1)
+            self.clear_layout(self.layout_r2)
+            self.clear_layout(self.layout_r3)
+            self.clear_layout(self.layout_r4)
+            self.options_open = False
+
+    def advanced_options(self) -> None:
+        """Sets up the advanced options"""
+
+        self.layout_r1.addWidget(self.__create_prediction_spinbox())
+        self.layout_r1.addWidget(self.__create_batch_size_dropdown())
+
+        self.layout_r2.addWidget(self.__create_frame_buffer_spinbox())
+        self.layout_r2.addWidget(self.__create_max_detections_spinbox())
+
+        self.layout_r3.addWidget(self.__create_crf_slider())
+
+        self.layout_r4.addWidget(self.__create_weights_dropdown())
+
+    def clear_layout(self, layout: QBoxLayout) -> None:
+        """Removes all of the advanced options
+
+        Args:
+            layout (QHBoxLayout): the local layout that is to be cleared
+        """
+        if layout is None:  # Checks if the layout is empty
+            return
+
+        # Iterates through the items in the layout to delete them
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+            else:
+                self.clear_layout(item.layout())
+
+    def __create_batch_size_dropdown(self) -> DropDownWidget:
+        batch_size_dd = DropDownWidget(
+            "Batch Size",
+            Common.batch_size,
+            "NB! Only for experienced users! \nThis is how many images are processed at once.",
+        )
+
+        batch_size_dd.set_index(Common.batch_size.index(str(settings.batch_size)))
+
+        def on_batch_size_changed(index: int) -> None:
+            settings.batch_size = int(Common.batch_size[index])
+
+        batch_size_dd.connect(on_batch_size_changed)
+        return batch_size_dd
+
+    def __create_prediction_spinbox(self) -> SpinBox:
+        prediction_tooltip = (
+            "The prediction thres"
+            "hold determines the "
+            "minimum confidence l"
+            "evel required for a "
+            "prediction to be con"
+            "sidered valid.\r\n"
+            "A higher threshold m"
+            "eans that only predi"
+            "ctions with a high c"
+            "onfidence level will"
+            " be accepted, reduci"
+            "ng the number of pre"
+            "dictions and potenti"
+            "al false positives."
+            "\r\n"
+            "A lower threshold in"
+            "cludes predictions w"
+            "ith lower confidence"
+            " levels, resulting i"
+            "n more predictions b"
+            "ut also a possibilit"
+            "y of more false posi"
+            "tives."
+        )
+
+        threshold_spinbox = SpinBox(
+            "Prediction Threshold",
+            0,
+            100,
+            settings.prediction_threshold,
+            prediction_tooltip,
+        )
+        threshold_spinbox.set_suffix("%")
+
+        def on_threshold_changed(value: int) -> None:
+            settings.prediction_threshold = value
+
+        threshold_spinbox.connect(on_threshold_changed)
+        return threshold_spinbox
+
+    def __create_crf_slider(self) -> Slider:
+        crf_slider = Slider(
+            "CRF",
+            0,
+            51,
+            settings.video_crf,
+            """Constant Rate Factor (CRF) is a quality control option for the H.264 codec.
+The CRF value chosen determines the output video bitrate (quality).
+The available range is 0–51 (0 is lossless, 51 is worst quality possible, default is 23)""",
+        )
+
+        def on_crf_slider_changed(value: int) -> None:
+            settings.video_crf = value
+
+        crf_slider.connect(on_crf_slider_changed)
+        return crf_slider
+
+    def __create_max_detections_spinbox(self) -> SpinBox:
+        max_detections_spinbox = SpinBox(
+            "Max Detections",
+            1,
+            300,
+            settings.max_detections,
+            """The maximum number of detections to include per frame.
+Reducing this number will improve performance when there are a lot of fish frames.""",
+        )
+
+        def on_max_detections_changed(value: int) -> None:
+            settings.max_detections = value
+
+        max_detections_spinbox.connect(on_max_detections_changed)
+        return max_detections_spinbox
+
+    def __create_frame_buffer_spinbox(self) -> SpinBox:
+        frame_buffer_spinbox = SpinBox(
+            "Frame Gap Tolerance (S)",
+            0,
+            10,
+            settings.frame_buffer_seconds,
+            "The maximum allowed gap (in seconds) between frames without detections "
+            + "within a valid range. Frames beyond this gap will be considered as a new range.",
+        )
+
+        def on_frame_buffer_changed(value: int) -> None:
+            settings.frame_buffer_seconds = value
+
+        frame_buffer_spinbox.connect(on_frame_buffer_changed)
+        return frame_buffer_spinbox
+
+    def __create_weights_dropdown(self) -> DropDownWidget:
+        def get_available_weights() -> List[str]:
+            """Gets available weights from the weights folder"""
+            weights_folder = Common.weights_folder
+            weights = [weight.name for weight in weights_folder.glob("*.pt")]
+            return weights
+
+        available_weights = get_available_weights()
+        if len(available_weights) == 0:
+            logger.error("No weights found in %s", Common.weights_folder)
+            sys.exit(1)
+        weight_dd = DropDownWidget(
+            "Weights",
+            available_weights,
+            "The weights to use for the model",
+            fit_content=True,
+        )
+
+        try:
+            weight_index = available_weights.index(settings.weights)
+        except ValueError:
+            weight_index = 0
+            settings.weights = available_weights[weight_index]
+            logger.warning(
+                "Could not find %s in available weights. Using %s instead",
+                settings.weights,
+                available_weights[weight_index],
+            )
+        weight_dd.set_index(weight_index)
+
+        def on_weight_changed(index: int) -> None:
+            settings.weights = available_weights[index]
+
+        weight_dd.connect(on_weight_changed)
+        return weight_dd

@@ -1,4 +1,4 @@
-"""Settings class for the application."""
+"""Settings module for the application."""
 
 import sys
 from types import ModuleType
@@ -37,6 +37,8 @@ video_crf: int = 23
 max_detections: int = 100
 
 frame_buffer_seconds: int = 1
+
+weights: str = "v8s-640-classes-augmented-backgrounds.pt"
 
 # endregion
 

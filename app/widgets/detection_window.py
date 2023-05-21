@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
 )
 
 from app import settings
+from app.common import Common
 from app.data_manager.data_manager import DataManager
 from app.detection import detection
 from app.detection.batch_yolov8 import BatchYolov8
@@ -70,9 +71,9 @@ class DetectionWorker(QThread):
         """Run the detection."""
 
         if self.model is None:
-            self.log("Initializing the model...")
+            self.log(f"Initializing the model using {settings.weights}...")
             self.model = BatchYolov8(
-                Path(r"data/models/v8s-640-classes-augmented-backgrounds.pt"),
+                Common.weights_folder / settings.weights,
                 "cuda:0",
             )
         stream_target = io.StringIO()
@@ -291,7 +292,13 @@ class DetectionWorker(QThread):
     def update_time_prediction(
         self, progress: int, video_num: int, num_videos: int
     ) -> None:
-        """Update the time prediction."""
+        """Update the time prediction label.
+
+        Args:
+            progress: The progress of the current task.
+            video_num: The number of the current video.
+            num_videos: The total number of videos.
+        """
         current_time = time.time()
         # Don't update more than once per second
         if current_time - self.last_time_update < 1.0:
@@ -341,6 +348,7 @@ class DetectionWindow(
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self.setWindowTitle("Detection Progress")
 
         self.dialog_layout = QVBoxLayout()
 
@@ -400,7 +408,11 @@ class DetectionWindow(
         self.worker.start()
 
         self.__add_stop_button()
-        self.__add_open_output_dir_button(output_folder_path)
+
+        # Hacky fix for disabling the output directory button on the VDI
+        if sys.platform != "linux":
+            self.__add_open_output_dir_button(output_folder_path)
+
         self.__add_close_button()
 
     def update_time_prediction_label(self, text: str) -> None:

@@ -5,8 +5,11 @@ from PyQt6.QtWidgets import QHBoxLayout, QMessageBox, QVBoxLayout
 
 from app import settings
 from app.common import Common
+from app.logger import get_logger
 from app.widgets.file_browser import FileBrowser
 from app.widgets.widgets_options import Checkbox, DropDownWidget
+
+logger = get_logger()
 
 
 def confirmation_dialog(message: str, title: str) -> int:
@@ -44,41 +47,41 @@ class WidgetsPanel:
         parent_layout.addLayout(vlayout)
 
     @staticmethod
-    def add_options_panel(parent_layout: QVBoxLayout) -> None:
+    def add_options_panel(
+        parent_layout: QVBoxLayout,
+    ) -> None:  # pylint: disable=too-many-locals
         """Sets up panel with options"""
 
-        buffer_layout = QHBoxLayout()
+        layout_r1 = QHBoxLayout()
+        layout_r2 = QHBoxLayout()
+        layout_r3 = QHBoxLayout()
 
-        buffer_before_dd = DropDownWidget(
-            "Buffer Before (s)",
-            Common.buffer_options,
-            "Time in seconds before the fish is detected",
+        WidgetsPanel.__add_buffer_before_dropdown(layout_r1)
+        WidgetsPanel.__add_buffer_after_dropdown(layout_r1)
+
+        get_report_cb = Checkbox("Get Report", "Whether to get a report or not")
+        get_report_cb.set_check_state(settings.get_report)
+
+        def on_get_report_changed(state: bool) -> None:
+            settings.get_report = state
+
+        get_report_cb.connect(on_get_report_changed)
+        layout_r2.addWidget(get_report_cb)
+
+        report_format_dd = DropDownWidget(
+            "Report Format", Common.formats, "What format the report should be in"
         )
-        buffer_before_dd.set_index(settings.buffer_before)
+        report_format_dd.set_index(Common.formats.index(settings.report_format))
 
-        def on_buffer_before_changed(index: int) -> None:
-            settings.buffer_before = index
+        def on_report_format_changed(index: int) -> None:
+            settings.report_format = Common.formats[index]
 
-        buffer_before_dd.connect(on_buffer_before_changed)
+        report_format_dd.connect(on_report_format_changed)
 
-        buffer_layout.addWidget(buffer_before_dd)
+        layout_r2.addWidget(report_format_dd)
 
-        buffer_after_dd = DropDownWidget(
-            "Buffer After (s)",
-            Common.buffer_options,
-            "Time in seconds before the fish is detected",
-        )
-        buffer_after_dd.set_index(settings.buffer_after)
-
-        def on_buffer_after_changed(index: int) -> None:
-            settings.buffer_after = index
-
-        buffer_after_dd.connect(on_buffer_after_changed)
-        buffer_layout.addWidget(buffer_after_dd)
-
-        parent_layout.addLayout(buffer_layout)
         keep_original_cb = Checkbox(
-            "Keep original video", "Whether to keep the original video or not"
+            "Keep Original Video", "Whether to keep the original video or not"
         )
         keep_original_cb.set_check_state(settings.keep_original)
 
@@ -99,5 +102,51 @@ class WidgetsPanel:
             settings.keep_original = state
 
         keep_original_cb.connect(on_keep_original_cb_toggled)
+        layout_r3.addWidget(keep_original_cb)
 
-        parent_layout.addWidget(keep_original_cb)
+        box_around_fish_cb = Checkbox(
+            "Box Around Fish Detected",
+            "Will place a box around the fish detected in the video "
+            + "including the confidence level and label",
+        )
+        box_around_fish_cb.set_check_state(settings.box_around_fish)
+
+        def on_box_around_fish_changed(state: bool) -> None:
+            settings.box_around_fish = state
+
+        box_around_fish_cb.connect(on_box_around_fish_changed)
+        layout_r3.addWidget(box_around_fish_cb)
+
+        parent_layout.addLayout(layout_r1)
+        parent_layout.addLayout(layout_r2)
+        parent_layout.addLayout(layout_r3)
+
+    @staticmethod
+    def __add_buffer_before_dropdown(layout: QHBoxLayout) -> None:
+        buffer_before_dd = DropDownWidget(
+            "Buffer Before (s)",
+            Common.buffer_options,
+            "Time in seconds before the fish is detected",
+        )
+        buffer_before_dd.set_index(settings.buffer_before)
+
+        def on_buffer_before_changed(index: int) -> None:
+            settings.buffer_before = index
+
+        buffer_before_dd.connect(on_buffer_before_changed)
+        layout.addWidget(buffer_before_dd)
+
+    @staticmethod
+    def __add_buffer_after_dropdown(layout: QHBoxLayout) -> None:
+        buffer_after_dd = DropDownWidget(
+            "Buffer After (s)",
+            Common.buffer_options,
+            "Time in seconds before the fish is detected",
+        )
+        buffer_after_dd.set_index(settings.buffer_after)
+
+        def on_buffer_after_changed(index: int) -> None:
+            settings.buffer_after = index
+
+        buffer_after_dd.connect(on_buffer_after_changed)
+        layout.addWidget(buffer_after_dd)
