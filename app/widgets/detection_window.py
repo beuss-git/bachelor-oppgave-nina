@@ -347,6 +347,7 @@ class DetectionWindow(
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self.setWindowTitle("Detection Progress")
 
         self.dialog_layout = QVBoxLayout()
 
