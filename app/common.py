@@ -2,6 +2,7 @@
 import typing
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 from PyQt6.QtCore import QProcess
 
@@ -35,3 +36,5 @@ class Common:
     formats = ["CSV", "XLSX"]
 
     batch_size = ["8", "16", "32", "64", "128", "256"]
+
+    weights_folder = Path(r"data/models")

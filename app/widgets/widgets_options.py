@@ -37,6 +37,7 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
         title: str,
         buffer: list[str],
         tooltip_text: str,
+        fit_content: bool = False,
     ) -> None:
         """Initiates the widget with a ComboBox and Label
 
@@ -54,7 +55,13 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
 
         # Sets up a combobox
         self.combo_box = QComboBox()
-        self.combo_box.setFixedWidth(60)
+        if not fit_content:
+            self.combo_box.setFixedWidth(60)
+        else:
+            self.combo_box.setSizeAdjustPolicy(
+                QComboBox.SizeAdjustPolicy.AdjustToContents
+            )
+
         self.combo_box.addItems(buffer)
 
         # Adds the combobox widget and label
@@ -79,21 +86,6 @@ class DropDownWidget(QWidget):  # pylint: disable=too-few-public-methods
             index (int): the new index of the combobox
         """
         self.combo_box.setCurrentIndex(index)
-
-    def index_changed(self, index: int) -> None:
-        """Saves the changed index in the comboBox
-
-        Args:
-            index (int): the new number that the combobox contains
-        """
-        if self.label == "Buffer After (s)":
-            settings.buffer_after = index
-        elif self.label == "Buffer Before (s)":
-            settings.buffer_before = index
-        elif self.label == "Batch Size":
-            settings.batch_size = int(Common.batch_size[index])
-        else:
-            settings.report_format = Common.formats[index]
 
 
 class AdvancedOptions(QWidget):
@@ -324,7 +316,7 @@ class Checkbox(QWidget):  # pylint: disable=too-few-public-methods
     """Class for Checkbox widget"""
 
     def __init__(self, msg: str, tooltip_text: str) -> None:
-        """Sets up a checkbox for 'keeping the original video' option
+        """Sets up a checkbox
 
         Returns:
             QHBoxLayout: local layout for the checkbox and label

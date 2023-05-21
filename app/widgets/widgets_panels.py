@@ -1,12 +1,17 @@
 """Widgets Panels for the application."""
+import sys
 from dataclasses import dataclass
+from typing import List
 
 from PyQt6.QtWidgets import QHBoxLayout, QMessageBox, QVBoxLayout
 
 from app import settings
 from app.common import Common
+from app.logger import get_logger
 from app.widgets.file_browser import FileBrowser
 from app.widgets.widgets_options import Checkbox, DropDownWidget
+
+logger = get_logger()
 
 
 def confirmation_dialog(message: str, title: str) -> int:
@@ -48,6 +53,7 @@ class WidgetsPanel:
         """Sets up panel with options"""
 
         buffer_layout = QHBoxLayout()
+        second_layout = QHBoxLayout()
 
         buffer_before_dd = DropDownWidget(
             "Buffer Before (s)",
@@ -100,4 +106,44 @@ class WidgetsPanel:
 
         keep_original_cb.connect(on_keep_original_cb_toggled)
 
-        parent_layout.addWidget(keep_original_cb)
+        second_layout.addWidget(keep_original_cb)
+
+        available_weights = WidgetsPanel.get_available_weights()
+        if len(available_weights) == 0:
+            logger.error("No weights found in %s", Common.weights_folder)
+            sys.exit(1)
+
+        weight_dd = DropDownWidget(
+            "Weights",
+            available_weights,
+            "The weights to use for the model",
+            fit_content=True,
+        )
+
+        try:
+            weight_index = available_weights.index(settings.weights)
+        except ValueError:
+            weight_index = 0
+            settings.weights = available_weights[weight_index]
+            logger.warning(
+                "Could not find %s in available weights. Using %s instead",
+                settings.weights,
+                available_weights[weight_index],
+            )
+        weight_dd.set_index(weight_index)
+
+        def on_weight_changed(index: int) -> None:
+            settings.weights = available_weights[index]
+
+        weight_dd.connect(on_weight_changed)
+
+        second_layout.addWidget(weight_dd)
+
+        parent_layout.addLayout(second_layout)
+
+    @staticmethod
+    def get_available_weights() -> List[str]:
+        """Gets available weights from the weights folder"""
+        weights_folder = Common.weights_folder
+        weights = [weight.name for weight in weights_folder.glob("*.pt")]
+        return weights

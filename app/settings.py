@@ -38,6 +38,8 @@ max_detections: int = 100
 
 frame_buffer_seconds: int = 1
 
+weights: str = "v8s-640-classes-augmented-backgrounds.pt"
+
 # endregion
 
 # ----------------------------------------------------------------------------- #
