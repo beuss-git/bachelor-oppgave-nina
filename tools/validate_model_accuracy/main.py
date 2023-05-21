@@ -24,7 +24,7 @@ from app.detection.batch_yolov8 import BatchYolov8
 from app.widgets.detection_window import DetectionWorker
 
 mpl.rcParams["xtick.labelsize"] = 8
-save_weight = True
+save_weight = False
 
 
 class ShowFigure(Enum):
@@ -66,7 +66,7 @@ class SaveFile:
     video_names: List[str]
     iou_threshold: IOUThreshold
     pr_curve: PrecisionRecallCurve
-    iou_confidence: List[List[Tuple[float, float]]]
+    iou_confidence: List[Tuple[List[Tuple[float, float]], float]]
 
 
 @dataclass
@@ -75,7 +75,7 @@ class FigureWeightClassifier:
     weight_color: str
 
 
-CURRENT_FIGURE: ShowFigure = ShowFigure.timeline
+CURRENT_FIGURE: ShowFigure = ShowFigure.iou_confidence
 
 THRESHOLD = 0.5
 WEIGHTS = Path(
@@ -173,7 +173,7 @@ def calculate_temporal_overlap(
     if print_ranges:
         print(f"GR: {len(ground_truth_ranges)}")
         print(f"PR: {len(predicted_ranges)}")
-    matched_iou_threshold: List[float] = []
+    matched_ranges: List[float] = []
 
     def calculate_iou(a: Tuple[int, int], b: Tuple[int, int]) -> float:
         start_a: int = a[0]
@@ -188,23 +188,28 @@ def calculate_temporal_overlap(
             return 0.0
         return intersection / union
 
-    matched_ranges = 0
+    unmatched_ranges = 0
     for ground_truth_range in ground_truth_ranges:
+        matched = False
         for predicted_range in predicted_ranges:
             iou = calculate_iou(ground_truth_range, predicted_range)
             # NOTE: Should allow for lower threshold if no other ranges are detected for the ground truth range.
             #       This should only add the current IOU
             if iou > iou_threshold:
-                matched_iou_threshold.append(iou)
-                matched_ranges += 1
+                matched_ranges.append(iou)
+                matched = True
                 break
-
+        if not matched:
+            unmatched_ranges += 1
     if len(ground_truth_ranges) == 0:
-        return 1, matched_iou_threshold
+        return 1, matched_ranges
 
     # Returns % of ground truth ranges that were matched
     # TODO: account for too many predicted ranges
-    return matched_ranges / len(ground_truth_ranges), matched_iou_threshold
+
+    recall = len(ground_truth_ranges) / (len(matched_ranges) + unmatched_ranges)
+
+    return recall, matched_ranges
 
 
 def load_video_data() -> List[VideoData]:
@@ -293,9 +298,7 @@ def main() -> int:
         model = BatchYolov8(
             WEIGHTS,
             DEVICE,
-            conf_thres=0.0000001
-            if CURRENT_FIGURE == ShowFigure.iou_confidence
-            else 0.5,
+            conf_thres=0.0000001,
         )
         videos = load_video_data()
 
@@ -495,11 +498,12 @@ def main() -> int:
             for fwc, file in file_data:
                 conf: List[float] = []
                 all_iou: List[List[float]] = []
-
-                for iou_conf in (videos := file.iou_confidence):
+                all_t_overlaps: List[float] = []
+                for iou_conf, temporal_overlap in file.iou_confidence:
                     conf = [x for (x, _) in iou_conf]
                     iou = [y for (_, y) in iou_conf]
                     all_iou.append(iou)
+                    all_t_overlaps.append(temporal_overlap)
                 average_iou = []
                 for i in range(0, len(conf)):
                     append_iou = []
@@ -509,12 +513,14 @@ def main() -> int:
 
                 """ for i in range(0, len(all_conf)): """
                 fig = Figure(linewidth=15)
-
+                average_t_overlap = sum(all_t_overlaps) / len(all_t_overlaps)
                 ax = fig.add_subplot()
-                ax.set_title("Average IOU- Confidence curve")
+                fig.subplots_adjust(bottom=0.2, top=0.8)
+                ax.set_title("Recall - Confidence curve")
                 ax.plot(conf, average_iou, color="purple")
-                ax.set_xlabel("Confidence")
-                ax.set_ylabel("Average IOU")
+                ax.set_xlabel(f"Confidence")
+                ax.set_ylabel("Recall")
+                print()
     app = QApplication(sys.argv)
     qdarktheme.setup_theme("auto")
     window = MyWindow()
@@ -524,9 +530,10 @@ def main() -> int:
 
 def get_confidence_iou(
     ground_truth_ranges: List[Tuple[int, int]], tensor: List[Any]
-) -> list[Tuple[float, float]]:
+) -> Tuple[list[Tuple[float, float]], float]:
     predictions = DetectionWorker.tensors_to_predictions(tensor)
     plotted_confidence_iou: List[Tuple[float, float]] = []
+    temporal_overlaps = []
     for num in range(0, 10):
         i = num / 10
         frames_with_fish_conf = []
@@ -537,9 +544,10 @@ def get_confidence_iou(
         predicted_ranges = detected_frames_to_ranges(
             frames_with_fish_conf, frame_buffer=FRAME_BUFFER
         )
-        _, matched_iou = calculate_temporal_overlap(
+        temporal_overlap, matched_iou = calculate_temporal_overlap(
             predicted_ranges, ground_truth_ranges
         )
+        temporal_overlaps.append(temporal_overlap)
         plotted_confidence_iou.append(
             (
                 i,
@@ -548,7 +556,12 @@ def get_confidence_iou(
                 else float(0),
             )
         )
-    return plotted_confidence_iou
+
+    return plotted_confidence_iou, (
+        sum(temporal_overlaps) / len(temporal_overlaps)
+        if len(temporal_overlaps) > 0
+        else float(0)
+    )
 
 
 def main_output_vid() -> int:

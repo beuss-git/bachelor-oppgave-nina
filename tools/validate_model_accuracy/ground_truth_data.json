@@ -1,11 +1,25 @@
 {
   "videos": [
     {
-      "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-06-01_15-58-09]-001.mp4",
+      "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-05-27_11-18-41]- 28.05.2020 kl ca1100-000.mp4",
       "ranges": [
         {
-          "start": 3144,
-          "end": 3424
+          "start": 217,
+          "end": 370
+        },
+        {
+          "start": 3218,
+          "end": 3260
+        }
+      ],
+      "video_end": 3300
+    },
+    {
+      "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\myggbukta 2020 mai\\28.05.2020 - 09.06.2020\\File1-[2020-05-27_11-18-41]-021.mp4",
+      "ranges": [
+        {
+          "start": 0,
+          "end": 380
         },
         {
           "start": 6055,
@@ -17,6 +31,112 @@
         }
       ],
       "video_end": 8000
+    },
+    {
+      "path": "X:\\DISK1 - Høyregga 17+18 og myggbukta 2020 mai NTNU\\Høyegga 2017 og 2018 NTNU\\2017 - Alt som er sett gjennom NTNU\\Disk 2\\File1-[2017-09-14_18-00-50]-048.mp4",
+      "ranges": [
+        {
+          "start": 2705,
+          "end": 2743
+        },
+        {
+          "start": 5295,
+          "end": 5424
+        },
+        {
+          "start": 5872,
+          "end": 5879
+        },
+        {
+          "start": 8515,
+          "end": 8632
+        },
+        {
+          "start": 13099,
+          "end": 13150
+        },
+        {
+          "start": 13704,
+          "end": 13750
+        },
+        {
+          "start": 14359,
+          "end": 14371
+        },
+        {
+          "start": 14426,
+          "end": 14473
+        },
+        {
+          "start": 14625,
+          "end": 14643
+        },
+        {
+          "start": 14900,
+          "end": 14964
+        },
+        {
+          "start": 15029,
+          "end": 15032
+        },
+        {
+          "start": 15135,
+          "end": 15213
+        },
+        {
+          "start": 15311,
+          "end": 15344
+        },
+        {
+          "start": 15455,
+          "end": 15543
+        },
+        {
+          "start": 16231,
+          "end": 16282
+        },
+        {
+          "start": 16319,
+          "end": 16358
+        },
+        {
+          "start": 16319,
+          "end": 16358
+        },
+        {
+          "start": 16387,
+          "end": 16402
+        },
+        {
+          "start": 16628,
+          "end": 16797
+        },
+        {
+          "start": 16628,
+          "end": 16797
+        },
+        {
+          "start": 17029,
+          "end": 17069
+        },
+        {
+          "start": 17105,
+          "end": 17250
+        },
+        {
+          "start": 17369,
+          "end": 17404
+        },
+        {
+          "start": 17858,
+          "end": 18005
+        },
+        {
+          "start": 18895,
+          "end": 19077
+        }
+      ],
+      "video_end": 20000
     }
   ]
 }
