@@ -1,4 +1,4 @@
-"""Settings class for the application."""
+"""Settings module for the application."""
 
 import sys
 from types import ModuleType

@@ -13,7 +13,7 @@ def __create_file_handler(
     """Set up logging to file to rotate every midnight and set formatter
 
     Returns:
-        _type_: _description_
+        TimedRotatingFileHandler: The file handler
     """
     handler = TimedRotatingFileHandler(
         f"{LOG_PATH}/{filename}",

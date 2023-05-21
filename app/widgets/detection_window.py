@@ -291,7 +291,13 @@ class DetectionWorker(QThread):
     def update_time_prediction(
         self, progress: int, video_num: int, num_videos: int
     ) -> None:
-        """Update the time prediction."""
+        """Update the time prediction label.
+
+        Args:
+            progress: The progress of the current task.
+            video_num: The number of the current video.
+            num_videos: The total number of videos.
+        """
         current_time = time.time()
         # Don't update more than once per second
         if current_time - self.last_time_update < 1.0:
