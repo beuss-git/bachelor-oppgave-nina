@@ -407,7 +407,11 @@ class DetectionWindow(
         self.worker.start()
 
         self.__add_stop_button()
-        self.__add_open_output_dir_button(output_folder_path)
+
+        # Hacky fix for disabling the output directory button on the VDI
+        if sys.platform != "linux":
+            self.__add_open_output_dir_button(output_folder_path)
+
         self.__add_close_button()
 
     def update_time_prediction_label(self, text: str) -> None:
