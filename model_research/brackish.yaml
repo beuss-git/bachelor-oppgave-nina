@@ -1,0 +1,9 @@
+path: path_to_dataset
+
+# These are relative to the path above
+train: images\train\
+val: images\valid\
+test: images\test\
+
+nc: 6
+names: ["none", "fish", "small_fish", "crab", "shrimp", "jellyfish", "starfish"]

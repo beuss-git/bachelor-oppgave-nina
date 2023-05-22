@@ -1,5 +1,10 @@
 # bachelor-oppgave-nina
 
+[![CI][ci-badge]][ci]
+
+[ci-badge]: https://github.com/beuss-git/bachelor-oppgave-nina/actions/workflows/code-quality.yml/badge.svg
+[ci]: https://github.com/beuss-git/bachelor-oppgave-nina/actions/workflows/code-quality.yml
+
 ### Requirements
 - [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - [poetry](https://python-poetry.org/docs/#insntalling-with-the-official-installer)
@@ -12,6 +17,8 @@ Add `%APPDATA%\Python\Scripts` on windows.
 
 `poetry install` to install project dependencies
 
+Windows: `poetry run poe torch-cuda` to install torch with cuda.
+
 `pre-commit install` to install pre-commit hooks.
 
 `pre-commit install --hook-type commit-msg` to install commitlint hook.
@@ -19,3 +26,12 @@ Add `%APPDATA%\Python\Scripts` on windows.
 
 See the commitlint config:
 https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional
+
+## Run using Docker
+
+```
+docker compose --profile prod build
+docker compose --profile prod run --rm app
+```
+
+**Note:** Before running the project, you will need to pull the large files (model weights) using Git LFS. Run `git lfs pull` to download the files.

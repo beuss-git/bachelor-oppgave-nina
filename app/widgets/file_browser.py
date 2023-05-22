@@ -1,169 +1,134 @@
-"""Open the file browser and return the selected file path."""
-import typing
+"""Creates a widget for browsing files depending on the mode"""
+import os
+from typing import ClassVar, List
 
-from PyQt6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QLineEdit,
-    QFileDialog,
-    QPushButton,
-)
-from PyQt6.QtCore import QDir
-from .options_widgets import (
-    add_label,
-)
+from PyQt6.QtCore import QDir, pyqtSignal
+from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QPushButton, QWidget
+
+from app.common import Common
+from app.widgets.widgets_options import add_label
 
 
-class FileBrowser(QWidget):
-    """_summary_
+class FileBrowser(QWidget):  # pylint: disable=too-few-public-methods
+    """Class for browsing files widget
 
     Args:
-        QWidget (_type_): _description_
-
-    Returns:
-        _type_: _description_
+        QWidget (QWidget): Inherits QWidget
     """
 
-    OpenFile = 0
-    OpenFiles = 1
-    OpenDirectory = 2
-    SaveFile = 3
+    # Creates empty list for filepaths
+    filepaths: List[str] = []
+    path_changed: ClassVar[pyqtSignal] = pyqtSignal(str)
 
-    def __init__(self, title: str, mode: int = OpenFile) -> None:
-        """_summary_
+    def __init__(
+        self,
+        title: str,
+        tooltip_text: str,
+        mode: Common.FileType = Common.FileType.OPEN_FILE,
+    ) -> None:
+        """Initiates the widget with LineEdit, Label and Button to browse files
 
         Args:
-            title (Any): _description_
-            mode (int, optional): _description_. Defaults to OpenFile.
+            title (Any): Label title
+            tooltip_text (str): Tooltip text
+            mode (int, optional): What kind of file browsing widget. Defaults to OpenFile.
+            default_paths (List[str], optional): Default path(s) to display. Defaults to None.
         """
 
-        self.filepaths: typing.List[str] = []
-        # self.mode: int = mode
+        # Creates empty list for filepaths
+        self.filepath = ""
 
         QWidget.__init__(self)
         layout = QHBoxLayout()
         self.setLayout(layout)
-        self.browser_mode = mode
         self.filter_name = "All files (*.*)"
-        self.dirpath = QDir.currentPath()
 
-        self.label = add_label(title)
-        layout.addWidget(self.label)
+        # Adds the label
+        self.label = title
+        layout.addWidget(add_label(title, tooltip_text))
 
+        # Creates a line edit to display the file path
         self.line_edit = QLineEdit(self)
-        self.line_edit.setFixedWidth(180)
-
         layout.addWidget(self.line_edit)
 
-        self.button = QPushButton("Browse Files")
-        self.button.clicked.connect(self.get_file)
-        layout.addWidget(self.button)
+        # Connect signal to update the path
+        self.line_edit.textChanged.connect(self.update_path)
+
+        # Creates a button to open the file browser
+        button = QPushButton("Browse Files")
+
+        def use_get_file() -> None:
+            self.get_file(mode)
+
+        button.clicked.connect(use_get_file)
+        layout.addWidget(button)
         layout.addStretch()
 
-        # --------------------------------------------------------------------
+    def update_path(self, path: str) -> None:
+        """Sets the path in the line edit"""
+        self.line_edit.setText(path)
+        self.filepath = path
+        self.path_changed.emit(self.filepath)
 
-    # For example,
-    #    setMode(FileBrowser.OpenFile)
-    #    setMode(FileBrowser.OpenFiles)
-    #    setMode(FileBrowser.OpenDirectory)
-    #    setMode(FileBrowser.SaveFile)
-    # def set_mode(self, mode: int) -> None:
-    #    """_summary_"""
-    #    self.mode = mode
+    def get_file(self, mode: Common.FileType) -> None:
+        """Opens file browser to gather one or more file(s) or save a file"""
+        stored_path = self.get_path()
 
-    # --------------------------------------------------------------------
-    # For example,
-    #    setFileFilter('Images (*.png *.xpm *.jpg)')
-    def set_file_filter(self, text: str) -> None:
-        """_summary_
+        # Check that the path is valid
+        if stored_path and os.path.exists(stored_path):
+            start_dir = stored_path
+        else:
+            start_dir = QDir.currentPath()
 
-        Args:
-            text (str): _description_
-        """
-        self.filter_name = text
-
-    # --------------------------------------------------------------------
-    def set_default_dir(self, path: str) -> None:
-        """_summary_
-
-        Args:
-            path (str): _description_
-        """
-        self.dirpath = path
-
-    # --------------------------------------------------------------------
-    def get_file(self) -> None:
-        """_summary_"""
-        self.filepaths = []
-
-        if self.browser_mode == FileBrowser.OpenFile:
-            self.filepaths.append(
-                QFileDialog.getOpenFileName(
+        filepath: str = ""
+        match mode:
+            case Common.FileType.OPEN_FILE:
+                filepath = QFileDialog.getOpenFileName(
                     self,
                     caption="Choose File",
-                    directory=self.dirpath,
+                    directory=start_dir,
                     filter=self.filter_name,
                 )[0]
-            )
-        elif self.browser_mode == FileBrowser.OpenFiles:
-            self.filepaths.extend(
-                QFileDialog.getOpenFileNames(
-                    self,
-                    caption="Choose Files",
-                    directory=self.dirpath,
-                    filter=self.filter_name,
-                )[0]
-            )
-        elif self.browser_mode == FileBrowser.OpenDirectory:
-            self.filepaths.append(
-                QFileDialog.getExistingDirectory(
-                    self, caption="Choose Directory", directory=self.dirpath
-                )
-            )
+            case Common.FileType.OPEN_DIR:
+                options = QFileDialog.Option(0)
+                # options |= ~QFileDialog.Option.ShowFilesOnly
 
-        else:
-            self.filepaths.append(
-                QFileDialog.getSaveFileName(
+                # Changes directory to not native directory of OS
+                options = (
+                    QFileDialog.Option.DontUseNativeDialog
+                )  # Use if want to see files in directory
+                filepath = QFileDialog.getExistingDirectory(
+                    self,
+                    caption="Choose Directory",
+                    directory=start_dir,
+                    options=options,
+                )
+            # Else save file
+            case Common.FileType.SAVE_FILE:
+                filepath = QFileDialog.getSaveFileName(
                     self,
                     caption="Save/Save As",
-                    directory=self.dirpath,
+                    directory=start_dir,
                     filter=self.filter_name,
                 )[0]
-            )
+            case _:
+                raise ValueError(f"Invalid mode {mode}")
 
-        if len(self.filepaths) == 0:
-            return
-        if len(self.filepaths) == 1:
-            self.line_edit.setText(self.filepaths[0])
-        else:
-            self.line_edit.setText(",".join(self.filepaths))
+        if len(filepath) > 0:
+            self.update_path(filepath)
 
-    # --------------------------------------------------------------------
-    def set_label_width(self, width: int) -> None:
-        """_summary_
+    def set_path(self, path: str) -> None:
+        """Sets the file path
 
         Args:
-            width (int): _description_
+            path (str): File path
         """
-        self.label.setFixedWidth(width)
+        self.update_path(path)
 
-    # --------------------------------------------------------------------
-    def set_line_edit_width(self, width: int) -> None:
-        """_summary_
-
-        Args:
-            width (int): _description_
-        """
-        self.line_edit.setFixedWidth(width)
-
-    # --------------------------------------------------------------------
-    def get_paths(self) -> typing.List[str]:
-        """_summary_
+    def get_path(self) -> str | None:
+        """Returns the file path
 
         Returns:
-            typing.List[str]: _description_
+            str: File path
         """
-        return self.filepaths
-
-
-# -------------------------------------------------------------------
+        return self.filepath

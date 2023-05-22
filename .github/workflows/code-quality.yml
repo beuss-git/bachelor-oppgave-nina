@@ -1,13 +1,30 @@
 name: Code Quality Checks
-on: [pull_request]
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, edited]
 
 jobs:
-  build:
-    runs-on: windows-latest
-    name: Checks
+  pre-commit:
+    runs-on: ubuntu-latest
+    name: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4.5.0
         with:
-          python-version: 3.10.9
-      - uses: pre-commit/action@v3.0.0
+          python-version: "3.10.10"
+      - run: |
+          pip install --constraint=.github/workflows/constraints.txt pip
+          pip install --constraint=.github/workflows/constraints.txt pre-commit
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Install dependencies
+        run: poetry install
+
+      - run: poetry run pre-commit run --all-files --show-diff-on-failure --color=always
+
+      - name: Test
+        run: poetry run pytest tests
