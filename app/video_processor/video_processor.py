@@ -1,4 +1,5 @@
 """Video processor module. Contains functions for processing videos."""
+from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 
@@ -295,7 +296,9 @@ def cut_video(
     output_container = av.open(str(output_path), mode="w")
     fps = video_stream.average_rate.numerator / video_stream.average_rate.denominator
     output_stream = output_container.add_stream(
-        "libx264", str(fps), options={"crf": str(settings.video_crf)}
+        "libx264",
+        rate=Fraction(fps).limit_denominator(65535),
+        options={"crf": str(settings.video_crf)},
     )
     output_stream.width = video_stream.codec_context.width
     output_stream.height = video_stream.codec_context.height
