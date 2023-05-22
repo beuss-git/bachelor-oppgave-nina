@@ -7,14 +7,18 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     apt-get update && \
     apt-get install -qy --no-install-recommends \
         libgl1 libxkbcommon0 libegl1 libdbus-1-3 \
-        libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxkbcommon-x11-0
-
-RUN python3 -m pip install poetry
+        libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxkbcommon-x11-0 \
+        xdg-utils nautilus
 
 WORKDIR /app
+
+RUN python3 -m pip install poetry && \
+    poetry config virtualenvs.in-project true
+
 COPY pyproject.toml poetry.lock ./
 RUN --mount=type=cache,sharing=locked,target=/root/.cache/pypoetry \
     poetry install --no-root
 
 COPY app app
+copy data data
 CMD ["poetry", "run", "python", "-c", "from app import main; main.main()"]

@@ -1,7 +1,28 @@
+x-common: &common
+  build: .
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+  environment:
+    DISPLAY: $DISPLAY
+  volumes:
+    - /tmp/.X11-unix:/tmp/.X11-unix
+
 services:
   app:
-    build: .
-    environment:
-      DISPLAY: $DISPLAY
+    <<: *common
+    profiles:
+      - prod
+  test:
+    <<: *common
+    profiles:
+      - test
+    command: poetry run python -m app.vdi_perf_test
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./app/logs:/app/app/logs

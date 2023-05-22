@@ -31,5 +31,8 @@ https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/c
 ## Run using Docker
 
 ```
-docker compose up --build"
+docker compose --profile prod build
+docker compose --profile prod run --rm app
 ```
+
+**Note:** Before running the project, you will need to pull the large files (model weights) using Git LFS. Run `git lfs pull` to download the files.
