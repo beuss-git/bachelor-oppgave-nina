@@ -400,6 +400,6 @@ class DataManager:
 
             return timestamps
 
-        except ffmpeg.Error as error:
-            logger.error("Error occured: %s", error.stderr.decode("utf8"))
+        except Exception as error:  # pylint: disable=broad-except
+            logger.error("Error occured: %s", error)
             return []
