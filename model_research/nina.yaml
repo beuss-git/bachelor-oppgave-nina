@@ -1,20 +1,19 @@
-path: C:\Users\benja\Documents\datasets\nina_yolo
-
+path: path/to/dataset # change this
 
 # These are relative to the path above
-train: obj_train_data
-val: obj_train_data
+train: train.txt
+val: val.txt
 test:
 
-nc: 9
-names: [
-  "Gjedde",
-  "Gullbust",
-  "Rumpetroll",
-  "Stingsild",
-  "Ørekyt",
-  "Abbor",
-  "Brasme",
-  "Mort",
-  "Vederbuk"
-]
+names:
+  0: Gjedde
+  1: Gullbust
+  2: Rumpetroll
+  3: Stingsild
+  4: Ørekyt
+  5: Abbor
+  6: Brasme
+  7: Mort
+  8: Vederbuk
+  9: Frosk
+  10: "Annen Fisk"
