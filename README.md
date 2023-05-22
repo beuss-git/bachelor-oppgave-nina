@@ -7,8 +7,7 @@
 
 ### Requirements
 - [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-- [commitlint (not husky)](https://commitlint.js.org/#/./guides-local-setup?id=guides-local-setup)
-- [poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+- [poetry](https://python-poetry.org/docs/#insntalling-with-the-official-installer)
 
 
 I recommend adding poetry to your PATH.
