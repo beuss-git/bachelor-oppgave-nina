@@ -1,5 +1,11 @@
 # bachelor-oppgave-nina
 
+Group members
+* [Lars Blütecher Holter](https://github.com/Firemines)
+* [Benjamin Letnes Bjerken](https://github.com/beuss-git)
+* [Lillian Alice Wangerud](https://github.com/Lilliaaw)
+* [Daniel Hao Huynh](https://github.com/Mystodan)
+
 [![CI][ci-badge]][ci]
 
 [ci-badge]: https://github.com/beuss-git/bachelor-oppgave-nina/actions/workflows/code-quality.yml/badge.svg
