@@ -243,3 +243,8 @@ runs/
 
 # Settings
 settings.ini
+
+# Data
+
+input/
+output/
