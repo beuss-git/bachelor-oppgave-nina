@@ -81,7 +81,6 @@ class MainWindow(QMainWindow):  # pylint: disable=too-few-public-methods
         self.run_btn = QPushButton("Run")
         self.run_btn.setFixedWidth(100)
         self.run_btn.clicked.connect(self.run)
-        self.run_btn.setStyleSheet("background-color: green")
         self.parent_layout.addWidget(self.run_btn)
         self.parent_layout.setAlignment(self.run_btn, Qt.AlignmentFlag.AlignCenter)
 
