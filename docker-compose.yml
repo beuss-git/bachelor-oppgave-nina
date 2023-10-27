@@ -11,6 +11,8 @@ x-common: &common
     DISPLAY: $DISPLAY
   volumes:
     - /tmp/.X11-unix:/tmp/.X11-unix
+    - ./input:/app/input
+    - ./output:/app/output
 
 services:
   app:
